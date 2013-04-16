@@ -1,0 +1,16 @@
+ToDo-List:
+==========
+
+- rename btc-e package due to a naming conflict in eclipse?
+
+- complete zapto client?
+
+- rename TradeSite to TradeSiteClient and TradeSiteImpl to TradeSiteClientCore ?
+  (but in most places, TradeSite.getDepth() etc. actually makes some sense...)
+
+- implement the TradeSite implementation as separate jars, so the trade site 'drivers' could be loaded as modules?
+
+- write a module loader for the trade site interfaces.
+
+- refactor the TradeOrder/DepositOrder/WithdrawOrder structure, because deposit and withdraw subclass trade order now,
+  but don't need a currency pair etc.

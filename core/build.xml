@@ -1,0 +1,64 @@
+<project name="Java tradeLib core" default="dist" basedir=".">
+    <description>
+        Java tradelib core build file
+    </description>
+  <!-- set global properties for this build -->
+
+  <property name="version" value="0.1.0"/>
+
+  <property name="src"   location="src"/>
+  <property name="lib"   location="lib/"/>
+  <property name="build" location="build"/>
+  <property name="dist"  location="dist"/>
+  <property name="docs"  location="docs"/>
+
+  <target name="init">
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init" description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}">
+      <classpath>
+	<fileset dir="${lib}">
+	  <include name="**/*.jar" />
+	</fileset>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="dist" depends="compile" description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+    <jar jarfile="${dist}/lib/cryptocoin-tradelib-${version}.jar" basedir="${build}">
+      <manifest>
+	<attribute name="Class-Path" value="json-lib-2.4-jdk15.jar log4j.jar"/>
+      </manifest>
+    </jar>
+
+    <!-- copy the libs to the distribution for easier installation -->
+    <copy todir="${dist}/lib">
+      <fileset dir="${lib}">
+	<include name="**/*.jar" />
+      </fileset>
+    </copy>
+  </target>
+
+  <!-- create the javadoc files -->
+  <target name="docs" depends="compile">
+    <javadoc packagenames="src" sourcepath="${src}" destdir="${docs}">
+       <fileset dir="${src}">
+                <include name="**" />
+           </fileset>
+    </javadoc>
+  </target>
+
+  <target name="clean" description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+</project>
