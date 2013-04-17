@@ -26,12 +26,12 @@
 package de.andreas_rueckert.trade.site.btc_e.client;
 
 import de.andreas_rueckert.trade.Amount;
-import de.andreas_rueckert.trade.app.TradeApp;
 import de.andreas_rueckert.trade.CryptoCoinTradeImpl;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.TradeType;
+import de.andreas_rueckert.util.LogUtils;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -86,7 +86,7 @@ public class BtcETradeImpl extends CryptoCoinTradeImpl {
 	try {
 	    _id = jsonTrade.getString( "tid");
 	} catch( JSONException je) {
-	    TradeApp.getApp().getLogger().error( "Cannot parse id in Btc-E trade");
+	    LogUtils.getInstance().getLogger().error( "Cannot parse id in Btc-E trade");
 	}
 	
 	// Parse the trade type

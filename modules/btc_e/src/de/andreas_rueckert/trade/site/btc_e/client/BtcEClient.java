@@ -31,7 +31,6 @@ import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
-import de.andreas_rueckert.trade.app.TradeApp;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyImpl;
@@ -51,8 +50,8 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
-import de.andreas_rueckert.trade.TradeSites;
 import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -292,7 +291,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		if( success == 0) {  // The request failed.
 		    String errorMessage = jsonResult.getString( "error");
 
-		    TradeApp.getApp().getLogger().error( "btc-e.com trade API request failed: " + errorMessage);
+		    LogUtils.getInstance().getLogger().error( "btc-e.com trade API request failed: " + errorMessage);
 
 		    return null;
 		} else {  // Request succeeded!
