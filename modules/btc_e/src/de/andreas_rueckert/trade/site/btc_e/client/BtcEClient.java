@@ -38,6 +38,7 @@ import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderNotInOrderBookException;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -820,7 +821,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		String currentSiteId = (String)( keyIterator.next());
 
 		// Since we know the tradesite and the site id now, we can query the order book for the order.
-		SiteOrder currentOrder = TradeApp.getApp().getOrderBook().getOrder( this, currentSiteId);
+		SiteOrder currentOrder = CryptoCoinOrderBook.getInstance().getOrder( this, currentSiteId);
 
 		if( currentOrder != null) {     // If the order book returned an order,
 		    result.add( currentOrder);  // add it to the result buffer.
