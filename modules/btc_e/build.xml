@@ -22,6 +22,8 @@
   <target name="init">
     <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}"/>
+    <!-- Create a lib dir, in case it is empty for this module -->
+    <mkdir dir="${lib}"/>
   </target>
 
   <target name="compile" depends="init" description="compile the source " >
