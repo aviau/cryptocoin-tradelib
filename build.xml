@@ -4,12 +4,32 @@
   </description>
 
   <fileset id="buildFiles" dir="." includes="core/build.xml modules/*/build.xml"/>
+  <fileset id="module-dist-files" dir="." includes="modules/*/dist/lib/*"/>
+
+  <property name="core.dist.lib" location="core/dist/lib"/>
+  <property name="core.dist.lib.ext" location="${core.dist.lib}/ext"/>
 
   <target name="dist">
     <!-- Build the core and modules distribution -->
     <subant target="dist">
       <fileset refid="buildFiles"/>
     </subant>
+
+    <antcall target="copy-modules" />
+    <!-- Copy the modules to the core ext dir -->
+
+  </target>
+
+  <target name="copy-modules">
+    <!-- Copy all the files from the modules to the ext/ of the core dist/lib/ dir -->
+    
+    <!-- create the ext dir, if it does not exist yet. -->
+    <mkdir dir="${core.dist.lib.ext}" />
+
+    <!-- Now copy all the jars from the modules dist lib directories. -->
+    <copy todir="${core.dist.lib.ext}" flatten="true">
+      <fileset refid="module-dist-files" />
+    </copy>
   </target>
 
   <target name="clean">
@@ -18,4 +38,5 @@
       <fileset refid="buildFiles"/>
     </subant>
   </target>
+
 </project>
