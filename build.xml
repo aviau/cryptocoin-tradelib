@@ -1,0 +1,21 @@
+<project name="Java tradeLib meta build file" default="dist" basedir=".">
+  <description>
+    Ant build file to build the core and all the modules.
+  </description>
+
+  <fileset id="buildFiles" dir="." includes="core/build.xml modules/*/build.xml"/>
+
+  <target name="dist">
+    <!-- Build the core and modules distribution -->
+    <subant target="dist">
+      <fileset refid="buildFiles"/>
+    </subant>
+  </target>
+
+  <target name="clean">
+    <!-- Clean the core and modules -->
+    <subant target="clean">
+      <fileset refid="buildFiles"/>
+    </subant>
+  </target>
+</project>
