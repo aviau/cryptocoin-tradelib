@@ -38,6 +38,7 @@ import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.util.LogUtils;
+import de.andreas_rueckert.util.ModuleLoader;
 import de.andreas_rueckert.util.TimeUtils;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -476,10 +477,10 @@ public class ChartProvider {
      *
      * @throws TradeDataNotAvailableException if the data are not available for the given parameters.
      */
-    /* public final Depth getDepth( String tradeSiteName, String currencyPairName) throws TradeDataNotAvailableException {
+    public final Depth getDepth( String tradeSiteName, String currencyPairName) throws TradeDataNotAvailableException {
 
 	// Try to find the trade site for the given name.
-	TradeSite tradeSite = TradeApp.getApp().getRegisteredTradeSite( tradeSiteName);
+	TradeSite tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( tradeSiteName);
 
 	if( tradeSite == null) {  // There is not registered trade site with the given name?
 	    throw new TradeDataNotAvailableException( "There is no trade site registered with the name: " + tradeSiteName);
@@ -503,7 +504,7 @@ public class ChartProvider {
 	}
 
 	return getDepth( tradeSite, currencyPair);  // Just return the depth with the given parameters.
-	} */
+    }
 
     /**
      * Get the (cached) depth of a given trade site.
@@ -612,10 +613,10 @@ public class ChartProvider {
      *
      * @throws TradeDataNotAvailableException if the sma could not be computed with the given parameters.
      */
-    /* public Price getSMA( String tradeSiteName, String currencyPairName, long sinceMicros) {
+    public Price getSMA( String tradeSiteName, String currencyPairName, long sinceMicros) {
 
 	// Try to find the trade site for the given name.
-	TradeSite tradeSite = TradeApp.getApp().getRegisteredTradeSite( tradeSiteName);
+	TradeSite tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( tradeSiteName);
 
 	if( tradeSite == null) {  // There is not registered trade site with the given name?
 	    throw new TradeDataNotAvailableException( "There is no trade site registered with the name: " + tradeSiteName);
@@ -640,7 +641,7 @@ public class ChartProvider {
 
 	// Now get the trades and compute the SMA of them to return it.
 	return getSMA( tradeSite, currencyPair, sinceMicros);
-	} */
+    } 
 
     /**
      * Get a value from all the tickers and store them in a map along with the site name.

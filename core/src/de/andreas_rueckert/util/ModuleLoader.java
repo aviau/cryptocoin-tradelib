@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert;
+package de.andreas_rueckert.util;
 
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.util.LogUtils;
