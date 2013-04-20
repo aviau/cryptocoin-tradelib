@@ -51,7 +51,7 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
 
-    <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+    <!-- Put everything in ${build} into the <projectname>-${version}.jar file -->
     <jar jarfile="${dist}/lib/cryptocoin-tradelib-btc_e-${version}.jar" basedir="${build}">
       <manifest>
 	<attribute name="Class-Path" value="cryptocoin-tradelib-0.1.0.jar json-lib-2.4-jdk15.jar log4j.jar"/>
