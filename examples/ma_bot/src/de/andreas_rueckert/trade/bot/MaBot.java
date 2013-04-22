@@ -113,14 +113,6 @@ public class MaBot implements TradeBot {
     }
 
     /**
-     * The main method to create the bot application.
-     *
-     * @param args The commandline arguments of the bot application.
-     */
-    public static void main(String [] args) {
-    }
-
-    /**
      * Set some property value in the bot.
      *
      * @param propertyName The name of then property.

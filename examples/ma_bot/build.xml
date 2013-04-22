@@ -14,6 +14,7 @@
   <property name="dist"  location="dist"/>
   <property name="docs"  location="docs"/>
 
+  <property name="core.lib" location="../../core/dist/lib"/>
   <!-- end global properties -->
 
 
@@ -36,6 +37,9 @@
       <classpath>
 	<fileset dir="${lib}">
 	  <include name="**/*.jar" />
+	</fileset>
+	<fileset dir="${core.lib}">
+	  <include name="*.jar" />
 	</fileset>
       </classpath>
     </javac>
