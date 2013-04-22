@@ -28,6 +28,9 @@ package de.andreas_rueckert.trade.bot;
 import de.andreas_rueckert.util.LogUtils;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 
 /**
  * This class runs bots with an UI or as a service.
@@ -38,6 +41,16 @@ public class BotRunner {
 
 
     // Instance variables
+
+    /**
+     * The panel with the bot list.
+     */
+    JPanel _botListPanel = null;
+
+    /**
+     * The main frame.
+     */
+    JFrame _mainFrame;
 
     /**
      * A list of registered trade bots.
@@ -61,11 +74,46 @@ public class BotRunner {
 
 	// Parse the commandline.
 	if( parseCommandLine( args)) {
+
+	    // If the app is not in server mode, create a GUI.
+	    if( ! _serverMode) {
+
+		createGUI();
+	    }
 	}
     }
 
 
     // Methods
+
+    /**
+     * Create a graphical user interface.
+     */
+    private final void createGUI() {
+
+	_mainFrame = new JFrame( "Trade-Bot Runner"); // Create the main frame.
+	
+	_mainFrame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE);
+
+	// Create UI elements.
+	_mainFrame.getContentPane().add( getBotListPanel());
+	
+	_mainFrame.pack();  // Resize frame.
+	
+	_mainFrame.setVisible( true);  // Display main frame.
+    }
+
+    /**
+     * Create a panel to list the bots.
+     *
+     * @return A panel to list the bots.
+     */
+    private JPanel getBotListPanel() {
+
+	_botListPanel = new JPanel();
+
+	return _botListPanel;  // Return the panel with the bot list.
+    }
 
     /**
      * The main method to create the bot application.

@@ -26,6 +26,10 @@
 package de.andreas_rueckert.trade.bot;
 
 import de.andreas_rueckert.trade.bot.ui.MaBotUI;
+import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.util.ModuleLoader;
 
 
 /**
@@ -49,6 +53,16 @@ public class MaBot implements TradeBot {
     MaBotUI _botUI = null;
 
     /**
+     * The traded currency pair.
+     */
+    CurrencyPair _tradedCurrencyPair = null;
+
+    /**
+     * The used trade site.
+     */
+    private TradeSite _tradeSite = null;
+
+    /**
      * The ticker loop.
      */
     private Thread _updateThread = null;
@@ -56,6 +70,16 @@ public class MaBot implements TradeBot {
 
     // Constructors
 
+    /**
+     * Create a new bot instance.
+     */
+    public MaBot() {
+
+	// Set trade site and currency pair to trade.
+	_tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( "MtGox");
+	_tradedCurrencyPair = CurrencyPairImpl.findByString( "BTC<=>USD");
+    }
+    
 
     // Methods
 
