@@ -29,6 +29,7 @@ import de.andreas_rueckert.util.LogUtils;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JPanel;
 
 
@@ -36,6 +37,9 @@ import javax.swing.JPanel;
  * This class runs bots with an UI or as a service.
  */
 public class BotRunner {
+
+    // Inner classes
+
     
     // Static variables
 
@@ -71,6 +75,9 @@ public class BotRunner {
      * @param args The commandline arguments.
      */
     private BotRunner( String [] args) {
+
+	// Register trade bots.
+	registerTradeBot( new MaBot());
 
 	// Parse the commandline.
 	if( parseCommandLine( args)) {
@@ -112,7 +119,19 @@ public class BotRunner {
 
 	_botListPanel = new JPanel();
 
+	// Add a list of the bots.
+	_botListPanel.add( new JList( getRegisteredTradeBots().keySet().toArray( new String[0])));
+
 	return _botListPanel;  // Return the panel with the bot list.
+    }
+
+    /**
+     * Get the registerd trade bots.
+     *
+     * @return The registered trade bots as a map.
+     */
+    Map<String, TradeBot> getRegisteredTradeBots() {
+	return _registeredTradeBots;
     }
 
     /**
