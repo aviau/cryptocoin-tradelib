@@ -106,12 +106,25 @@ public class ModuleLoader {
      */
     private ModuleLoader() {
 
-	// Load all the module jars and 
-	// loop over the files and load all the classes in them.
-	for( File currentJar : getModuleJars()) {
+	// Collect all the module jars in the ext/ directory.
+	File [] moduleJars = getModuleJars();
 
-	    // Load all the classes in the jar.
-	    loadClassesFromJar( currentJar);
+	if( moduleJars != null) {
+
+	    // Load all the module jars and 
+	    // loop over the files and load all the classes in them.
+	    for( File currentJar : getModuleJars()) {
+
+		// Log, that a module is loaded.
+		LogUtils.getInstance().getLogger().info( "Loading module jar: " + currentJar.getName());
+		
+		// Load all the classes in the jar.
+		loadClassesFromJar( currentJar);
+	    }
+	} else {
+
+	    // No module jars found, so there are no supported exchanges...
+	    LogUtils.getInstance().getLogger().warn( "No module jars found in ext/ directory");
 	}
     }
 
@@ -148,9 +161,9 @@ public class ModuleLoader {
 	// Decode the path, in case there are spaces or special characters in it.
 	try {
 	    String decodedPath = URLDecoder.decode( path, "UTF-8");
-	
-	    // Convert the path to a file and return it.
-	    return new File( decodedPath);
+
+	    // Convert the path to a file, get the path of the file and return it.
+	    return new File( decodedPath).getParentFile();
 
 	    
 	} catch( UnsupportedEncodingException uee) {  // Should never happen.
@@ -168,10 +181,16 @@ public class ModuleLoader {
     private File [] getModuleJars() {
 
 	// Create a file to access the directory with the jars.
-	File extDir = new File( getJarLocation(), "ext");
+	File extDir = new File( getJarLocation(), "ext/");
+
+	// Check, if this is actually a directory?
+	if( ! extDir.isDirectory()) {
+	    LogUtils.getInstance().getLogger().error( extDir.getName() + " file is not a directory!");
+
+	    return null;
+	}
 
 	// Get all the jars in the ext directory.
-	// Maybe I should check, if this is actually a directory?
 	return extDir.listFiles( new JarFilenameFilter());
     }
     
