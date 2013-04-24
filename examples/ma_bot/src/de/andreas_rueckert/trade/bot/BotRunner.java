@@ -26,6 +26,7 @@
 package de.andreas_rueckert.trade.bot;
 
 import de.andreas_rueckert.util.LogUtils;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JFrame;
@@ -50,6 +51,11 @@ public class BotRunner {
      * The panel with the bot list.
      */
     JPanel _botListPanel = null;
+
+    /**
+     * A list of the bots to start.
+     */
+    ArrayList<String> _botsToStart = new ArrayList<String>();
 
     /**
      * The main frame.
@@ -162,9 +168,23 @@ public class BotRunner {
 
 	    if( "-server".equalsIgnoreCase( currentArgument)) {
 		
-		// Activate the server more.
+		// Activate the server mode.
 		_serverMode = true;
 		
+
+	    } else if( "-startbot".equalsIgnoreCase( currentArgument)) {  // The user wants to start a bot.
+		
+                if( ++currentArgumentIndex >= args.length) {
+
+                    LogUtils.getInstance().getLogger().error( "-startbot switch given but no trade bot name to start.");
+
+		    return false;  // Indicate an error.
+
+                } else {
+
+		    // add the bot name to the list of bots to start.
+                    _botsToStart.add( args[ currentArgumentIndex]);
+                }
 	    } else {  // This is an unknown argument.
 
 		LogUtils.getInstance().getLogger().error( "BotRunner: unknown commandline argument: " + currentArgument);
@@ -183,5 +203,26 @@ public class BotRunner {
      */
     private void registerTradeBot( TradeBot tradeBot) {
         _registeredTradeBots.put( tradeBot.getName(), tradeBot);
+    }
+
+    /**
+     * Set a new panel in the bot runner.
+     *
+     * @param newPanel The new panel to set.
+     */
+    public void setContentPanel( JPanel newPanel) {
+
+        while( _mainFrame.getContentPane().getComponentCount() > 1) {  // Remove all content panels, but the bot list.
+            _mainFrame.getContentPane().remove( _mainFrame.getContentPane().getComponentCount() - 1); 
+        }
+        
+        if( newPanel != null) {  // If there was actually a new panel given (newPanel might be null otherwise).
+            _mainFrame.getContentPane().add( newPanel);  // Add the new panel.
+            
+            _mainFrame.getContentPane().invalidate();  // Re-layout the UI.
+            _mainFrame.getContentPane().validate();
+            
+            _mainFrame.pack();  // Pack the frame.
+        }
     }
 }
