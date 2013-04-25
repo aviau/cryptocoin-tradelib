@@ -26,8 +26,11 @@
 package de.andreas_rueckert.trade.bot;
 
 import de.andreas_rueckert.trade.bot.ui.MaBotUI;
+import de.andreas_rueckert.trade.chart.ChartProvider;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.util.ModuleLoader;
 
@@ -38,6 +41,11 @@ import de.andreas_rueckert.util.ModuleLoader;
 public class MaBot implements TradeBot {
 
     // Static variables
+
+    /**
+     * The interval for the SMA value.
+     */
+    private static long SMA_INTERVAL = 3L * 60L * 60L * 1000000L; // 3 hrs for now...
 
     /**
      * The interval to update the bot activities.
@@ -161,6 +169,14 @@ public class MaBot implements TradeBot {
 		    
 		    while( _updateThread == this) {  // While the bot thread is not stopped...
 
+			// Get the SMA of the selected interval.
+			Price sma = ChartProvider.getInstance().getSMA( _tradeSite, _tradedCurrencyPair, SMA_INTERVAL);
+
+			// Get the current depth.
+			Depth depth = ChartProvider.getInstance().getDepth( _tradeSite, _tradedCurrencyPair);
+
+			// Now compare buy and sells the SMA.
+			// ..todo...
 
 			try {
                             sleep( UPDATE_INTERVAL * 1000);  // Wait for the next loop.

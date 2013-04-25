@@ -327,13 +327,17 @@ public class ChartProvider {
     // Static variables
 
     /**
+     * The only instance of this class (singleton pattern).
+     */
+    private static ChartProvider _instance = null; 
+
+    /**
      * The various log levels.
      */
     private final static int LOGLEVEL_ERROR        = 0;  // Minimal log level. Just log errors.
     private final static int LOGLEVEL_WARNING      = 1;  // More info. Log warnings.
     private final static int LOGLEVEL_NOTIFICATION = 2;  // Notify about cache findings etc.
     private final static int LOGLEVEL_DEBUG        = 4;  // Log more or less everything.
-    
 
     // Instance variables
 
@@ -387,8 +391,9 @@ public class ChartProvider {
 
     /**
      * Create a ChartProvider instance.
+     * Private constructor for singleton pattern.
      */
-    public ChartProvider() {
+    private ChartProvider() {
 
 	// Create a new list of trade sites.
 	_tradeSites = new ArrayList<TradeSite>();
@@ -563,6 +568,21 @@ public class ChartProvider {
 	}
 
 	throw new TradeDataNotAvailableException( "The depth is not available for the given parameters");
+    }
+
+    /**
+     * Get the only instance of this class (singleton pattern).
+     *
+     * @return The only instance of this class.
+     */
+    public static ChartProvider getInstance() {
+
+	if( _instance == null) {              // If there is no instance yet,
+
+	    _instance = new ChartProvider();  // ..create one.
+	}
+
+	return _instance;  // Return the only instance.
     }
 
     /**
