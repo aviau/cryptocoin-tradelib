@@ -33,6 +33,8 @@ import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.util.ModuleLoader;
+import java.math.BigDecimal;
+import java.math.MathContext;
 
 
 /**
@@ -41,6 +43,11 @@ import de.andreas_rueckert.util.ModuleLoader;
 public class MaBot implements TradeBot {
 
     // Static variables
+
+    /**
+     * The minimal profit in percent for a trade, compared to the SMA.
+     */
+    private static BigDecimal MIN_PROFIT = new BigDecimal( "5");
 
     /**
      * The interval for the SMA value.
@@ -166,6 +173,11 @@ public class MaBot implements TradeBot {
                  * The main bot thread.
                  */
                 @Override public void run() {
+
+		    // The factors for buy and sell prices.
+		    BigDecimal buyFactor = ( new BigDecimal( "100")).subtract( MIN_PROFIT).divide( ( new BigDecimal( "100")), MathContext.DECIMAL128);
+		    BigDecimal sellFactor = ( new BigDecimal( "100")).add( MIN_PROFIT).divide( ( new BigDecimal( "100")), MathContext.DECIMAL128);
+
 		    
 		    while( _updateThread == this) {  // While the bot thread is not stopped...
 
@@ -176,7 +188,23 @@ public class MaBot implements TradeBot {
 			Depth depth = ChartProvider.getInstance().getDepth( _tradeSite, _tradedCurrencyPair);
 
 			// Now compare buy and sells the SMA.
-			// ..todo...
+			// Actually the trade fee should considered here, too.
+			// But to keep things simple, I'll just ignore it for now... :-)
+
+			// Check, if there is an opportunity to buy something.
+			if( depth.getSell( 0).getPrice().multiply( buyFactor).compareTo( sma) < 0) {
+
+			    // Now check, if we have any funds to buy something.
+			    ToDo: check funds...
+			    
+                        }
+
+			// Check, if there is an opportunity to sell some funds.
+			if( depth.getBuy( 0).getPrice().multiply( sellFactor).compareTo( sma) > 0) {
+
+			    // Now check, if we have any funds to sell.
+			    ToDo: check funds...
+			}
 
 			try {
                             sleep( UPDATE_INTERVAL * 1000);  // Wait for the next loop.
