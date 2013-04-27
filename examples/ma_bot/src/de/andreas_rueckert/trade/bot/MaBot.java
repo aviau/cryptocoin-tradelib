@@ -25,16 +25,24 @@
 
 package de.andreas_rueckert.trade.bot;
 
+import de.andreas_rueckert.trade.account.TradeSiteAccount;
+import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.bot.ui.MaBotUI;
 import de.andreas_rueckert.trade.chart.ChartProvider;
+import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
+import de.andreas_rueckert.trade.order.OrderFactory;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.ModuleLoader;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.Collection;
 
 
 /**
@@ -47,17 +55,22 @@ public class MaBot implements TradeBot {
     /**
      * The minimal profit in percent for a trade, compared to the SMA.
      */
-    private static BigDecimal MIN_PROFIT = new BigDecimal( "5");
+    private final static BigDecimal MIN_PROFIT = new BigDecimal( "5");
+
+    /**
+     * The minimal trade volume.
+     */
+    private final static BigDecimal MIN_TRADE_AMOUNT = new Amount( "1");
 
     /**
      * The interval for the SMA value.
      */
-    private static long SMA_INTERVAL = 3L * 60L * 60L * 1000000L; // 3 hrs for now...
+    private final static long SMA_INTERVAL = 3L * 60L * 60L * 1000000L; // 3 hrs for now...
 
     /**
      * The interval to update the bot activities.
      */
-    private static int UPDATE_INTERVAL = 30;  // 30 seconds for now...
+    private final static int UPDATE_INTERVAL = 30;  // 30 seconds for now...
 
 
     // Instance variables
@@ -91,12 +104,36 @@ public class MaBot implements TradeBot {
     public MaBot() {
 
 	// Set trade site and currency pair to trade.
-	_tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( "MtGox");
-	_tradedCurrencyPair = CurrencyPairImpl.findByString( "BTC<=>USD");
+	_tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( "BtcE");
+	_tradedCurrencyPair = CurrencyPairImpl.findByString( "LTC<=>BTC");
     }
     
 
     // Methods
+
+   /**
+     * Get the funds for a given currency.
+     *
+     * @param currency The currency to use.
+     *
+     * @return The balance for this currency (or -1, if no account with this currency was found).
+     */
+    public BigDecimal getFunds( Currency currency) {
+
+	Collection<TradeSiteAccount> currentFunds = _tradeSite.getAccounts();  // fetch the accounts from the trade site.
+
+        if( currentFunds == null) {
+            LogUtils.getInstance().getLogger().error( "MaBot cannot fetch accounts from trade site.");
+        } else {
+            for( TradeSiteAccount account : currentFunds) {    // Loop over the accounts.
+                if( currency.equals( account.getCurrency())) {  // If this accounts has the requested currency.
+                    return account.getBalance();                // Return it's balance.
+                }
+            }
+        }
+
+        return null;  // Cannot get any balance. 
+    }
 
     /**
      * Get the name of this bot.
@@ -191,19 +228,56 @@ public class MaBot implements TradeBot {
 			// Actually the trade fee should considered here, too.
 			// But to keep things simple, I'll just ignore it for now... :-)
 
-			// Check, if there is an opportunity to buy something.
-			if( depth.getSell( 0).getPrice().multiply( buyFactor).compareTo( sma) < 0) {
+			// Check, if there is an opportunity to buy something, and the volume of the
+			// order is higher than the minimum trading volume.
+			if( ( depth.getSell( 0).getPrice().multiply( buyFactor).compareTo( sma) < 0)
+			    && ( depth.getSell( 0).getAmount().compareTo( MIN_TRADE_AMOUNT) >= 0)) {
 
 			    // Now check, if we have any funds to buy something.
-			    ToDo: check funds...
+			    Amount buyAmount = new Amount( getFunds( _tradedCurrencyPair.getPaymentCurrency()).divide( depth.getSell( 0).getPrice(), MathContext.DECIMAL128));
+
+			    // If the volume is bigger than the min volume, do the actual trade.
+			    if( buyAmount.compareTo( MIN_TRADE_AMOUNT) >= 0) {
+
+				// Compute the actual amount to trade.
+				Amount orderAmount = depth.getSell( 0).getAmount().compareTo( buyAmount) < 0 
+				    ? depth.getSell( 0).getAmount()
+				    : buyAmount;
+
+				// Create a buy order...
+				CryptoCoinOrderBook.getInstance().add( OrderFactory.createCryptoCoinTradeOrder( _tradeSite
+														, OrderType.BUY
+														, depth.getSell( 0).getPrice()
+														, _tradedCurrencyPair
+														, orderAmount));
+
+			    }
 			    
                         }
-
-			// Check, if there is an opportunity to sell some funds.
-			if( depth.getBuy( 0).getPrice().multiply( sellFactor).compareTo( sma) > 0) {
+			    
+			// Check, if there is an opportunity to sell some funds, and the volume of the order
+			// is higher than the minimum trading volume.
+			if( ( depth.getBuy( 0).getPrice().multiply( sellFactor).compareTo( sma) > 0)
+			    && ( depth.getBuy( 0).getAmount().compareTo( MIN_TRADE_AMOUNT) >= 0)) {
 
 			    // Now check, if we have any funds to sell.
-			    ToDo: check funds...
+			    Amount sellAmount = new Amount( getFunds( _tradedCurrencyPair.getCurrency()));
+
+			    // If the volume is bigger than the min volume, do the actual trade.
+			    if( sellAmount.compareTo( MIN_TRADE_AMOUNT) >= 0) {
+
+				// Compute the actual amount to trade.
+				Amount orderAmount = depth.getBuy( 0).getAmount().compareTo( sellAmount) < 0 
+				    ? depth.getBuy( 0).getAmount()
+				    : sellAmount;
+
+				// Create a sell order...
+				CryptoCoinOrderBook.getInstance().add( OrderFactory.createCryptoCoinTradeOrder( _tradeSite
+														, OrderType.SELL
+														, depth.getBuy( 0).getPrice()
+														, _tradedCurrencyPair
+														, orderAmount));
+			    }
 			}
 
 			try {
