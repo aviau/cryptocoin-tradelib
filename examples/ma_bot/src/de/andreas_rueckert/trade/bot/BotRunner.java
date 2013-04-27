@@ -31,6 +31,9 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 
 
@@ -61,6 +64,11 @@ public class BotRunner {
      * The main frame.
      */
     JFrame _mainFrame;
+
+    /**
+     * The menu bar for the app.
+     */
+    JMenuBar _menuBar = null;
 
     /**
      * A list of registered trade bots.
@@ -105,7 +113,9 @@ public class BotRunner {
     private final void createGUI() {
 
 	_mainFrame = new JFrame( "Trade-Bot Runner"); // Create the main frame.
-	
+
+	_mainFrame.setJMenuBar( getMenuBar());
+
 	_mainFrame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE);
 
 	// Create UI elements.
@@ -129,6 +139,28 @@ public class BotRunner {
 	_botListPanel.add( new JList( getRegisteredTradeBots().keySet().toArray( new String[0])));
 
 	return _botListPanel;  // Return the panel with the bot list.
+    }
+
+    /**
+     * Get the menu bar for the app.
+     *
+     * @return The menu bar for the app.
+     */
+    private final JMenuBar getMenuBar() {
+	
+	if( _menuBar == null) {  // If there is no menu bar yet..
+
+	    _menuBar = new JMenuBar();  // ..create one.
+	    
+	    // Create an edit menu.
+	    JMenu editMenu = new JMenu( "Edit");
+
+	    // Add the edit menu to the menu bar.
+	    _menuBar.add( editMenu);
+
+	}
+
+	return _menuBar;  // Return the menu bar for the app.
     }
 
     /**
