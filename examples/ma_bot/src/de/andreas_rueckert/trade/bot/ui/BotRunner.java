@@ -23,8 +23,11 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade.bot;
+package de.andreas_rueckert.trade.bot.ui;
 
+import de.andreas_rueckert.trade.bot.MaBot;
+import de.andreas_rueckert.trade.bot.TradeBot;
+import de.andreas_rueckert.trade.bot.ui.action.ActionSettings;
 import de.andreas_rueckert.util.LogUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,6 +157,7 @@ public class BotRunner {
 	    
 	    // Create an edit menu.
 	    JMenu editMenu = new JMenu( "Edit");
+	    editMenu.add( new JMenuItem( ActionSettings.getInstance()));
 
 	    // Add the edit menu to the menu bar.
 	    _menuBar.add( editMenu);
