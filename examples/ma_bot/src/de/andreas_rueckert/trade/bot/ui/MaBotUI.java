@@ -26,8 +26,13 @@
 package de.andreas_rueckert.trade.bot.ui;
 
 import de.andreas_rueckert.trade.bot.TradeBot;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.math.BigDecimal;
+import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 
 /**
@@ -44,6 +49,26 @@ public class MaBotUI implements TradeBotUI {
      * The bot that uses this user interface.
      */
     TradeBot _bot = null;
+
+    /**
+     * A text field to display the current buy price from the depth.
+     */
+    JTextField _buyPriceField;
+
+    /**
+     * A text field to display the current sell price from the depth.
+     */
+    JTextField _sellPriceField;
+    
+    /**
+     * A text field to display the current SMA.
+     */
+    JTextField _smaField;
+
+    /**
+     * A button to start and stop the bot.
+     */
+    JButton _startStopButton;
 
     /**
      * The panel for the user interface.
@@ -76,6 +101,34 @@ public class MaBotUI implements TradeBotUI {
 
         if( _uiPanel == null) {       // if there is no UI panel yet,
             _uiPanel = new JPanel();  // create one.
+
+	    _uiPanel.setLayout( new BorderLayout());
+
+	    // Create a very simple status of the bot.
+	    JPanel statusPanel = new JPanel();
+	    statusPanel.setLayout( new GridLayout( 3, 2));
+
+	    // Add a text field to display the current SMA.
+	    statusPanel.add( new JLabel( "Current SMA:"));
+	    statusPanel.add( _smaField = new JTextField( 16));
+
+	    // Add a text field to display the current buy price from the depth.
+	    statusPanel.add( new JLabel( "Current buy price:"));
+	    statusPanel.add( _buyPriceField = new JTextField( 16));
+
+	    // Add a text field to display the current sell price from the depth.
+	    statusPanel.add( new JLabel( "Current sell price:"));
+	    statusPanel.add( _sellPriceField = new JTextField( 16));
+
+	    _uiPanel.add( statusPanel, BorderLayout.CENTER);
+
+	    // Create a panel for the button.
+	    JPanel buttonPanel = new JPanel();
+
+	    // Add a button to start and stop the bot.
+	    buttonPanel.add( _startStopButton = new JButton( "Start"));
+
+	    _uiPanel.add( buttonPanel, BorderLayout.SOUTH);
 	}
 
 	return _uiPanel;  // Return the UI panel for the bot.
