@@ -32,18 +32,22 @@ import de.andreas_rueckert.util.LogUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import javax.swing.DefaultListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 
 /**
  * This class runs bots with an UI or as a service.
  */
-public class BotRunner {
+public class BotRunner implements ListSelectionListener {
 
     // Inner classes
 
@@ -136,10 +140,20 @@ public class BotRunner {
      */
     private JPanel getBotListPanel() {
 
+	// Create a panel for the list of bots.
 	_botListPanel = new JPanel();
 
 	// Add a list of the bots.
-	_botListPanel.add( new JList( getRegisteredTradeBots().keySet().toArray( new String[0])));
+	JList botList = new JList( getRegisteredTradeBots().keySet().toArray( new String[0]));
+
+	// Select only one bot at a time.
+	botList.setSelectionMode( DefaultListSelectionModel.SINGLE_SELECTION);
+
+	// Use a scrollpane, because there might be more bots in the future...
+	_botListPanel.add( new JScrollPane( botList));
+
+	// Add the runner as a list event listener.
+	botList.addListSelectionListener( this);
 
 	return _botListPanel;  // Return the panel with the bot list.
     }
@@ -174,6 +188,19 @@ public class BotRunner {
      */
     Map<String, TradeBot> getRegisteredTradeBots() {
 	return _registeredTradeBots;
+    }
+
+    /**
+     * Get a registered trade bot for a name, or null if no bot with the given name is registered.
+     *
+     * @param botName The name of the bot to look for.
+     *
+     * @return The registered bot or null, i no bot with the given name is known.
+     */
+    TradeBot getRegisteredTradeBot( String botName) {
+	
+	// Get the bot from the map of registered bots.
+	return getRegisteredTradeBots().get( botName);
     }
 
     /**
@@ -260,5 +287,25 @@ public class BotRunner {
             
             _mainFrame.pack();  // Pack the frame.
         }
+    }
+    
+    /**
+     * The user clicked at the bot list panel.
+     *
+     * @param listSelectionEvent The event, that the click triggered.
+     */
+    public void valueChanged( ListSelectionEvent listSelectionEvent) {
+
+	// Get the list from the event.
+	JList botList = (JList)listSelectionEvent.getSource();
+
+	// Get the bot name from the list.
+	String botName = (String)botList.getSelectedValue();
+
+	// Get the bot for the name.
+	TradeBot selectedBot = getRegisteredTradeBot( botName);
+
+	// Set the content panel for the UI of the selected bot.
+	setContentPanel( selectedBot.getUI().getUIPanel());
     }
 }
