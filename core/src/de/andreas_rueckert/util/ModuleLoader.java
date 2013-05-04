@@ -231,8 +231,7 @@ public class ModuleLoader {
 	    URL [] urls = { new URL("jar:file:" + file.getCanonicalPath() +"!/") };
 	    
 	    // Now we need a class loader.
-	    ClassLoader classLoader = URLClassLoader.newInstance( urls);
-	    //ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+	    ClassLoader classLoader = new URLClassLoader( urls, ModuleLoader.class.getClassLoader());
 
 	    // Loop over the entries of the jar file.
 	    for( Enumeration<JarEntry> enumeration = jarFile.entries(); enumeration.hasMoreElements(); ) {
