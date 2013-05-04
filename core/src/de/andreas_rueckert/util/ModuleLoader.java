@@ -232,6 +232,7 @@ public class ModuleLoader {
 	    
 	    // Now we need a class loader.
 	    ClassLoader classLoader = URLClassLoader.newInstance( urls);
+	    //ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
 	    // Loop over the entries of the jar file.
 	    for( Enumeration<JarEntry> enumeration = jarFile.entries(); enumeration.hasMoreElements(); ) {
@@ -246,21 +247,26 @@ public class ModuleLoader {
 		    
 		    // Convert path to package convention.
 		    className = className.replace( '/', '.');
-		    
+
 		    // Now load the class.
 		    Class loadedClass = classLoader.loadClass( className);
-		    
-		    // Now check, if this class is an exchange client implementation.
-		    if( loadedClass.isAnnotationPresent( TradeSite.class)) {
-			
-			// Create a client instance from the class.
-			// Since the client should have 0 arguments, this might work.
-			// But it might be better to loop over the available
-			// constructors and call the appropriate one?
-			TradeSite tradeSite = (TradeSite)( loadedClass.newInstance());
 
-			// And add it to the list of registered trade sites.
-			registerTradeSite( tradeSite);
+		    // Check all the implemented interfaces of this class for the tradesite
+		    for( Class currentInterface : loadedClass.getInterfaces()) {
+			
+			if( currentInterface.equals( TradeSite.class)) {
+			
+			    // Create a client instance from the class.
+			    // Since the client should have 0 arguments, this might work.
+			    // But it might be better to loop over the available
+			    // constructors and call the appropriate one?
+			    TradeSite tradeSite = (TradeSite)( loadedClass.newInstance());
+
+			    // And add it to the list of registered trade sites.
+			    registerTradeSite( tradeSite);
+
+			    break;  // End the loop for this class.
+			}
 		    }
 		}
 	    }
