@@ -195,7 +195,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	_supportedCurrencyPairs[9] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
 	_supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
 	_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
-	_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
 
 	setCurrentCurrency( CurrencyImpl.USD);
 
