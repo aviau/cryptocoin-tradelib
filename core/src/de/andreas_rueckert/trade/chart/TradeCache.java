@@ -125,9 +125,9 @@ class TradeCache {
     // Static variables
 
     /**
-     * The initial update interval for the cache (1hour).
+     * The initial update interval for the cache (30s).
      */
-    static final long INITIAL_UPDATE_INTERVAL = 60L * 60L * 1000000L;
+    static final long INITIAL_UPDATE_INTERVAL = 30L * 1000000L;
 
     /**
      * The max. cached time interval (24 hrs for now).
@@ -213,6 +213,40 @@ class TradeCache {
      */
     public long getNewestTradeTimestamp() {
 	return isEmpty() ? -1 : _cache.get( _cache.size() - 1).getTimestamp();
+    }
+
+    /**
+     * Get all trades, that are newer than the start time.
+     *
+     * @param startTime The time to compare with the trades.
+     *
+     * @return An array of trades.
+     */
+    public Trade [] getTrades( long startTime) {
+
+	// Buffer for the result.
+	ArrayList<Trade> resultBuffer = new ArrayList<Trade>();
+
+	// Since we assume, that the cache is sorted, just find the first 
+	// trade, that is newer than the given timestamp and then copy from
+	// there.
+	// This search algo for the first matching trade is suboptimal for a big
+	// cache. Some intersection search might be better.
+
+	int currentTradeIndex;
+
+	for( currentTradeIndex = 0;  
+	     ( _cache.get( currentTradeIndex).getTimestamp() < startTime) && ( currentTradeIndex < _cache.size());
+	     ++currentTradeIndex);
+
+	// Now copy the trades to the result buffer.
+	for( ; currentTradeIndex < _cache.size(); ++currentTradeIndex) {
+
+	    resultBuffer.add( _cache.get( currentTradeIndex));
+	}
+
+	// Now convert the buffer to an array and return it.
+	return resultBuffer.toArray( new Trade[ resultBuffer.size()]);
     }
 
     /**
