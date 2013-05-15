@@ -26,7 +26,10 @@
 package de.andreas_rueckert.util;
 
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.SimpleLayout;
 
 
 /**
@@ -41,15 +44,15 @@ public class LogUtils {
      */
     private static LogUtils _instance = null;
 
+
+    // Instance variables
+    
     /**
      * The logger for the tradelib.
      */
-    private static Logger _logger = Logger.getLogger( LogUtils.class);
+    private Logger _logger = null;
 
 
-    // Instance variables
-
-    
     // Constructors
 
     /**
@@ -57,8 +60,17 @@ public class LogUtils {
      */
     private LogUtils() {
 
+	// Get a static logger.
+	_logger = Logger.getLogger( LogUtils.class);
+
         // Configure Log4j 
-        BasicConfigurator.configure();
+        // BasicConfigurator.configure();
+
+	_logger.setLevel( Level.WARN);  
+          
+        // Define and set appender     
+        _logger.addAppender( new ConsoleAppender( new SimpleLayout()));  
+
     }
 
 
@@ -84,7 +96,7 @@ public class LogUtils {
      *
      * @return The logger object.
      */
-    public static Logger getLogger() {
+    public Logger getLogger() {
 
         return _logger;
     }
