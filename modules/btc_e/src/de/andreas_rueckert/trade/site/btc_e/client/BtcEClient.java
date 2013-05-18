@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site.btc_e.client;
 
+import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
@@ -224,6 +225,14 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
 	Mac mac;
 	SecretKeySpec key = null;
+
+	// Check, if _key and _secret are available for the request.
+	if( _key == null) {
+	    throw new MissingAccountDataException( "Key not available for authenticated request to btc-e");
+	}
+	if( _secret == null) {
+	    throw new MissingAccountDataException( "Secret not available for authenticated request to btc-e");
+	}
 
 	if( arguments == null) {  // If the user provided no arguments, just create an empty argument array.
 	    arguments = new HashMap<String, String>();

@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site.mtgox.client;
 
+import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
@@ -284,6 +285,14 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     Map< String, String> getAuthenticationHeader( String postData) {
 	HashMap<String, String> result = new HashMap<String, String>();
 	Mac mac;
+
+	// Check, if _key and _secret are available for the request.
+	if( _key == null) {
+	    throw new MissingAccountDataException( "Key not available for authenticated request to btc-e");
+	}
+	if( _secret == null) {
+	    throw new MissingAccountDataException( "Secret not available for authenticated request to btc-e");
+	}
 
 	result.put( "Rest-Key", _key);
 
