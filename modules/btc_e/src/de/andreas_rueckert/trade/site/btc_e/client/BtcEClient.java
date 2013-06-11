@@ -29,6 +29,7 @@ import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
+import de.andreas_rueckert.trade.account.CryptoCoinAccount;
 import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
@@ -400,8 +401,63 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	} else if( orderType == OrderType.WITHDRAW) {  // This is a withdraw order.
 
-	    throw new NotYetImplementedException( "Executing withdraws is not yet implemented for " + this.getName());
+	    // Just to avoid multiple typecasts all over the code here...
+	    WithdrawOrder withdrawOrder = (WithdrawOrder)order;
 
+	    // For now, make sure that we withdraw to a cryptocoin address
+	    if( ! ( withdrawOrder.getAccount() instanceof CryptoCoinAccount)) {
+		
+		throw new CurrencyNotSupportedException( "Can only withdraw to a cryptocoin account at the moment");
+	    }
+
+	    // Get a cryptocoin address for the account to withdraw to...
+	    String cryptocoinAddress = ((CryptoCoinAccount)(withdrawOrder.getAccount())).getCryptoCoinAddress();
+
+	    // Get the coin id for the given currency to withdraw
+	    short coin_id = getIdForCurrency( withdrawOrder.getCurrency());
+
+	    // It's practically a translation of the following jquery code:
+	    // function withdraw_coin(a){
+	    //   var b=$("#sum").val(),c=$("#address").val(),d=$("#token").val();
+	    //   showLoader();
+	    //    $.post(domain+aF+"coins.php",{act:"withdraw",sum:b,address:c,coin_id:a,token:d},function(a){nPopReady(430,70);$("#nPopupCon").html(a);hideLoader()})}
+
+	    String url = "https://" + BtcEClient.DOMAIN + "/coins.php";
+
+	    ensureLogin();  // Make sure, that the user is logged in.
+	    
+	    if( _customerId == null) {
+		throw new MissingBtcECustomerIdException( "getFunds: no customer id received from the btc-e.com website.");
+	    }
+	
+	    if( _currentCookies == null) {
+		throw new MissingBtcECookieException( "No current btc-e.com cookie for getFunds! Please login to get one!");
+	    }
+
+	    try {
+		// Now post the actual withdrar request.
+		Response response = Jsoup.connect( url)
+		    .data( "act", "withdraw"                   // The parameters for the request.
+			   , "sum", withdrawOrder.getAmount().toString()
+			   , "address", cryptocoinAddress
+			   , "coin_id", "" + coin_id
+			   , "token", _currentToken)
+		    .method( Method.POST)
+		    .cookies( _currentCookies)
+		    .userAgent( USERAGENT)
+		    .timeout( TIMEOUT)
+		    .execute();
+
+		// Check, if the response code signals success.
+		// There might be ways to detail out the error, but for now I can live with this binary response...
+		return response.statusCode() == 200 ? OrderStatus.FILLED : OrderStatus.ERROR;
+		
+	    } catch( IOException ioe) {
+
+		LogUtils.getInstance().getLogger().error( "Cannot post profile request to the btc-e.com website: " + ioe.toString());
+	    }
+	    
+	    // throw new NotYetImplementedException( "Executing withdraws is not yet implemented for " + this.getName());
 	}
 
 	return null;  // An error occured, or this is an unknow order type?
