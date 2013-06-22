@@ -29,6 +29,7 @@ import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
+import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.Currency;
@@ -38,6 +39,7 @@ import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.Order;
 import de.andreas_rueckert.trade.order.OrderNotInOrderBookException;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -54,6 +56,7 @@ import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.InvalidKeyException;
@@ -268,9 +271,41 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 		    return order.getStatus();
 		}
 	    }
-	} else {  // This is a withdrawal order...
 
-	}
+	} else if( orderType == OrderType.DEPOSIT) {  // This is a deposit order...
+
+	    DepositOrder depositOrder = (DepositOrder)order;  // Just to avoid constant casting.
+
+	      // Get the deposited currency from the order.
+	    Currency depositedCurrency = depositOrder.getCurrency();
+
+	    // Check, if this currency is supported yet in this implementation.
+	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
+		
+		// Get the address for a deposit from the trade site.
+		String depositAddress = getDepositAddress( depositedCurrency);
+
+		// Attach a new account for depositing to this order.
+		depositOrder.setAccount( new CryptoCoinAccountImpl( depositAddress
+								    , new BigDecimal( "0")
+								    , depositedCurrency));
+
+		// Now return a new order status to indicate, that the order was modified.
+		return OrderStatus.DEPOSIT_ADDRESS_GENERATED;
+
+	    } else {  // This currency is not supported yet.
+
+		throw new CurrencyNotSupportedException( "Depositing the currency " 
+							 + depositedCurrency 
+							 + " is not supported yet in this implementation");
+	    }
+
+
+	} else if( orderType == OrderType.WITHDRAW) {  // This is a withdrawal order...
+
+	    throw new NotYetImplementedException( "Withdrawal from MtGox is not yet implemented");
+
+	} 
 
 	return null;
     }
@@ -375,6 +410,41 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      */
     public Currency getCurrentCurrency() {
 	return _currentCurrency;
+    }
+
+    /**
+     * Get an address to deposit coins at btc-e.
+     *
+     * @param currency The currency to deposit.
+     *
+     * @return The deposit address as a string, or null if no address is found.
+     */
+    private String getDepositAddress( Currency currency) {
+
+	// The URL to request the address from.
+	String url = null;
+
+	// Check, if the currency is supported
+	if( currency.equals( CurrencyImpl.BTC)) {
+
+	    // Set the url to fetch the deposit address.
+	    url = "https://data.mtgox.com/api/1/generic/bitcoin/address";
+
+	    // Do a authenticated query for the deposit address.
+	    JSONObject result = authenticatedQuery( url, null);
+
+	    // Get the return value and convert it to an object.
+	    JSONObject jsonAddress = result.getJSONObject( "return");
+
+	    // Get the actual address as a string and return it.
+	    return jsonAddress.getString( "addr");
+
+	} else {
+	    
+	    throw new CurrencyNotSupportedException( "Getting a deposit address for currency " 
+						     + currency 
+						     + " is not yet supported by this implementation");
+	}
     }
 
     /**
