@@ -981,8 +981,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @param currencyPair The currency pair to query.
      *
      * @return The trades as a list of Trade objects.
+     *
+     * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) {
+    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Btc-E");
