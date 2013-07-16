@@ -916,6 +916,8 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Get the section name in the global property file.
+     *
+     * @return The name of the property section as a String.
      */
     public String getPropertySectionName() {
 	return "BtcE";
