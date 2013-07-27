@@ -664,6 +664,35 @@ public class ChartProvider {
     } 
 
     /**
+     * Get the current spread for a given trade site and currency pair.
+     *
+     * @param tradeSite The trade site to query.
+     * @param currencyPair The currency pair to query.
+     *
+     * @return The spread for the depth of the given trade site and the given currency pair.
+     *
+     * @throws TradeDataNotAvailableException if the data are not available for the given parameters.
+     */
+    public Price getSpread( TradeSite tradeSite, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+
+	// Get the current depth for the given parameters.
+	Depth currentDepth = getDepth( tradeSite, currencyPair);
+
+	  // If there are buy and sell orders
+        if( ( currentDepth.getBuySize() > 0) && ( currentDepth.getSellSize() > 0)) {
+
+            // Compute the current spreadvand return it.
+            Price currentSpread = currentDepth.getSell( 0).getPrice().subtract( currentDepth.getBuy( 0).getPrice());
+	}
+
+	// If there are not buy _and_ sell orders, throw an exception.
+	throw new TradeDataNotAvailableException( "No get and buy orders in the current spread of trade site " 
+						  + tradeSite.getName() 
+						  + " with currency pair "
+						  + currencyPair.getName());
+    } 
+
+    /**
      * Get a value from all the tickers and store them in a map along with the site name.
      *
      * @param key The key for the values.
