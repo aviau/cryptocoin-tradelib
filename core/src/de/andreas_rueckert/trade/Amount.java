@@ -46,6 +46,11 @@ public class Amount extends BigDecimal {
      */
     public final static Amount ZERO = new Amount( "0");
 
+    /**
+     * 100 as an amount.
+     */
+    public final static Amount HUNDRED = new Amount( "100");
+
 
     // Instance variables
 
@@ -80,5 +85,27 @@ public class Amount extends BigDecimal {
      */
     public final Amount add( Amount amount) {
 	return (Amount)super.add( amount);
+    }
+
+    /**
+     * Return a given percentage of this amount.
+     * This is just a convenience method.
+     *
+     * @return The given percentage of this amount as a new Amount object.
+     */
+    public final Amount percent( int percentage) {
+
+	return this.percent( new BigDecimal( percentage));
+    }
+
+    /**
+     * Return a given percentage of this amount.
+     * This is just a convenience method.
+     *
+     * @return The given percentage of this amount as a new Amount object.
+     */
+    public final Amount percent( BigDecimal percentage) {
+
+	return new Amount( super.multiply( percentage.divide( HUNDRED, MathContext.DECIMAL128)));
     }
 }
