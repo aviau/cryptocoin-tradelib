@@ -263,6 +263,27 @@ public abstract class OrderBook {
     }
 
     /**
+     * Cancel an order.
+     *
+     * @param order The order to cancel.
+     *
+     * @return true, if the order cancelation worked. False otherwise.
+     */
+    public boolean cancelOrder( Order order) {
+
+	if( order instanceof SiteOrder) {  // We can only cancel site orders for now.
+
+	    SiteOrder siteOrder = (SiteOrder)order;  // Cast the order to an site order.
+
+	    TradeSite tradeSite = siteOrder.getTradeSite();  // Get the trade site of the order.
+
+	    return tradeSite.cancelOrder( siteOrder);  // Ask the trade site to cancel the order.
+	}
+
+	return false;  // Default is failure.
+    }
+
+    /**
      * Check the status of the order with a given id.
      *
      * @param orderId The ID of the order to check.

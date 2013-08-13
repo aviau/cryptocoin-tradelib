@@ -49,6 +49,15 @@ public interface TradeSite extends PersistentProperties {
     // Methods
 
     /**
+     * Cancel an order on the trade site.
+     *
+     * @param order The order to cancel.
+     *
+     * @return true, if the order was canceled. False otherwise.
+     */
+    public boolean cancelOrder( SiteOrder order);
+
+    /**
      * Execute an order on the trade site.
      *
      * @param order The order to execute.

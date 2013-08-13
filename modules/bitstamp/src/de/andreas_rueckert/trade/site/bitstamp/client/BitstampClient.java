@@ -291,6 +291,18 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Cancel an order on the trade site.
+     *
+     * @param order The order to cancel.
+     *
+     * @return true, if the order was canceled. False otherwise.
+     */
+    public boolean cancelOrder( SiteOrder order) {
+
+	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + this._name);
+    }
+
+    /**
      * Execute an order on the trade site.
      *
      * @param order The order to execute.

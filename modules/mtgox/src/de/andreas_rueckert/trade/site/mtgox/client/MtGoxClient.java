@@ -202,6 +202,18 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Cancel an order on the trade site.
+     *
+     * @param order The order to cancel.
+     *
+     * @return true, if the order was canceled. False otherwise.
+     */
+    public boolean cancelOrder( SiteOrder order) {
+
+	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + this._name);
+    }
+
+    /**
      * Get the accounts with the current funds on this trading site.
      *
      * @return The accounts with the current balance as an array of Account objects.
