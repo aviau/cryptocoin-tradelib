@@ -29,7 +29,7 @@ import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.Price;
-//import java.math.BigDecimal;
+import de.andreas_rueckert.util.TimeUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,6 +78,9 @@ public class OrderImpl extends DepthOrderImpl implements Order {
      */
     public OrderImpl(  OrderType orderType, Price price, CurrencyPair currencyPair, Amount amount) {
 	super( orderType, price, currencyPair, amount);
+
+	// Set the timestamp to the current time in microseconds.
+	_timestamp = TimeUtils.getInstance().getCurrentGMTTimeMicros();
     }
 
     
