@@ -271,7 +271,14 @@ public abstract class OrderBook {
      */
     public OrderStatus checkOrder( String orderId) {
 
-	return OrderStatus.UNKNOWN;  // Default is, that the status of an order is unknown.
+	Order currentOrder = getOrder( orderId);  // Get the checked order.
+
+	if( currentOrder.getStatus() == null) {  // If the order has no status yet.
+
+	    return OrderStatus.UNKNOWN;  // Default is, that the status of an order is unknown.
+	}
+
+	return currentOrder.getStatus();  // Return the status of the order.
     }
 
     /**
