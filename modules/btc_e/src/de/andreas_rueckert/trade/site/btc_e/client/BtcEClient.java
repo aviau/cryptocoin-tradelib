@@ -330,7 +330,31 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      */
     public boolean cancelOrder( SiteOrder order) {
 
-	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + this._name);
+	// The parameters for the HTTP post call.
+	HashMap<String, String> parameter = new HashMap<String, String>();
+
+	// Get the site id of this order.
+	String site_id =  order.getSiteId();
+
+	// If there is no site id, we cannot cancel the order.
+	if( site_id == null) {
+	    return false;
+	}
+	
+	parameter.put( "order_id", order.getSiteId());  // Pass the site id of the order.
+
+	JSONObject jsonResponse = authenticatedHTTPRequest( "CancelOrder", parameter);
+
+	if( jsonResponse == null) {
+
+	    LogUtils.getInstance().getLogger().error( "No response from btc-e while attempting to cancel an order");
+
+	    return false;
+
+	} else {
+
+	    return true; // Ok!
+	}
     }
 
     /**
