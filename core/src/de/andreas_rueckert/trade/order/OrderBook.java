@@ -165,10 +165,6 @@ public abstract class OrderBook {
 		    // Now get the order via the key.
 		    Order currentOrder = getOrders().get( orderKey);
 
-		    if( currentOrder == null) {
-			System.out.println( "Current order is null!");  // Should never happen...
-		    }
-
 		    if( currentOrder.hasDependencies()) {  // If this order has dependencies..
 
 			// Check, if some of them are filled and can be removed from the dependencies.
