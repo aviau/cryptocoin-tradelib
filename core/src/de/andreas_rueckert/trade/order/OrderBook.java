@@ -157,9 +157,17 @@ public abstract class OrderBook {
 		continueChecks = false;  // Assume, that we don't have to continue checks.
 
 		// Loop over all the orders. Do not(!) use an iterator to avoid a concurrent modification exception!
-		for( int orderIndex = 0; orderIndex < getOrders().values().size(); ++orderIndex) {
+		for( int orderIndex = 0; orderIndex < getOrders().size(); ++orderIndex) {
 
-		    Order currentOrder = getOrders().get( orderIndex);
+		    // Get the key of this order.
+		    String orderKey = (String)( getOrders().keySet().toArray()[ orderIndex]);
+
+		    // Now get the order via the key.
+		    Order currentOrder = getOrders().get( orderKey);
+
+		    if( currentOrder == null) {
+			System.out.println( "Current order is null!");  // Should never happen...
+		    }
 
 		    if( currentOrder.hasDependencies()) {  // If this order has dependencies..
 
