@@ -442,6 +442,9 @@ public abstract class OrderBook {
 
 		}
 	    }
+	} else {
+	    // A null order is suspicious, so log this fact as an error.
+	    LogUtils.getInstance().getLogger().error( "OrderBook: order to execute is null!");
 	}
 
 	return null;
