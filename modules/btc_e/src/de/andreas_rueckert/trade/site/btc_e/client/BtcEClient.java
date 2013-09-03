@@ -62,12 +62,14 @@ import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException; 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -507,7 +509,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     private final String formatAmount( BigDecimal amount) {
 
 	// The amount has always 8 fraction digits for now.
-	DecimalFormat amountFormat = new DecimalFormat( "#####.########");
+	DecimalFormat amountFormat = new DecimalFormat( "#####.########", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 	return amountFormat.format( amount);
     }
@@ -520,6 +522,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @param currencyPair The currency pair to trade.
      */
     private final String formatPrice( BigDecimal price, CurrencyPair currencyPair) {
+
 	if( currencyPair.getCurrency().equals( CurrencyImpl.BTC) 
 	    && currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
 
@@ -531,9 +534,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)) {
 
 	    // btc has 5 fraction digits
-	    DecimalFormat ltcDecimalFormat = new DecimalFormat("#####.#####");
-	    
+	    DecimalFormat ltcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
 	    return ltcDecimalFormat.format( price);
+
 	} else {
 	    throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
 	}
@@ -772,7 +776,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    if( order.getCurrencyPair().getCurrency().equals( CurrencyImpl.BTC)) {
 		return new Price( "0.01");  // Withdrawal in btc seem to cost always 0.01 btc ?
 	    } else {
-		System.out.println( "Compute withdaw fees for currencies other than btc");
+		// System.out.println( "Compute withdaw fees for currencies other than btc");
 
 		throw new CurrencyNotSupportedException( "Cannot compute fee for this order: " + order.toString());
 	    }
