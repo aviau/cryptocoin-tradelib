@@ -36,6 +36,7 @@ import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import java.util.Collection;
@@ -83,17 +84,19 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The new status of the order.
      */
-    public OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder( SiteOrder order) {
 
 	throw new NotYetImplementedException( "Executing an order is not yet implemented for cryptsy");	
     }
 
     /**
-     * Get the current funds of the user.
+     * Get the current funds of a user.
+     *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used. 
      *
      * @return The accounts with the current balance as a collection of Account objects, or null if the request failed.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for cryptsy");	
     }
@@ -131,9 +134,11 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The open orders as a collection, or null if the request failed.
      */
-    public Collection<SiteOrder> getOpenOrders() {
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the open orders is not yet implemented for cryptsy");	
     }

@@ -64,6 +64,11 @@ public class TradeSiteUserAccount {
      */
     private String _secret = null;
 
+    /**
+     * A user ID.
+     */
+    private String _userId;
+
 
     // Constructors
 
@@ -121,6 +126,16 @@ public class TradeSiteUserAccount {
     }
 
     /**
+     * Get the user ID.
+     *
+     * @return The user ID.
+     */
+    public String getUserId() {
+
+	return _userId;
+    }
+
+    /**
      * Set a new name for this account.
      *
      * @param accountName The new name of this account.
@@ -169,4 +184,15 @@ public class TradeSiteUserAccount {
 
 	_secret = secret;
     }
+
+    /**
+     * Set a new user ID.
+     *
+     * @param userId The new user ID.
+     */
+    public void setUserId( String userId) {
+
+	_userId = userId;
+    }
+
 }

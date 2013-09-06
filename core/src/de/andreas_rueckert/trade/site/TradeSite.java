@@ -69,9 +69,11 @@ public interface TradeSite extends PersistentProperties {
     /**
      * Get the accounts of the user on this trading site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts of the user on this trading site as a list of Account objects or null if no accounts were found.
      */
-    public Collection<TradeSiteAccount> getAccounts();
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount);
 
     /**
      * Get the current market depth (minimal data of the orders).
@@ -131,9 +133,11 @@ public interface TradeSite extends PersistentProperties {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange.
+     *
      * @return The open orders as a collection.
      */
-    public Collection<SiteOrder> getOpenOrders();
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAcount);
 
     /**
      * Get the supported currency pairs of this trading site.

@@ -51,6 +51,7 @@ import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
@@ -219,21 +220,36 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      *
      * @param method The method to execute.
      * @param arguments The arguments to pass to the server.
+     * @param userAccount The user account on the exchange, or null if the default account should be used.
      *
      * @return The returned data as JSON or null, if the request failed.
      *
      * @see http://pastebin.com/K25Nk2Sv
      */
-    private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments) {
+    private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
 	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
 	Mac mac;
 	SecretKeySpec key = null;
+	String accountKey;     // The used key of the account.
+	String accountSecret;  // The used secret of the account.
 
-	// Check, if _key and _secret are available for the request.
-	if( _key == null) {
+	// Try to get an account key and secret for the request.
+	if( userAccount != null) {
+
+	    accountKey = userAccount.getAPIkey();
+	    accountSecret = userAccount.getSecret();
+
+	} else {  // Use the default values from the API implementation.
+
+	    accountKey = _key;
+	    accountSecret = _secret;
+	}
+
+	// Check, if account key and account secret are available for the request.
+	if( accountKey == null) {
 	    throw new MissingAccountDataException( "Key not available for authenticated request to btc-e");
 	}
-	if( _secret == null) {
+	if( accountSecret == null) {
 	    throw new MissingAccountDataException( "Secret not available for authenticated request to btc-e");
 	}
 
@@ -258,16 +274,22 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	// Create a new secret key
 	try {
-	    key = new SecretKeySpec( _secret.getBytes( "UTF-8"), "HmacSHA512" ); 
+
+	    key = new SecretKeySpec( accountSecret.getBytes( "UTF-8"), "HmacSHA512" ); 
+
 	} catch( UnsupportedEncodingException uee) {
+
 	    System.err.println( "Unsupported encoding exception: " + uee.toString());
 	    return null;
 	} 
 
 	// Create a new mac
 	try {
+
 	    mac = Mac.getInstance( "HmacSHA512" );
+
 	} catch( NoSuchAlgorithmException nsae) {
+
 	    System.err.println( "No such algorithm exception: " + nsae.toString());
 	    return null;
 	}
@@ -281,12 +303,14 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Add the key to the header lines.
-	headerLines.put( "Key", _key);
+	headerLines.put( "Key", accountKey);
 
 	// Encode the post data by the secret and encode the result as base64.
 	try {
+
 	    headerLines.put( "Sign", Hex.encodeHexString( mac.doFinal( postData.getBytes( "UTF-8"))));
 	} catch( UnsupportedEncodingException uee) {
+
 	    System.err.println( "Unsupported encoding exception: " + uee.toString());
 	    return null;
 	} 
@@ -309,7 +333,9 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		    LogUtils.getInstance().getLogger().error( "btc-e.com trade API request failed: " + errorMessage);
 
 		    return null;
+
 		} else {  // Request succeeded!
+
 		    return jsonResult.getJSONObject( "return");
 		}
 
@@ -345,7 +371,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	
 	parameter.put( "order_id", order.getSiteId());  // Pass the site id of the order.
 
-	JSONObject jsonResponse = authenticatedHTTPRequest( "CancelOrder", parameter);
+	JSONObject jsonResponse = authenticatedHTTPRequest( "CancelOrder", parameter, order.getTradeSiteUserAccount());
 
 	if( jsonResponse == null) {
 
@@ -361,12 +387,13 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Execute an order on the trade site.
+     * Synchronize this method, since several users might execute orders in parallel via an API implementation instance.
      *
      * @param order The order to execute.
      *
      * @return The new status of the order.
      */
-    public OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder( SiteOrder order) {
 
 	OrderType orderType = order.getOrderType();  // Get the type of this order.
 
@@ -390,7 +417,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    
 	    parameter.put( "pair", order.getCurrencyPair().getCurrency().getName().toLowerCase() + "_" + order.getCurrencyPair().getPaymentCurrency().getName().toLowerCase());  
 
-	    JSONObject jsonResponse = authenticatedHTTPRequest( "Trade", parameter);
+	    JSONObject jsonResponse = authenticatedHTTPRequest( "Trade", parameter, order.getTradeSiteUserAccount());
 
 	    if( jsonResponse == null) {
 		return OrderStatus.ERROR;
@@ -546,12 +573,14 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the current funds of the user via the new trade API.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts with the current balance as a collection of Account objects, or null if the request failed.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	// Try to get some info on the user (including the current funds).
-	JSONObject jsonResponse = authenticatedHTTPRequest( "getInfo", null);
+	JSONObject jsonResponse = authenticatedHTTPRequest( "getInfo", null, userAccount);
 
 	if( jsonResponse != null) {
 
@@ -764,12 +793,14 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
      *
      * @param order The order to use for the fee computation.
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      */
-    public Price getFeeForOrder( SiteOrder order) {
+    public synchronized Price getFeeForOrder( SiteOrder order) {
 	
 	if( order instanceof WithdrawOrder) {
 
@@ -904,9 +935,11 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The open orders as a collection, or null if the request failed.
      */
-    public Collection<SiteOrder> getOpenOrders() {
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
 	// Set the parameters for the order list request.
 	Map< String, String> parameters = new HashMap< String, String>();
@@ -914,7 +947,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	parameters.put( "active", "1");  // This is actually the default anyway, but it can't hurt...
 
 	// Try to get some info on the open orders.
-	JSONObject jsonResponse = authenticatedHTTPRequest( "OrderList", parameters);
+	JSONObject jsonResponse = authenticatedHTTPRequest( "OrderList", parameters, userAccount);
 
 	if( jsonResponse != null) {  // If the request succeeded.
 

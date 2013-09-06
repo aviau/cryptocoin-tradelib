@@ -26,6 +26,7 @@
 package de.andreas_rueckert.trade.order;
 
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 
 
 /**
@@ -57,6 +58,13 @@ public interface SiteOrder extends Order {
      * @return The trade site, this order will be placed.
      */
     public TradeSite getTradeSite();
+
+    /**
+     * Get the user account of the user, who executes this order.
+     *
+     * @return The user account of the user, who executes this order.
+     */
+    public TradeSiteUserAccount getTradeSiteUserAccount();
 
     /**
      * Set a new site id for this order.

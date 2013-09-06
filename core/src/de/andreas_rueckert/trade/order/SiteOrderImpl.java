@@ -29,6 +29,7 @@ import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import java.math.BigDecimal;
 
 
@@ -52,22 +53,58 @@ public class SiteOrderImpl extends OrderImpl implements SiteOrder {
      */
     private TradeSite _tradeSite;
 
+    /**
+     * A user account to use for executing the order.
+     * If it's null, the default user account of the API implementation is used.
+     */
+    private TradeSiteUserAccount _tradeSiteUserAccount = null;
+
 
     // Constructors
 
     /**
      * Create a new SiteOrder object.
      *
-     * @param TradeSite tradeSite The site to trade on.
+     * @param tradeSite tradeSite The site to trade on.
      * @param orderType The type of the order (buy or sell).
      * @param price The price of the order.
      * @param currencyPair The currency pair that is used for this order.
      * @param amount The amount of the traded good.
      */
-    public SiteOrderImpl( TradeSite tradeSite, OrderType orderType, Price price, CurrencyPair currencyPair, Amount amount) {
+    public SiteOrderImpl( TradeSite tradeSite
+			  , OrderType orderType
+			  , Price price
+			  , CurrencyPair currencyPair
+			  , Amount amount) {
+
 	super( orderType, price, currencyPair, amount);
 
 	_tradeSite = tradeSite;
+    }
+
+
+    /**
+     * Create a new SiteOrder object.
+     *
+     * @param tradeSite tradeSite The site to trade on.
+     * @param tradeSiteUserAccount The exchange account of the user.
+     * @param orderType The type of the order (buy or sell).
+     * @param price The price of the order.
+     * @param currencyPair The currency pair that is used for this order.
+     * @param amount The amount of the traded good.
+     */
+    public SiteOrderImpl( TradeSite tradeSite
+			  , TradeSiteUserAccount tradeSiteUserAccount
+			  , OrderType orderType
+			  , Price price
+			  , CurrencyPair currencyPair
+			  , Amount amount) {
+
+	// Use the constructor without the account.
+	this( tradeSite, orderType, price, currencyPair, amount);
+
+	// Now store the user account in this instance.
+	_tradeSiteUserAccount = tradeSiteUserAccount;
     }
 
 
@@ -88,7 +125,18 @@ public class SiteOrderImpl extends OrderImpl implements SiteOrder {
      * @return The trade site, where this order will be placed.
      */
     public TradeSite getTradeSite() {
+
 	return _tradeSite;
+    }
+
+    /**
+     * Get the user account of the user, who executes this order.
+     *
+     * @return The user account of the user, who executes this order.
+     */
+    public TradeSiteUserAccount getTradeSiteUserAccount() {
+
+	return _tradeSiteUserAccount;
     }
 
     /**
@@ -97,6 +145,7 @@ public class SiteOrderImpl extends OrderImpl implements SiteOrder {
      * @param siteId The new site id for this order.
      */
     public void setSiteId( String siteId) {
+
 	_siteId = siteId;
     }
 
@@ -106,6 +155,7 @@ public class SiteOrderImpl extends OrderImpl implements SiteOrder {
      * @return This order as a string.
      */
     public String toString() {
+
 	StringBuffer resultBuffer = new StringBuffer();
 
 	resultBuffer.append( getOrderType() == OrderType.BUY ? "buy" : "sell");

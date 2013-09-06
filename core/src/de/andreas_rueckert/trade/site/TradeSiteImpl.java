@@ -111,12 +111,14 @@ public class TradeSiteImpl {
     /**
      * Get the fee for an order in the resulting currency. This is just a default implementation, that
      * could (and sometimes should) be overwritten in the mplementation for a specific trade site.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
      *
      * @param order The order to use for the fee computation.
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      */
-    public Price getFeeForOrder( SiteOrder order) {
+    public synchronized Price getFeeForOrder( SiteOrder order) {
 	
 	if( order instanceof WithdrawOrder) {  // If this is a withdrawal...
 

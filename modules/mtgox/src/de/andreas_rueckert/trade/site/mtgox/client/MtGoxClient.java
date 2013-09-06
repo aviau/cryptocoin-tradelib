@@ -50,6 +50,7 @@ import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.util.HttpUtils;
@@ -157,10 +158,12 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      *
      * @param requestUrl The URL to query.
      * @param parameters Additional parameters for the request.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      *
      * @return The request result as a JSONObject, if the JSON result object has a success value. null otherwise
      */
-    private final JSONObject authenticatedQuery( String requestUrl, Map< String, String> parameters) {
+    private final JSONObject authenticatedQuery( String requestUrl, Map< String, String> parameters, TradeSiteUserAccount userAccount) {
+
 	// Create the post data to identify the logged in user.
 	String postData = "nonce=" + TimeUtils.getInstance().getCurrentGMTTimeMicros();
 
@@ -176,7 +179,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Query the MtGox server and return the HTTP result as a string.
-	String requestResult = HttpUtils.httpPost( requestUrl, getAuthenticationHeader( postData), postData);
+	String requestResult = HttpUtils.httpPost( requestUrl, getAuthenticationHeader( postData, userAccount), postData);
 
 	try {
 	    // Convert the HTTP request return value to JSON to parse further.
@@ -216,11 +219,13 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the accounts with the current funds on this trading site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts with the current balance as an array of Account objects.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 	
-	JSONObject privateInfo = getPrivateInfo();
+	JSONObject privateInfo = getPrivateInfo( userAccount);
 
 	if( privateInfo != null) {
 	    System.out.println( "Private info is: " + privateInfo.toString());
@@ -235,12 +240,13 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Execute an order on the trade site.
+     * Synchronize this method, since several users might execute orders in parallel via an API implementation instance.
      *
      * @param order The order to execute.
      *
      * @return The new status of the order.
      */
-    public OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder( SiteOrder order) {
 
 	OrderType orderType = order.getOrderType();  // Get the type of this order.
 
@@ -266,7 +272,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	    parameters.put( "price", "" + order.getPrice());  // ToDo: format price and amount? Don't know, how picky mtgox is about the format...
 	    
 	    // Query the MtGox server and fetch the result as a json object.
-	    JSONObject jsonResult = authenticatedQuery( url, parameters);
+	    JSONObject jsonResult = authenticatedQuery( url, parameters, order.getTradeSiteUserAccount());
 		
 	    if( jsonResult != null) {
 		if( "success".equalsIgnoreCase( jsonResult.getString( "result"))) {  // The order was executed.
@@ -295,7 +301,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
 		
 		// Get the address for a deposit from the trade site.
-		String depositAddress = getDepositAddress( depositedCurrency);
+		String depositAddress = getDepositAddress( depositedCurrency, order.getTradeSiteUserAccount());
 
 		// Attach a new account for depositing to this order.
 		depositOrder.setAccount( new CryptoCoinAccountImpl( depositAddress
@@ -326,47 +332,74 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      * Create authentication entries for a HTTP post header.
      *
      * @param postData The data to post via HTTP.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      *
      * @return The header entries as a map or null if an error occured.
      */
-    Map< String, String> getAuthenticationHeader( String postData) {
+    Map< String, String> getAuthenticationHeader( String postData, TradeSiteUserAccount userAccount) {
 	HashMap<String, String> result = new HashMap<String, String>();
 	Mac mac;
+	String accountKey = null;
+	String accountSecret = null;
 
-	// Check, if _key and _secret are available for the request.
-	if( _key == null) {
+	// Try to get user account and secret.
+	if( userAccount != null) {
+
+	    accountKey = userAccount.getAPIkey();
+	    accountSecret = userAccount.getSecret();
+
+	} else {  // Use the default account from the API implementation.
+
+	    accountKey = _key;
+	    accountSecret = _secret;
+	}
+
+	// Check, if key and secret are available for the request.
+	if( accountKey == null) {
 	    throw new MissingAccountDataException( "Key not available for authenticated request to btc-e");
 	}
-	if( _secret == null) {
+	if( accountSecret == null) {
 	    throw new MissingAccountDataException( "Secret not available for authenticated request to btc-e");
 	}
 
-	result.put( "Rest-Key", _key);
+	result.put( "Rest-Key", accountKey);
 
 	// Create a new secret key
-	SecretKeySpec key = new SecretKeySpec( Base64.decodeBase64( _secret), "HmacSHA512" );       
+	SecretKeySpec key = new SecretKeySpec( Base64.decodeBase64( accountSecret), "HmacSHA512" );       
 
 	// Create a new mac
 	try {
+
 	    mac = Mac.getInstance( "HmacSHA512" );
+
 	} catch( NoSuchAlgorithmException nsae) {
+
 	    System.err.println( "No such algorithm exception: " + nsae.toString());
+
 	    return null;
 	}
 
 	// Init mac with key.
 	try {
+
 	    mac.init( key );
+
 	} catch( InvalidKeyException ike) {
+
 	    System.err.println( "Invalid key exception: " + ike.toString());
+
 	    return null;
 	}
 
 	// Encode the post data by the secret and encode the result as base64.
 	try {
+
 	    result.put( "Rest-Sign", Base64.encodeBase64String( mac.doFinal( postData.getBytes( "UTF-8"))));
+
 	} catch( UnsupportedEncodingException uee) {
+
 	    System.err.println( "Unsupported encoding exception: " + uee.toString());
+
 	    return null;
 	}
 
@@ -377,16 +410,18 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      * Get all the cancelled trades of the current user.
      *
      * @param currencyPair The currency pair to use.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      *
      * @return The cancelled trades as an array of Trade objects or null if the request failed.
      */
-    Trade [] getCancelledTrades( CurrencyPair currencyPair) {
+    Trade [] getCancelledTrades( CurrencyPair currencyPair, TradeSiteUserAccount userAccount) {
 
 	// Query the MtGox server and fetch the result as a json object.
 	JSONObject jsonResult = authenticatedQuery( "https://" + DOMAIN + "/api/1/"
 						    + currencyPair.getCurrency().getName() + currencyPair.getPaymentCurrency().getName() 
 						    + "/public/cancelledtrades"
-						    , null);
+						    , null
+						    , userAccount);
 
 	if( jsonResult != null) {
 	    try {
@@ -425,13 +460,14 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
-     * Get an address to deposit coins at btc-e.
+     * Get an address to deposit coins at MtGox.
      *
      * @param currency The currency to deposit.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      *
      * @return The deposit address as a string, or null if no address is found.
      */
-    private String getDepositAddress( Currency currency) {
+    private String getDepositAddress( Currency currency, TradeSiteUserAccount userAccount) {
 
 	// The URL to request the address from.
 	String url = null;
@@ -443,7 +479,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	    url = "https://data.mtgox.com/api/1/generic/bitcoin/address";
 
 	    // Do a authenticated query for the deposit address.
-	    JSONObject result = authenticatedQuery( url, null);
+	    JSONObject result = authenticatedQuery( url, null, userAccount);
 
 	    // Get the return value and convert it to an object.
 	    JSONObject jsonAddress = result.getJSONObject( "return");
@@ -522,10 +558,13 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders of the user.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The open orders as a collection
      */
-    public Collection<SiteOrder> getOpenOrders() {
-	JSONObject jsonResult = authenticatedQuery( "https://mtgox.com/api/1/generic/private/orders", null);
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
+
+	JSONObject jsonResult = authenticatedQuery( "https://mtgox.com/api/1/generic/private/orders", null, userAccount);
 
 	if( jsonResult != null) {
 	    JSONArray requestReturn = jsonResult.getJSONArray( "return");  // Get the return value as an array
@@ -559,12 +598,15 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
-     * Request the private info of the current user.
+     * Request the private info of a user.
+     *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      *
      * @return The private info of the current user.
      */
-    public JSONObject getPrivateInfo() {
-	JSONObject jsonResult = authenticatedQuery( "https://mtgox.com/api/1/generic/private/info", null);
+    public JSONObject getPrivateInfo( TradeSiteUserAccount userAccount) {
+
+	JSONObject jsonResult = authenticatedQuery( "https://mtgox.com/api/1/generic/private/info", null, userAccount);
 
 	if( jsonResult != null) {
 	    JSONObject requestReturn = jsonResult.getJSONObject( "return");

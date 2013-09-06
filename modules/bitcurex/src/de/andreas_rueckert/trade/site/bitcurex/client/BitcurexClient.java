@@ -42,6 +42,7 @@ import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
@@ -128,9 +129,11 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the current funds of the user.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts with the current balance as a collection of Account objects, or null if the request failed.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for bitcurex");	
     }
@@ -231,9 +234,11 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The open orders as a collection, or null if the request failed.
      */
-    public Collection<SiteOrder> getOpenOrders() {
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the open orders is not yet implemented for bitcurex");	
     }

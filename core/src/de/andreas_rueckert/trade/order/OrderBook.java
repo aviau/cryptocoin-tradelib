@@ -89,7 +89,8 @@ public abstract class OrderBook {
 		// all the orders from all the trade sites for each order.
 		Map<TradeSite, Collection<SiteOrder>> allOpenOrders = new HashMap< TradeSite, Collection<SiteOrder>>();
 		for( TradeSite currentTradeSite : currentTradeSites) {
-		    Collection<SiteOrder> openOrders = currentTradeSite.getOpenOrders();
+		    Collection<SiteOrder> openOrders = currentTradeSite.getOpenOrders( null);
+		    LogUtils.getInstance().getLogger().warn( "Only fetching open orders from default API user");
 		    if( openOrders != null) {                              // If the trade site returned the open orders,
 			allOpenOrders.put( currentTradeSite, openOrders);  // add them to the list of open orders.
 		    }

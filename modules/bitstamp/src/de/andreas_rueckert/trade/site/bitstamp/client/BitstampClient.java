@@ -49,6 +49,7 @@ import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -208,11 +209,14 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      *
      * @param url The url to request from.
      * @param arguments The argments for the request.
-     * @param returnArray if true, return a JSONArray. If false, return a JSONObject
+     * @param returnArray if true, return a JSONArray. If false, return a JSONObject.
+     * @param userAccount The account of the user on the exchange.
      *
      * @return The returned data as JSON or null, if the request failed.
      */
-    private Object authenticatedHTTPRequest( String url, Map<String, String> arguments, boolean returnArray) {
+    private Object authenticatedHTTPRequest( String url, Map<String, String> arguments, boolean returnArray, TradeSiteUserAccount userAccount) {
+	String userId = null;
+	String password;
 
 	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
 
@@ -221,14 +225,24 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Try to add username and password to the parameters.
+	if( userAccount != null) {
 
-	if( _userId == null || _password == null) {
+	    userId = userAccount.getUserId();
+	    password = userAccount.getPassword();
+
+	} else { // User the default identity from the API implementation.
+	    
+	    userId = _userId;
+	    password = _password;
+	}
+
+	if( userId == null || password == null) {
 	    throw new MissingAccountDataException( "User ID or password missing in Bitstamp method getOpenOrders()");
 	}
 
 	// Add the account data to the parameters.
-	arguments.put( "user", _userId);
-	arguments.put( "password", _password);
+	arguments.put( "user", userId);
+	arguments.put( "password", password);
 
 	// Convert the arguments into a string to post them.
 	String postData = "";
@@ -269,12 +283,12 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      *
      * @param url The url to request from.
      * @param arguments The argments for the request.
-     * @param returnArray if true, return a JSONArray. If false, return a JSONObject
+     * @param userAccount The account of the user on the exchange.
      *
      * @return The returned data as JSON array or null, if the request failed.
      */
-    private JSONArray authenticatedHTTPRequestArray( String url, Map<String, String> arguments) {
-	return (JSONArray)authenticatedHTTPRequest( url, arguments, true);
+    private JSONArray authenticatedHTTPRequestArray( String url, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
+	return (JSONArray)authenticatedHTTPRequest( url, arguments, true, userAccount);
     }
 
     /**
@@ -283,11 +297,12 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      *
      * @param url The url to request from.
      * @param arguments The argments for the request.
+     * @param userAccount The account of the user on the exchange.
      *
      * @return The returned data as a JSON object or null, if the request failed.
      */
-    private JSONObject authenticatedHTTPRequestObject( String url, Map<String, String> arguments) {
-	return (JSONObject)authenticatedHTTPRequest( url, arguments, false);
+    private JSONObject authenticatedHTTPRequestObject( String url, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
+	return (JSONObject)authenticatedHTTPRequest( url, arguments, false, userAccount);
     }
 
     /**
@@ -304,12 +319,13 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Execute an order on the trade site.
+     * Since many users might execute orders via one API implementation, this method is synchronized.
      *
      * @param order The order to execute.
      *
      * @return The new status of the order.
      */
-    public OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder( SiteOrder order) {
 
 	OrderType orderType = order.getOrderType();  // Get the type of this order.
 
@@ -338,16 +354,17 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the current funds of the user.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts with the current balance as a collection of Account objects, or null if the request failed.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	// Create the url to fetch the balance details.
 	String url = this._url + "api/balance/";
 
 	// Try to get some info on the user (including the current funds).
-	JSONObject jsonResponse = authenticatedHTTPRequestObject( url, null);
-
+	JSONObject jsonResponse = authenticatedHTTPRequestObject( url, null, userAccount);
 
 	if( jsonResponse != null) {
 
@@ -418,12 +435,14 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
     /**
      * Get the fee for an order in the resulting currency.
+     * Since the fee might depend on the user and many users might use 1 API implementation instance, 
+     * synchronize this method.
      *
      * @param order The order to use for the fee computation.
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      */
-    public Price getFeeForOrder( SiteOrder order) {
+    public synchronized Price getFeeForOrder( SiteOrder order) {
 
 	if( order instanceof WithdrawOrder) {
 	    
@@ -474,18 +493,20 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the current fee for regular trades.
      *
+     * @param userAccount The account of the user on the exchange.
+     *
      * @return The current fee for this user and the current volume.
      */
-    public BigDecimal getFeeForTrade() {
+    public BigDecimal getFeeForTrade( TradeSiteUserAccount userAccount) {
 
 	// If the fee is dated or not available at the moment.
 	if( _fee.isDated() || ( _fee.getFee() == null)) {
 
 	    // Check, if some user account data are available
-	    if( ( _userId != null) && ( _password != null)) {
+	    if( ( userAccount != null) || ( ( _userId != null) && ( _password != null))) {
 		
 		// Fetch the accounts to get the current fee.
-		getAccounts();
+		getAccounts( userAccount);
 
 		if( _fee.getFee() != null) {  // If the fee is available now,
 		    
@@ -529,14 +550,16 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The open orders as a collection, or null if the request failed.
      */
-    public Collection<SiteOrder> getOpenOrders() {
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
 	String url = this._url + "api/open_orders/";
 
 	// Try to get some info on the open orders.
-	JSONArray jsonResponse = authenticatedHTTPRequestArray( url, null);
+	JSONArray jsonResponse = authenticatedHTTPRequestArray( url, null, userAccount);
 
 	if( jsonResponse != null) {  // If the request succeeded.
 	    

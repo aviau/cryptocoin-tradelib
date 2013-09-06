@@ -42,6 +42,7 @@ import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.TimeUtils;
@@ -133,7 +134,7 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The new status of the order.
      */
-    public OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder( SiteOrder order) {
 
 	throw new NotYetImplementedException( "Executing orders is not yet implemented for Intersango");
     }
@@ -141,9 +142,11 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the accounts with the current funds on this trading site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
      * @return The accounts with the current balance as a collection of Account objects.
      */
-    public Collection<TradeSiteAccount> getAccounts() {
+    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 	throw new NotYetImplementedException( "Get accounts is not yet implemented for Intersango");
     }
 
@@ -235,9 +238,11 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get the open orders on this trade site.
      *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used. 
+     *
      * @return The open orders as a collection.
      */
-    public Collection<SiteOrder> getOpenOrders() {
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 	throw new NotYetImplementedException( "Get the open orders is not yet implemented for Bitparking");
     }
 
