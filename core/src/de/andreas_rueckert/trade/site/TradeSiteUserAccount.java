@@ -25,6 +25,9 @@
 
 package de.andreas_rueckert.trade.site;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * This class handles all the data for a trade site user account.
@@ -39,35 +42,9 @@ public class TradeSiteUserAccount {
     // Instance variables
 
     /**
-     * The name of this account. Not(!) the nickname of the user at the trade site.
-     * This name could be used to identify this account in bots etc.
+     * A map to store all the parameters in one data structure.
      */
-    private String _accountName = null;
-
-    /**
-     * An API key. Often used with a secret to identify bots.
-     */
-    private String _APIkey = null;
-
-    /**
-     * The email address of the users. Some sites use it for login.
-     */
-    private String _email = null;
-
-    /**
-     * A password for a user. Often used for user login.
-     */
-    private String _password = null;
-
-    /**
-     * A secret for an API key. Often used to authenticate bots at an exchange.
-     */
-    private String _secret = null;
-
-    /**
-     * A user ID.
-     */
-    private String _userId;
+    private Map< String, String> _parameters = new HashMap< String, String>();
 
 
     // Constructors
@@ -82,7 +59,7 @@ public class TradeSiteUserAccount {
      */
     public String getAccountName() {
 
-	return _accountName;
+	return _parameters.get( "accountName");
     }
     
     /**
@@ -92,7 +69,7 @@ public class TradeSiteUserAccount {
      */
     public String getAPIkey() {
 
-	return _APIkey;
+	return _parameters.get( "APIkey");
     }
 
     /**
@@ -102,7 +79,7 @@ public class TradeSiteUserAccount {
      */
     public String getEmail() {
 
-	return _email;
+	return _parameters.get( "email");
     }
 
     /**
@@ -112,7 +89,7 @@ public class TradeSiteUserAccount {
      */
     public String getPassword() {
 
-	return _password;
+	return _parameters.get( "password");
     }
 
     /**
@@ -122,7 +99,7 @@ public class TradeSiteUserAccount {
      */
     public String getSecret() {
 
-	return _secret;
+	return _parameters.get( "secret");
     }
 
     /**
@@ -132,7 +109,7 @@ public class TradeSiteUserAccount {
      */
     public String getUserId() {
 
-	return _userId;
+	return _parameters.get( "userId");
     }
 
     /**
@@ -142,7 +119,7 @@ public class TradeSiteUserAccount {
      */
     public void setAccountName( String accountName) {
 
-	_accountName = accountName;
+	_parameters.put( "accountName", accountName);
     }
 
     /**
@@ -152,7 +129,7 @@ public class TradeSiteUserAccount {
      */
     public void setAPIkey( String APIkey) {
 
-	_APIkey = APIkey;
+	_parameters.put( "APIkey", APIkey);
     }
 
     /**
@@ -162,7 +139,7 @@ public class TradeSiteUserAccount {
      */
     public void setEmail( String email) {
 
-	_email = email;
+	_parameters.put( "email", email);
     }
 
     /**
@@ -172,7 +149,7 @@ public class TradeSiteUserAccount {
      */
     public void setPassword( String password) {
 
-	_password = password;
+	_parameters.put( "password", password);
     }
 
     /**
@@ -182,7 +159,7 @@ public class TradeSiteUserAccount {
      */
     public void setSecret( String secret) {
 
-	_secret = secret;
+	_parameters.put( "secret", secret);
     }
 
     /**
@@ -192,7 +169,7 @@ public class TradeSiteUserAccount {
      */
     public void setUserId( String userId) {
 
-	_userId = userId;
+	_parameters.put( "userId", userId);
     }
 
 }
