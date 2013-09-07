@@ -89,7 +89,7 @@ public class HttpUtils {
      *
      * @return The reply as a string, or null if an error occured.
      */
-    public static String httpGet( String url) {
+    public synchronized static String httpGet( String url) {
 
 	// Execute HTTP GET request with no further header lines.
 	return httpGet( url, null);
@@ -103,7 +103,7 @@ public class HttpUtils {
      *
      * @return The reply as a string, or null if an error occured.
      */
-    public static String httpGet( String url, Map< String, String> headerlines) {
+    public synchronized static String httpGet( String url, Map< String, String> headerlines) {
       URL requestURL;
       HttpURLConnection connection;
       String agent = "Mozilla/4.0";  // Bitstamp seems to require this as an example.
@@ -188,7 +188,7 @@ public class HttpUtils {
      *
      * @return The response as a string or null, of the request failed.
      */
-    public static String httpPost( String url, Map<String, String> headerlines, String postData) {
+    public synchronized static String httpPost( String url, Map<String, String> headerlines, String postData) {
 	URL requestURL;
 	HttpURLConnection connection;
 	String agent = "Mozilla/4.0";
