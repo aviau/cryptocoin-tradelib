@@ -156,7 +156,7 @@ public class HttpUtils {
 
 	  result = null;  // return null
 
-      }  catch( IOException ioe) {
+      } catch( IOException ioe) {
 
 	  System.err.println( "I/O error while reading from URL: " + url + "\n" + ioe.toString());
 
@@ -169,7 +169,9 @@ public class HttpUtils {
 	  System.out.println( "DEBUG: Server error: " + response);
 
 	  result = null;  // return null
+
       } finally {
+
 	  if( connection != null) { 
 	      connection.disconnect();
 	  }
