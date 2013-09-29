@@ -143,6 +143,17 @@ public class TradeSiteUserAccount {
     }
 
     /**
+     * Set a parameter with a given name to a given value.
+     *
+     * @param fieldname The name of the parameter.
+     * @param value The new value of the parameter.
+     */
+    public void setParameter( String fieldname, String value) {
+	
+	_parameters.put( fieldname, value);
+    }
+
+    /**
      * Set a new password for this account.
      *
      * @param password The new password to set.
