@@ -119,7 +119,8 @@ public class HttpUtils {
       try { 
          requestURL = new URL( url);
       } catch( MalformedURLException me) {
-	  System.err.println( "URL format error: " + url);
+
+	  LogUtils.getInstance().getLogger().error( "URL format error: " + url);
 
 	  return null;
       }
@@ -127,7 +128,8 @@ public class HttpUtils {
       try {
          connection = (HttpURLConnection)requestURL.openConnection();
       } catch( IOException ioe) {
-	  System.err.println( "Cannot open URL: " + url);
+
+	  LogUtils.getInstance().getLogger().error( "Cannot open URL: " + url);
 
 	  return null;
       }
@@ -152,21 +154,23 @@ public class HttpUtils {
 	  reader.close();
 
       } catch( ProtocolException pe) {
-	  System.err.println( "Wrong protocol for URL: " + pe.toString());
+
+	  LogUtils.getInstance().getLogger().error( "Wrong protocol for URL: " + pe.toString());
 
 	  result = null;  // return null
 
       } catch( IOException ioe) {
 
-	  System.err.println( "I/O error while reading from URL: " + url + "\n" + ioe.toString());
+	  LogUtils.getInstance().getLogger().error( "I/O error while reading from URL: " + url + "\n" + ioe.toString());
 
+	  /*
 	  Scanner scanner = new Scanner( connection.getErrorStream());  // Get a stream for the error message.
 
 	  scanner.useDelimiter("\\Z");
 
 	  String response = scanner.next();  // Get the error message as text.
 
-	  System.out.println( "DEBUG: Server error: " + response);
+	  System.out.println( "DEBUG: Server error: " + response); */
 
 	  result = null;  // return null
 
@@ -207,14 +211,17 @@ public class HttpUtils {
 	try {
 	    encodedData = URLEncoder.encode( postData, "UTF-8" );
 	} catch( UnsupportedEncodingException uee) {
-	    System.err.println( "Cannot encode post data as UTF-8: " + uee.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Cannot encode post data as UTF-8: " + uee.toString());
+
 	    return null;
 	}
 
 	try { 
 	    requestURL = new URL( url);
 	} catch( MalformedURLException me) {
-	    System.err.println( "URL format error: " + url);
+
+	    LogUtils.getInstance().getLogger().error( "URL format error: " + url);
 
 	    return null;
 	}
@@ -222,7 +229,8 @@ public class HttpUtils {
 	try {
 	    connection = (HttpURLConnection)requestURL.openConnection();
 	} catch( IOException ioe) {
-	    System.err.println( "Cannot open URL: " + url);
+
+	    LogUtils.getInstance().getLogger().error( "Cannot open URL: " + url);
 
 	    return null;
 	}
@@ -249,11 +257,17 @@ public class HttpUtils {
 	    os.flush();
 	    os.close();
 	} catch( ProtocolException pe) {
-	    System.err.println( "Cannot set protocol to HTTP POST: " + pe.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Cannot set protocol to HTTP POST: " + pe.toString());
+
 	    result = null;
+
 	} catch( IOException ioe) {
-	    System.err.println( "Cannot write HTTP post data to output stream: " + ioe.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Cannot write HTTP post data to output stream: " + ioe.toString());
+
 	    result = null;
+
 	} finally {
 	    if( connection != null) {
 		connection.disconnect();
@@ -280,8 +294,11 @@ public class HttpUtils {
 		result = null;  // Posting resulted in an error.
 	    }
 	} catch( IOException ioe) {
-	    System.err.println( "Cannot read HTTP POST response: " + ioe.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Cannot read HTTP POST response: " + ioe.toString());
+
 	    result = null;
+
 	} finally {
 	    if(connection != null) {
 		connection.disconnect(); 
@@ -317,11 +334,17 @@ public class HttpUtils {
 	    sc.init ( null, _trustAllCerts, new java.security.SecureRandom());
 	    HttpsURLConnection.setDefaultSSLSocketFactory( sc.getSocketFactory());
 	} catch( KeyManagementException kme) {
-	    System.err.println( "Can't get key in SSL fix installer: " + kme.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Can't get key in SSL fix installer: " + kme.toString());
+
 	    System.exit( 1);
+
 	} catch( NoSuchAlgorithmException nsae) {
-	    System.err.println( "Can't get algorithm in SSL fix installer: " + nsae.toString());
+
+	    LogUtils.getInstance().getLogger().error( "Can't get algorithm in SSL fix installer: " + nsae.toString());
+
 	    System.exit( 1);
+
 	}
 
 	// Create all-trusting host name verifier
