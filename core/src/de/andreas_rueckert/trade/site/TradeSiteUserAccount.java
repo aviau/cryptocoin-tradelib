@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site;
 
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +52,30 @@ public class TradeSiteUserAccount {
 
 
     // Methods
+
+    /**
+     * Encode this user account as a property value.
+     *
+     * @return This user account as a property value.
+     */
+    public String encodeAsPropertyValue() {
+
+	StringBuffer resultBuffer = new StringBuffer();  // A buffer for the result.
+
+	// Loop over the user accounts.
+	for( Map.Entry<String, String> currentParameter : _parameters.entrySet()) {
+
+	    if( resultBuffer.length() > 0) {   // If the buffer already holds parameters
+		resultBuffer.append( "&");     // Concatenate the next parameter.
+	    }
+	    
+	    resultBuffer.append( URLEncoder.encode( currentParameter.getKey()));
+	    resultBuffer.append( "=");
+	    resultBuffer.append( URLEncoder.encode( currentParameter.getValue()));
+	}
+
+	return resultBuffer.toString();  // Return the converted buffer.
+    }
 
     /**
      * Get the name of this account.
