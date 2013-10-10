@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,32 @@ public class TradeSiteUserAccount {
 	}
 
 	return resultBuffer.toString();  // Return the converted buffer.
+    }
+
+    /**
+     * Create a new user account from an encoded property value.
+     *
+     * @param propertyValue The property value encoded as a string.
+     *
+     * @return The decoded property value as a TradeSiteUserAccount object.
+     */
+    public static TradeSiteUserAccount fromPropertyValue( String propertyValue) {
+
+	// Create a buffer for the result.
+	TradeSiteUserAccount result = new TradeSiteUserAccount();
+
+	// Split the encoded value into key<=>value pairs.
+	for( String currentParameter : propertyValue.split( "&")) {
+
+	    // Now split and decode the key<=>value pairs.
+	    // ToDo: check, if the array has 2 elements?
+	    String [] value = currentParameter.split( "=");
+
+	    result.setParameter( URLDecoder.decode( value[0]), URLDecoder.decode( value[1]));
+	}
+
+	// Return the created account.
+	return result;
     }
 
     /**
