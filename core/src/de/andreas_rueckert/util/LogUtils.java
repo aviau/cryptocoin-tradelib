@@ -29,7 +29,8 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
+import org.apache.log4j.PatternLayout;
+//import org.apache.log4j.SimpleLayout;
 
 
 /**
@@ -69,8 +70,8 @@ public class LogUtils {
 	_logger.setLevel( Level.WARN);  
           
         // Define and set appender     
-        _logger.addAppender( new ConsoleAppender( new SimpleLayout()));  
-
+        //_logger.addAppender( new ConsoleAppender( new SimpleLayout()));  
+	_logger.addAppender( new ConsoleAppender( new PatternLayout( "%d %-5p [%t]: %m%n")));  // Add the time to the log output...
     }
 
 
