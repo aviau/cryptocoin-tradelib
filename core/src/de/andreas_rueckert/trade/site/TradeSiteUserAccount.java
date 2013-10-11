@@ -44,6 +44,12 @@ public class TradeSiteUserAccount {
     // Instance variables
 
     /**
+     * Flag to indicate, if this user account is activated. A trading app could honor
+     * this flag and stop trading, if the account is deactivated.
+     */
+    private boolean _activated = true;
+
+    /**
      * A map to store all the parameters in one data structure.
      */
     private Map< String, String> _parameters = new HashMap< String, String>();
@@ -165,6 +171,16 @@ public class TradeSiteUserAccount {
     }
 
     /**
+     * Check, if this user account is activated at the moment.
+     *
+     * @return true, if the user account is activated at the moment. False otherwise.
+     */
+    public final boolean isActivated() {
+
+	return _activated;
+    }
+
+    /**
      * Set a new name for this account.
      *
      * @param accountName The new name of this account.
@@ -172,6 +188,16 @@ public class TradeSiteUserAccount {
     public void setAccountName( String accountName) {
 
 	_parameters.put( "accountName", accountName);
+    }
+
+    /**
+     * Activate or deactivate this user account.
+     *
+     * @param activated true to activate the account, false to deactivate it.
+     */
+    public final void setActivated( boolean activated) {
+
+	_activated = activated;
     }
 
     /**
