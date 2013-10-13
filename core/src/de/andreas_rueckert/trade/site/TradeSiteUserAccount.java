@@ -69,12 +69,17 @@ public class TradeSiteUserAccount {
 
 	StringBuffer resultBuffer = new StringBuffer();  // A buffer for the result.
 
+	// Store the activated status.
+	resultBuffer.append( URLEncoder.encode( "activated"));
+	resultBuffer.append( "=");
+	resultBuffer.append( URLEncoder.encode( isActivated() ? "1" : "0"));
+
 	// Loop over the user accounts.
 	for( Map.Entry<String, String> currentParameter : _parameters.entrySet()) {
 
 	    if( resultBuffer.length() > 0) {   // If the buffer already holds parameters
-		resultBuffer.append( "&");     // Concatenate the next parameter.
-	    }
+		resultBuffer.append( "&");     // Concatenate the next parameter (should always happen with the activated flag.
+	    }                                  // This is just added in case the activated flag is removed).
 	    
 	    resultBuffer.append( URLEncoder.encode( currentParameter.getKey()));
 	    resultBuffer.append( "=");
@@ -103,7 +108,14 @@ public class TradeSiteUserAccount {
 	    // ToDo: check, if the array has 2 elements?
 	    String [] value = currentParameter.split( "=");
 
-	    result.setParameter( URLDecoder.decode( value[0]), URLDecoder.decode( value[1]));
+	    String parameterName = URLDecoder.decode( value[0]).trim();
+	    String parameterValue = URLDecoder.decode( value[1]).trim();
+
+	    if( "activated".equalsIgnoreCase( parameterName)) {              // If the account was activated,
+		result.setActivated( "1".equalsIgnoreCase( parameterValue));  // activate it again...
+	    } else {	// Store this parameter in the parameter map.
+		result.setParameter( URLDecoder.decode( value[0]), URLDecoder.decode( value[1]));
+	    }
 	}
 
 	// Return the created account.
