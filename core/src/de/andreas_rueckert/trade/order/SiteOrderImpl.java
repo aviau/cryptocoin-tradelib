@@ -46,18 +46,18 @@ public class SiteOrderImpl extends OrderImpl implements SiteOrder {
     /**
      * The id of this order on the trading site.
      */
-    private String _siteId;
+    protected String _siteId;
 
     /**
      * The site, where this order will be placed.
      */
-    private TradeSite _tradeSite;
+    protected TradeSite _tradeSite;
 
     /**
      * A user account to use for executing the order.
      * If it's null, the default user account of the API implementation is used.
      */
-    private TradeSiteUserAccount _tradeSiteUserAccount = null;
+    protected TradeSiteUserAccount _tradeSiteUserAccount = null;
 
 
     // Constructors

@@ -31,6 +31,7 @@ import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 
 
 /**
@@ -50,6 +51,23 @@ public class DepositOrderImpl extends SiteOrderImpl implements DepositOrder {
     
 
     // Constructors
+
+    /**
+     * Create a new deposit order implementation object.
+     *
+     * @param tradeSite The trade site to deposit funds to.
+     * @param userAccount The tradesite user account to use.
+     * @param currency The currency to use.
+     * @param amount The amount to deposit.
+     *
+     * @return The deposit order with the given parameters.
+     */
+    public DepositOrderImpl( TradeSite tradeSite, TradeSiteUserAccount userAccount, Currency currency, Amount amount) {
+
+	this( tradeSite, currency, amount);
+
+	_tradeSiteUserAccount = userAccount;  // Store the user account in this instance.
+    }
 
     /**
      * Create a new deposit order implementation object.

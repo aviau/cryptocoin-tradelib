@@ -32,6 +32,7 @@ import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 
 
 /**
@@ -54,21 +55,24 @@ public class OrderFactory {
      * Create a new deposit order to send funds to a trade site.
      *
      * @param tradeSite The trade site to send funds, too.
+     * @param userAccount The user account to use or null for the default user account (if it exists).
      * @param currency The currency to deposit.
      * @param amount The amount to deposit.
      *
      * @return A deposit order with the given data.
      */
     public static final DepositOrderImpl createCryptoCoinDepositOrder( TradeSite tradeSite
-								      , Currency currency
-								      , Amount amount) {
-	return new DepositOrderImpl( tradeSite, currency, amount);
+								       , TradeSiteUserAccount userAccount
+								       , Currency currency
+								       , Amount amount) {
+	return new DepositOrderImpl( tradeSite, userAccount, currency, amount);
     }
 
     /**
      * Create an order on a given trading site.
      *
      * @param tradeSite The trade site to use.
+     * @param userAccount The user account to use or null for the default user account (if it exists).
      * @param orderType The order type (buy or sell).
      * @param price The price for the order.
      * @param currencyPair The currency pair for the order (currency to buy and currency for the payment).
@@ -77,17 +81,19 @@ public class OrderFactory {
      * @return The implementation of an order.
      */
     public static final SiteOrderImpl createCryptoCoinTradeOrder( TradeSite tradeSite
+								  , TradeSiteUserAccount userAccount
 								  , OrderType orderType
 								  , Price price
 								  , CurrencyPair currencyPair
 								  , Amount amount) {
-	return new SiteOrderImpl( tradeSite, orderType, price, currencyPair, amount);
+	return new SiteOrderImpl( tradeSite, userAccount, orderType, price, currencyPair, amount);
     }
 
     /**
      * Withdraw a given amount from a given trade site.
      *
      * @param tradeSite The trade site to use.
+     * @param userAccount The user account to use or null for the default user account (if it exists).
      * @param currency The currency to withdraw.
      * @param amount The amount to buy or sell.
      * @param target_account The account, where the money goes. Might be null, as long as the order is not executed.
@@ -95,10 +101,11 @@ public class OrderFactory {
      * @return A withdraw order for the given data.
      */
     public static final WithdrawOrderImpl createCryptoCoinWithdrawOrder( TradeSite tradeSite
+									 , TradeSiteUserAccount userAccount
 									 , Currency currency
 									 , Amount amount
 									 , Account target_account) {
 
-	return new WithdrawOrderImpl( tradeSite, currency, amount, target_account);
+	return new WithdrawOrderImpl( tradeSite, userAccount, currency, amount, target_account);
     }
 }

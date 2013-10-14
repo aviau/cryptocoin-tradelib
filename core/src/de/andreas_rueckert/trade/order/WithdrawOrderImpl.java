@@ -31,6 +31,7 @@ import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 
 
 /**
@@ -56,6 +57,24 @@ public class WithdrawOrderImpl extends SiteOrderImpl implements WithdrawOrder {
      * class, since we don't need a price or a currency pair.
      *
      * @param TradeSite tradeSite The site to trade on.
+     * @param userAccount The tradesite user account to use.
+     * @param currency The currency to use for the withdrawal.
+     * @param param amount The amount to withdraw.
+     * @param account The account to withdraw to.
+     
+     */
+    public WithdrawOrderImpl( TradeSite tradeSite, TradeSiteUserAccount userAccount, Currency currency, Amount amount, Account account) {
+	
+	this( tradeSite, currency, amount, account);
+
+	_tradeSiteUserAccount = userAccount;  // Store the user account in this instance.
+    }
+
+    /**
+     * Create a new withdraw order. It might be better not to base this order on the OrderImpl
+     * class, since we don't need a price or a currency pair.
+     *
+     * @param TradeSite tradeSite The site to trade on.
      * @param currency The currency to use for the withdrawal.
      * @param param amount The amount to withdraw.
      * @param account The account to withdraw to.
@@ -71,6 +90,7 @@ public class WithdrawOrderImpl extends SiteOrderImpl implements WithdrawOrder {
 	setAccount( account);
     }
 
+    
 
     // Methods
     
