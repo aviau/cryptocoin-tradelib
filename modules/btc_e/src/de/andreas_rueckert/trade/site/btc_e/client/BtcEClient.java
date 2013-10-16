@@ -556,7 +556,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    && currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
 
 	    // btc has only 3 fraction digits for usd.
-	    DecimalFormat btcDecimalFormat = new DecimalFormat("#####.###");
+	    DecimalFormat btcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 	    
 	    return btcDecimalFormat.format( price);
 
