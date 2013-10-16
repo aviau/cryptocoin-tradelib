@@ -356,10 +356,10 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
 	// Check, if key and secret are available for the request.
 	if( accountKey == null) {
-	    throw new MissingAccountDataException( "Key not available for authenticated request to btc-e");
+	    throw new MissingAccountDataException( "Key not available for authenticated request to MtGox");
 	}
 	if( accountSecret == null) {
-	    throw new MissingAccountDataException( "Secret not available for authenticated request to btc-e");
+	    throw new MissingAccountDataException( "Secret not available for authenticated request to MtGox");
 	}
 
 	result.put( "Rest-Key", accountKey);
@@ -587,7 +587,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 		} else {  // It seems, this order is not in the order book. I can consider this an error at the moment,
 		          // since every order should go through the order book.
 
-		    throw new OrderNotInOrderBookException( "Error: btc-e order with site id " + currentSiteId + " is not in order book!");
+		    throw new OrderNotInOrderBookException( "Error: MtGox order with site id " + currentSiteId + " is not in order book!");
 		}
 	    }
 	    
