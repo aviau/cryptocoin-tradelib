@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site;
 
+import de.andreas_rueckert.util.ModuleLoader;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -54,6 +55,11 @@ public class TradeSiteUserAccount {
      */
     private Map< String, String> _parameters = new HashMap< String, String>();
 
+    /**
+     * The trade site, this account is for.
+     */
+    private TradeSite _tradeSite = null;
+
 
     // Constructors
 
@@ -74,13 +80,18 @@ public class TradeSiteUserAccount {
 	resultBuffer.append( "=");
 	resultBuffer.append( URLEncoder.encode( isActivated() ? "1" : "0"));
 
+	if( getTradeSite() != null) {  // If a trade site is set, encode it.
+
+	    resultBuffer.append( "&");
+	    resultBuffer.append( URLEncoder.encode( "tradesite"));
+	    resultBuffer.append( "=");
+	    resultBuffer.append( URLEncoder.encode( getTradeSite().getName()));
+	}
+
 	// Loop over the user accounts.
 	for( Map.Entry<String, String> currentParameter : _parameters.entrySet()) {
-
-	    if( resultBuffer.length() > 0) {   // If the buffer already holds parameters
-		resultBuffer.append( "&");     // Concatenate the next parameter (should always happen with the activated flag.
-	    }                                  // This is just added in case the activated flag is removed).
 	    
+	    resultBuffer.append( "&");     // Concatenate the next parameter.
 	    resultBuffer.append( URLEncoder.encode( currentParameter.getKey()));
 	    resultBuffer.append( "=");
 	    resultBuffer.append( URLEncoder.encode( currentParameter.getValue()));
@@ -113,6 +124,15 @@ public class TradeSiteUserAccount {
 
 	    if( "activated".equalsIgnoreCase( parameterName)) {              // If the account was activated,
 		result.setActivated( "1".equalsIgnoreCase( parameterValue));  // activate it again...
+	    } else if( "tradesite".equalsIgnoreCase( parameterName)) {
+		
+		// Try to find the trade site with this name.
+		TradeSite foundSite =  ModuleLoader.getInstance().getRegisteredTradeSite( parameterValue);
+
+		if( foundSite != null) {     // If there was a trade site found,
+		    result._tradeSite = foundSite;  // store it in this instance.
+		}
+
 	    } else {	// Store this parameter in the parameter map.
 		result.setParameter( URLDecoder.decode( value[0]), URLDecoder.decode( value[1]));
 	    }
@@ -170,6 +190,16 @@ public class TradeSiteUserAccount {
     public String getSecret() {
 
 	return _parameters.get( "secret");
+    }
+
+    /**
+     * Get the trade site for this account.
+     *
+     * @return The trade site, this account is for.
+     */
+    public TradeSite getTradeSite() {
+
+	return _tradeSite;
     }
 
     /**
