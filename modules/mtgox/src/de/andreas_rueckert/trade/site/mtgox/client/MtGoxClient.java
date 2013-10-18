@@ -31,6 +31,7 @@ import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
+import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyImpl;
@@ -213,7 +214,58 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      */
     public boolean cancelOrder( SiteOrder order) {
 
-	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + this._name);
+	String url = "https://" + DOMAIN + "/api/1/" 
+	    + order.getCurrencyPair().getCurrency().getName().toUpperCase() 
+	    + order.getCurrencyPair().getPaymentCurrency().getName().toUpperCase()
+	    + "/private/order/cancel";
+
+	// The parameters for the HTTP post call.
+	HashMap<String, String> parameter = new HashMap<String, String>();
+
+	// Get the site id of this order.
+	String site_id =  order.getSiteId();
+
+	// If there is no site id, we cannot cancel the order.
+	if( site_id == null) {
+	    return false;
+	}
+
+	parameter.put( "oid", order.getSiteId());  // Pass the site id of the order.
+
+	JSONObject jsonResponse = authenticatedQuery( url, parameter, order.getTradeSiteUserAccount());
+
+	if( jsonResponse == null) {
+
+	    LogUtils.getInstance().getLogger().error( "No response from " + getName() + " while attempting to cancel an order");
+
+	    return false;
+
+	} else {  // Check, if the tradesite signals success.
+	    
+	    String tradeSiteResult = jsonResponse.getString( "result");
+
+	    if( tradeSiteResult.equalsIgnoreCase( "success")) {  // If the tradesite signals success..
+
+		return true;  // canceling worked!
+
+	    } else if( tradeSiteResult.equalsIgnoreCase( "error"))  {
+
+		LogUtils.getInstance().getLogger().error( "Tradesite " 
+							  + getName() 
+							  + " signaled error while trying to cancel an order: "
+							  + jsonResponse.getString( "error"));
+
+		return false;
+
+	    } else {  // This is an unknown condition. Should never be reached, if this implementation is complete and the API did not change.
+
+		LogUtils.getInstance().getLogger().error( "Tradesite " 
+							  + getName() 
+							  + " signaled an unknown condition while trying to cancel an order.");
+		
+		return false;
+	    }
+	}
     }
 
     /**
@@ -228,12 +280,31 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	JSONObject privateInfo = getPrivateInfo( userAccount);
 
 	if( privateInfo != null) {
-	    System.out.println( "Private info is: " + privateInfo.toString());
+
+	    // Get all the wallets.
+	    JSONObject jsonBalances = privateInfo.getJSONObject( "Wallets");
+
+	    // An array for the parsed funds.
+	    ArrayList<TradeSiteAccount> result = new ArrayList<TradeSiteAccount>();
+
+	    // Now iterate over all the currencies in the wallets.
+	    for( Iterator currencyIterator = jsonBalances.keys(); currencyIterator.hasNext(); ) {
+		
+		String currentCurrencyName = (String)currencyIterator.next();  // Get the next currency.
+
+		JSONObject jsonBalance = jsonBalances.getJSONObject( currentCurrencyName);
+
+		BigDecimal balance = new BigDecimal( jsonBalance.getJSONObject( "Balance").getString( "value"));  // Get the balance for this currency.
+
+		result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currentCurrencyName.toUpperCase()), this));
+	    }
+
+	    return result; // Return the array with the accounts.
 	} else {
-	    System.out.println( "Private info is null!");
+	    // System.out.println( "DEBUG: private info is null!");
 	}
 
-	throw new NotYetImplementedException( "Get accounts is not yet implemented for MtGox");
+	return null;
     }
     
     
