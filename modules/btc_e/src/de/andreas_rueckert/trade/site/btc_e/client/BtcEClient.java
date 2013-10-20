@@ -408,7 +408,8 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    parameter.put( "type", order.getOrderType() == OrderType.BUY ? "buy" : "sell");  // Indicate buy or sell.
 	    parameter.put( "amount", formatAmount( order.getAmount()));
 	    parameter.put( "rate", formatPrice( order.getPrice(), order.getCurrencyPair()));
-	    
+	   
+	    /*
 	    int currencyPairId = getIdForCurrencies( order.getCurrencyPair());
 	    
 	    if( currencyPairId == -1) {
@@ -416,7 +417,8 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 							 + order.getCurrencyPair().getCurrency().toString() 
 							 + " and payment in "
 							 + order.getCurrencyPair().getPaymentCurrency());
-	    }
+							 } 
+	    */
 	    
 	    parameter.put( "pair", order.getCurrencyPair().getCurrency().getName().toLowerCase() + "_" + order.getCurrencyPair().getPaymentCurrency().getName().toLowerCase());  
 
