@@ -568,6 +568,13 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	    return ltcDecimalFormat.format( price);
 
+	} else if( currencyPair.getCurrency().equals( CurrencyImpl.XPM)) {
+
+	    // XPM has 5 fraction digits
+	    DecimalFormat xpmDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+	    return xpmDecimalFormat.format( price); 
+
 	} else {
 	    throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
 	}
