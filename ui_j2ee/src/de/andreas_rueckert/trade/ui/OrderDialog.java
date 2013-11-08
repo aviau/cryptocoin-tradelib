@@ -235,7 +235,8 @@ public class OrderDialog extends JDialog implements ActionListener {
 	Amount amount = new Amount( _amountField.getText());
 
 	// Now create the order via the order factory.
-	_resultingOrder = OrderFactory.createCryptoCoinTradeOrder( tradeSite, orderType, price, currencyPair, amount);
+	// Leave the account away for now (ugly hack).
+	_resultingOrder = OrderFactory.createCryptoCoinTradeOrder( tradeSite, null, orderType, price, currencyPair, amount);
     }
 
     /**
