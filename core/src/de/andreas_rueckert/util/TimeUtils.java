@@ -87,6 +87,50 @@ public class TimeUtils {
     }
 
     /**
+     * Convert a time as a String object to microseconds.
+     *
+     * @param timeToConvert The time to be converted as a String object, ie '2ms', '5s', '1m', '3h' '2d'.
+     *
+     * @return The converted time as microseconds.
+     *
+     * @throws TimeFormatException If the time format is not recognized.
+     */
+    public static final long microsFromString( String timeToConvert) throws TimeFormatException {
+
+	try {
+
+	    if( timeToConvert.endsWith( "ms")) {  // Are these milliseconds?
+
+		return Long.parseLong( timeToConvert.substring( 0, timeToConvert.length() - 2)) * 1000L;
+
+	    } else if( timeToConvert.endsWith( "s")) {  // Are these seconds?
+
+		return Long.parseLong( timeToConvert.substring( 0, timeToConvert.length() - 1)) * 1000000L;
+
+	    } else if( timeToConvert.endsWith( "m")) {  // Are these minutes?
+
+		return Long.parseLong( timeToConvert.substring( 0, timeToConvert.length() - 1)) * 60L * 1000000L; 
+
+	    } else if( timeToConvert.endsWith( "h")) {  // Are these hours?
+
+		return Long.parseLong( timeToConvert.substring( 0, timeToConvert.length() - 1)) * 60L * 60L * 1000000L;	
+
+	    } else if( timeToConvert.endsWith( "d")) {  // Are these days? 
+
+		return Long.parseLong( timeToConvert.substring( 0, timeToConvert.length() - 1)) * 24L * 60L * 60L * 1000000L;
+
+	    } else {  // Maybe this is just a number? Try to parse it.
+
+		return  Long.parseLong( timeToConvert);
+	    }
+
+	} catch( NumberFormatException nfe) {
+
+	    throw new TimeFormatException( "Cannot parse time string: " + nfe.toString());
+	}
+    }
+
+    /**
      * Format a given microsecond timestamp as a date.
      *
      * @param microsTimestamp The timestamp as microseconds.
