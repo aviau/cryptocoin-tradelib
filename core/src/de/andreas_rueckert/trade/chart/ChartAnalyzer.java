@@ -28,6 +28,8 @@ package de.andreas_rueckert.trade.chart;
 import de.andreas_rueckert.trade.NotEnoughTradesException;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.Trade;
+import de.andreas_rueckert.util.TimeFormatException;
+import de.andreas_rueckert.util.TimeUtils;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -152,12 +154,38 @@ class ChartAnalyzer {
     }
 
     /**
+     * Compute the sma over a timespan before the current time.
+     *
+     * @param trades The list of trades.
+     * @param timespan The timespan as a String, so you can use 12d,5h or 10m as an example.
+     *
+     * @return The SMA of the trade prices.
+     *
+     * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
+     * @throws TimeFormatException if the time in the string cannot be parsed.
+     */
+    public Price sma( Trade [] trades, String timespan) throws NotEnoughTradesException, TimeFormatException {
+
+	// Conver the timespan to microseconds.
+	long timespanMicros = TimeUtils.microsFromString( timespan);
+
+	// Get the current time as microseconds.
+	long currentTimeMicros = TimeUtils.getInstance().getCurrentGMTTimeMicros();
+
+	// Now just call the SMA method to do the actual calculations.
+	return sma( trades, currentTimeMicros - timespanMicros, currentTimeMicros);
+    }
+
+    /**
      * Compute the sma over a list of trades.
      *
      * @param trades The list of trades.
      * @param startTime All trades with timestamp >= startTime or all trades, if timstamp = -1L.
      * @param endTime and timestamp <= endTime  are processed, or all trades, if timestamp = -1L.
      *        Both times are GMT-relative timestamps (microseconds since 1.1.1970).
+     *
+     * @return The SMA of the trade prices.
+     *
      * @throws a NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      */
     public Price sma( Trade [] trades, long startTime, long endTime) throws NotEnoughTradesException {
