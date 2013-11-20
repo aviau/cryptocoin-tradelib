@@ -64,6 +64,96 @@ class ChartAnalyzer {
     // Methods
 
     /**
+     * Compute the EMA over a timespan before the current time.
+     * This timespan is also used for the weight calculation of each price.
+     *
+     * @see http://www.iexplain.org/ema-how-to-calculate/
+     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     *
+     * @param trades The list of trades.
+     * @param startTime The start time as microseconds.
+     * @param endTime The end time as microseconds.
+     * @param timePeriod The time period as microseconds (day, hour etc).
+     *
+     * @return The EMA of the trade prices.
+     *
+     * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
+     * @throws TimeFormatException if the time in the string cannot be parsed.
+     */
+    public Price ema( Trade [] trades, long startTime, long endTime, long timePeriod) throws NotEnoughTradesException {
+
+	// The interval to check.
+	long timeInterval = endTime - startTime;
+
+	// Calculate the number of time periods in the given time interval.
+	int nPeriods = (int)( timeInterval / timePeriod);
+
+	// If there are no time periods given, just return null.
+	if( nPeriods == 0) {
+	    return null;
+	}
+
+	// Create an array for the weights (k values) of each time unit.
+	// I use an additional array field for the previous weight of the first entry.
+	double [] weights = new double[ nPeriods + 1];
+
+	// Now calculate the weight for each time unit, starting from the most recent one.
+	weights[ weights.length - 1] = 0.0d;
+	for( int currentTimePeriod = weights.length - 2; currentTimePeriod >= 0; --currentTimePeriod) {
+	    
+	    // This is the translation of the formula: Multiplier: (2 / (Time periods + 1) ) 
+	    // but every EMA of the previous period is multiplied with ( 1 - k[previoud time period])
+	    // At least, that's the way, I understand it... (A. Rueckert)
+	    weights[ currentTimePeriod] = (1.0d - weights[ currentTimePeriod + 1]) * (2.0d / (currentTimePeriod + 2));
+	}
+
+	// Create a var to sum up the weighted prices.
+	Price totalPrice = new Price( "0");
+
+	// Another var to sum up the weights to scale the price at the end.
+	double totalWeight = 0.0d;  
+
+	// Now loop over the trades.
+	for( int index = 0; index < trades.length; ++index) {
+	    
+	    Trade currentTrade = trades[ index];
+	    long currentTimestamp = currentTrade.getTimestamp();
+
+	    // Check, if this trade is in the target timespan.
+	    if( ( startTime == -1L) || ( currentTimestamp >= startTime)) {
+		if( ( endTime == -1L) || ( currentTimestamp <= endTime)) {
+
+		    // Now find the timeunit, this trade is in.
+		    
+		    // Calculate the distance from the end time.
+		    long endDistance = endTime - currentTimestamp;
+		    
+		    // Compute the time period.
+		    int currentTimePeriod = (int)( endDistance / timePeriod);
+
+		    // Get the weight for this price.
+		    // weights[0] is the weight for the oldest period! 
+		    // weights[ weights.length - 2] is the weight for the most recent period!
+		    double weight = weights[ weights.length - 2 - currentTimePeriod];
+
+		    // Now add the weighted price to the total weighted prices.
+		    totalPrice = new Price( totalPrice.add( currentTrade.getPrice().multiply( new BigDecimal( weight))));
+
+		    // Add the current weight to the total weight.
+		    totalWeight += weight;
+		}
+	    }
+		    
+	}
+
+	// Now scale the total of the weighted prices and return this price.
+	return new Price( totalPrice.divide( new BigDecimal( totalWeight, MathContext.DECIMAL128)));
+	
+	// This method is not yet complete.
+	// throw new NotYetImplementedException( "EMA is not yet implemented");
+    }
+
+    /**
      * Get the only instance of this class (singleton pattern).
      *
      * @return The only instance of this class.
