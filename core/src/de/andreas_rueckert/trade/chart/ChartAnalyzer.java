@@ -71,6 +71,83 @@ class ChartAnalyzer {
      * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
      *
      * @param trades The list of trades.
+     * @param timeInterval The time interval as a String object to guesstimate the time period.
+     *
+     * @return The EMA of the trade prices.
+     *
+     * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
+     * @throws TimeFormatException if the time in the string cannot be parsed.
+     */
+    public Price ema( Trade [] trades, String timeInterval) throws NotEnoughTradesException, TimeFormatException {
+
+	// Analyze the time period string to figure the unit of the time period.
+	long timeIntervalMicros = TimeUtils.microsFromString( timeInterval); 
+	
+	// Now try to guesstimate the time unit from the interval string.
+	// 3d => user wants most likely 1d as the unit.
+	// 72h => user wants most likely 1h as the unit etc.
+
+	long timePeriod;  // Var for the time period length.
+
+	if( timeInterval.endsWith( "ms")) {  // Are these milliseconds?
+
+	    timePeriod = 1000L;
+
+	} else if( timeInterval.endsWith( "s")) {  // Are these seconds?
+
+	    timePeriod = 1000000L;
+
+	} else if( timeInterval.endsWith( "m")) {  // Are these minutes?
+
+	    timePeriod = 60L * 1000000L;
+
+	} else if( timeInterval.endsWith( "h")) {  // Are these hours?
+
+	    timePeriod = 60L * 60L * 1000000L;
+
+	} else if( timeInterval.endsWith( "d")) {  // Are these days? 
+
+	    timePeriod = 24L * 60L * 60L * 1000000L;
+
+	} else {  // Maybe this is just a number? Assume 1 microsecond.
+
+	    timePeriod = 1L;
+	}
+
+	// Now call the ema method.
+	return this.ema( trades, timeIntervalMicros, timePeriod);
+    }
+
+    /**
+     * Compute the EMA over a timespan before the current time.
+     *
+     * @see http://www.iexplain.org/ema-how-to-calculate/
+     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     *
+     * @param trades The list of trades.
+     * @param timeInterval The time interval as microseconds before the current time.
+     * @param timePeriod The time period as microseconds (day, hour etc).
+     *
+     * @return The EMA of the trade prices.
+     *
+     * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
+     */
+    public Price ema( Trade [] trades, long timeInterval, long timePeriod) throws NotEnoughTradesException {
+
+	// Get the current time.
+	long currentTime = TimeUtils.getInstance().getCurrentGMTTimeMicros();
+
+	// Just use the current time as the end of the time interval.
+	return this.ema( trades, currentTime - timeInterval, currentTime, timePeriod);
+    }
+
+    /**
+     * Compute the EMA over a timespan before the a given end time.
+     *
+     * @see http://www.iexplain.org/ema-how-to-calculate/
+     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     *
+     * @param trades The list of trades.
      * @param startTime The start time as microseconds.
      * @param endTime The end time as microseconds.
      * @param timePeriod The time period as microseconds (day, hour etc).
@@ -78,7 +155,6 @@ class ChartAnalyzer {
      * @return The EMA of the trade prices.
      *
      * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
-     * @throws TimeFormatException if the time in the string cannot be parsed.
      */
     public Price ema( Trade [] trades, long startTime, long endTime, long timePeriod) throws NotEnoughTradesException {
 
