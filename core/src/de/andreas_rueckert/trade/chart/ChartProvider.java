@@ -604,66 +604,6 @@ public class ChartProvider {
     }
 
     /**
-     * Get the SMA for a given trade site, currency pair and timespan.
-     *
-     * @param tradeSite The trade site with the trades.
-     * @param currencyPair The currency pair to use.
-     * @param sinceMicros The timespan in microsecond.
-     *
-     * @return The SMA as a Price object.
-     */
-    public Price getSMA( TradeSite tradeSite, CurrencyPair currencyPair, long sinceMicros) {
-
-	// Get the trades for the given timespan.
-	Trade [] trades = getTrades( tradeSite, currencyPair, sinceMicros);
-
-	// Since the trades are already filtered, just pass -1L as the interval limits and 
-	// consider all trades for the sma.
-	return ChartAnalyzer.getInstance().sma( trades, -1L, -1L);
-    }
-
-    /**
-     * This is mainly a convenience method for the rule engine.
-     *
-     * @param tradeSiteName The name of the trade site.
-     * @param currencyPairName The name of the currency pair.
-     * @param sinceMicros The interval in microseconds.
-     *
-     * @return The sma as a Price object.
-     *
-     * @throws TradeDataNotAvailableException if the sma could not be computed with the given parameters.
-     */
-    public Price getSMA( String tradeSiteName, String currencyPairName, long sinceMicros) {
-
-	// Try to find the trade site for the given name.
-	TradeSite tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( tradeSiteName);
-
-	if( tradeSite == null) {  // There is not registered trade site with the given name?
-	    throw new TradeDataNotAvailableException( "There is no trade site registered with the name: " + tradeSiteName);
-	}
-	    
-	// Check if this trade site supports the given currency pair.
-	CurrencyPair [] supportedCurrencyPairs = tradeSite.getSupportedCurrencyPairs();
-	
-	CurrencyPair currencyPair = null;  // The default value of the requested currency pair is null (which indicates a not matching name).
-	
-	for( int index = 0; index < supportedCurrencyPairs.length; ++index) {
-	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getName())) {
-		currencyPair = supportedCurrencyPairs[ index];  // We've found the requested currency pair!
-		break;                                          // No further searching required...
-	    }
-	}
-
-	// Check, if a currency pair with the given name was found.
-	if( currencyPair == null) {
-	    throw new TradeDataNotAvailableException( "Tradesite: " + tradeSiteName + " doesn't seem to support the currency pair: " + currencyPairName);
-	}
-
-	// Now get the trades and compute the SMA of them to return it.
-	return getSMA( tradeSite, currencyPair, sinceMicros);
-    } 
-
-    /**
      * Get the current spread for a given trade site and currency pair.
      *
      * @param tradeSite The trade site to query.

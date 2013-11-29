@@ -25,9 +25,13 @@
 
 package de.andreas_rueckert.trade.chart;
 
+import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.NotEnoughTradesException;
 import de.andreas_rueckert.trade.Price;
+import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.Trade;
+import de.andreas_rueckert.trade.TradeDataNotAvailableException;
+import de.andreas_rueckert.util.ModuleLoader;
 import de.andreas_rueckert.util.TimeFormatException;
 import de.andreas_rueckert.util.TimeUtils;
 import java.math.BigDecimal;
@@ -230,6 +234,33 @@ class ChartAnalyzer {
     }
 
     /**
+     * Compute the EMA over a timespan before the current time.
+     * This timespan is also used for the weight calculation of each price.
+     *
+     * @see http://www.iexplain.org/ema-how-to-calculate/
+     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     *
+     * @param tradeSite The tradesite to query the trades from.
+     * @param currencyPair The currency pair to query.
+     * @param timeInterval The time interval as a String object to guesstimate the time period.
+     *
+     * @return The EMA of the trade prices.
+     *
+     * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
+     * @throws TimeFormatException if the time in the string cannot be parsed.
+     */
+    public Price getEMA( TradeSite tradeSite, CurrencyPair currencyPair, String timeInterval) throws NotEnoughTradesException, TimeFormatException {
+
+	// Convert the timespan to microseconds.
+	long sinceMicros = TimeUtils.microsFromString( timeInterval);
+
+	// Get the trades for the given timespan to calculate the ema.
+	Trade [] trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
+
+	return ema( trades, timeInterval);
+    }
+
+    /**
      * Get the only instance of this class (singleton pattern).
      *
      * @return The only instance of this class.
@@ -380,4 +411,64 @@ class ChartAnalyzer {
 
 	return new Price( currentSum.divide( new BigDecimal( nTrades), MathContext.DECIMAL128));  // Return the average of the trade prices.
     }
+
+    /**
+     * Get the SMA for a given trade site, currency pair and timespan.
+     *
+     * @param tradeSite The trade site with the trades.
+     * @param currencyPair The currency pair to use.
+     * @param sinceMicros The timespan in microsecond.
+     *
+     * @return The SMA as a Price object.
+     */
+    public Price getSMA( TradeSite tradeSite, CurrencyPair currencyPair, long sinceMicros) {
+
+	// Get the trades for the given timespan.
+	Trade [] trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
+
+	// Since the trades are already filtered, just pass -1L as the interval limits and 
+	// consider all trades for the sma.
+	return sma( trades, -1L, -1L);
+    }
+
+    /**
+     * This is mainly a convenience method for the rule engine.
+     *
+     * @param tradeSiteName The name of the trade site.
+     * @param currencyPairName The name of the currency pair.
+     * @param sinceMicros The interval in microseconds.
+     *
+     * @return The sma as a Price object.
+     *
+     * @throws TradeDataNotAvailableException if the sma could not be computed with the given parameters.
+     */
+    public Price getSMA( String tradeSiteName, String currencyPairName, long sinceMicros) {
+
+	// Try to find the trade site for the given name.
+	TradeSite tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite( tradeSiteName);
+
+	if( tradeSite == null) {  // There is not registered trade site with the given name?
+	    throw new TradeDataNotAvailableException( "There is no trade site registered with the name: " + tradeSiteName);
+	}
+	    
+	// Check if this trade site supports the given currency pair.
+	CurrencyPair [] supportedCurrencyPairs = tradeSite.getSupportedCurrencyPairs();
+	
+	CurrencyPair currencyPair = null;  // The default value of the requested currency pair is null (which indicates a not matching name).
+	
+	for( int index = 0; index < supportedCurrencyPairs.length; ++index) {
+	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getName())) {
+		currencyPair = supportedCurrencyPairs[ index];  // We've found the requested currency pair!
+		break;                                          // No further searching required...
+	    }
+	}
+
+	// Check, if a currency pair with the given name was found.
+	if( currencyPair == null) {
+	    throw new TradeDataNotAvailableException( "Tradesite: " + tradeSiteName + " doesn't seem to support the currency pair: " + currencyPairName);
+	}
+
+	// Now get the trades and compute the SMA of them to return it.
+	return getSMA( tradeSite, currencyPair, sinceMicros);
+    } 
 }
