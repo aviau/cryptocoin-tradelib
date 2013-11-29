@@ -41,9 +41,9 @@ import java.util.Iterator;
 
 
 /**
- * This class analyzes lists of trades in various ways.
+ * This class analyzes chart data in various ways.
  */
-class ChartAnalyzer {
+public class ChartAnalyzer {
 
     // Static variables
 
