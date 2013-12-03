@@ -187,7 +187,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	_url = "https://btc-e.com/";
 
 	// Define the supported currency pairs for this trading site.
-	_supportedCurrencyPairs = new CurrencyPair[17];
+	_supportedCurrencyPairs = new CurrencyPair[18];
         _supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
         _supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
         _supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
@@ -203,8 +203,9 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
         _supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
         _supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
         _supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
-        _supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
-	_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
+        _supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
 
 	setCurrentCurrency( CurrencyImpl.USD);
 
