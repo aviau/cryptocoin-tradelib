@@ -578,6 +578,22 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	    return xpmDecimalFormat.format( price); 
 
+	} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
+		   && currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
+	
+	    // NMC has 5 fraction digits
+	    DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+	    return nmcDecimalFormat.format( price); 
+
+	} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
+		   && currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
+
+	    // PPC has 3 fraction digits in USD.
+	    DecimalFormat ppcUsdDecimalFormat = new DecimalFormat("#######.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+	    return ppcUsdDecimalFormat.format( price); 
+
 	} else {
 	    throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
 	}
