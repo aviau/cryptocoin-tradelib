@@ -75,6 +75,21 @@ public class TimeUtils {
     }
 
     /**
+     * Get a past time from a string. The string describes the difference to the current time.
+     * So "1d" means 1 day ago etc.
+     *
+     * @param interval The time interval.
+     *
+     * @return The point of time in the past with the given interval to the current GMT time.
+     *
+     * @throws TimeFormatException If the time format is not recognized.
+     */
+    public static final long getPastGMTTimeFromString( String interval) {
+
+	return getInstance().getCurrentGMTTimeMicros() - microsFromString( interval);
+    }
+
+    /**
      * Get the only instance of this class.
      *
      * @return The only instance of this class.

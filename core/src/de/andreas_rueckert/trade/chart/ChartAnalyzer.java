@@ -119,7 +119,7 @@ public class ChartAnalyzer {
 	}
 
 	// Now call the ema method.
-	return this.ema( trades, timeIntervalMicros, timePeriod);
+	return this.ema( trades, TimeUtils.getInstance().getCurrentGMTTimeMicros() - timeIntervalMicros, timePeriod);
     }
 
     /**
@@ -252,7 +252,7 @@ public class ChartAnalyzer {
     public Price getEMA( TradeSite tradeSite, CurrencyPair currencyPair, String timeInterval) throws NotEnoughTradesException, TimeFormatException {
 
 	// Convert the timespan to microseconds.
-	long sinceMicros = TimeUtils.microsFromString( timeInterval);
+	long sinceMicros = TimeUtils.getPastGMTTimeFromString( timeInterval);
 
 	// Get the trades for the given timespan to calculate the ema.
 	Trade [] trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
