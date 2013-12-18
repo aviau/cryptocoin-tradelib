@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site.btc_e.client;
 
+import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
@@ -73,14 +74,23 @@ public class BtcETicker extends TickerImpl {
 	
 	// Parse the ticker values in the json object and store the values in the hash map.
 	for( String key : HASHKEYS) {
-	    if( ! SWAP_BUY_SELL) {
-		_values.put( key, new Price( ticker.getString( key)));
+	    
+	    if( key.equals( "vol")) {  // the volume is rather an amount than a price? (Although it has a currency attached).
+
+		_values.put( key, new Amount( ticker.getString( key)));
+
 	    } else {
-		String newKey = key;
-		if( "buy".equals( key)) { newKey = "sell"; 		  
-		} else if( "sell".equals( key)) { newKey = "buy";
+		if( ! SWAP_BUY_SELL) {
+		    _values.put( key, new Price( ticker.getString( key)));
+		} else {
+		    String newKey = key;
+		    if( "buy".equals( key)) { 
+			newKey = "sell"; 		  
+		    } else if( "sell".equals( key)) { 
+			newKey = "buy";
+		    }
+		    _values.put( newKey, new Price( ticker.getString( key), currencyPair.getPaymentCurrency()));
 		}
-		_values.put( newKey, new Price( ticker.getString( key), currencyPair.getPaymentCurrency()));
 	    }
 	}
     }

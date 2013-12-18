@@ -82,5 +82,5 @@ public interface Ticker {
      *
      * @return The value for the key or null, if there is no such value.
      */
-    public Price getValue( String key);
+    public Object getValue( String key);
 }

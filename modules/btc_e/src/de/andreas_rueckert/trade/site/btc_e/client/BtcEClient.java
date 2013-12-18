@@ -806,18 +806,19 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	if( requestResult != null) {  // Request sucessful?
 	    try {
+
 		// Convert the HTTP request return value to JSON to parse further.
 		return new BtcEDepth( JSONObject.fromObject( requestResult), currencyPair, this);
-	    } catch( JSONException je) {
-		System.err.println( "Cannot parse btc-e depth return: " + je.toString());
 
-		throw new TradeDataNotAvailableException( "cannot parse data from btc-e");
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
 	    }
 	}
 	
-	throw new TradeDataNotAvailableException( "btc-e server did not respond to depth request");
-	
-	// return null;  // The depth request failed.
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
     /**
@@ -1056,7 +1057,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     public BtcETicker getTicker( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
-	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Btc-E");
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
 	}
 	
 	String url = "https://" + DOMAIN + "/api/2/" 

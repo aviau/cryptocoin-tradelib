@@ -70,7 +70,7 @@ public class TickerImpl implements Ticker {
     /**
      * Store the values in a hash map for easier setting in the constructor.
      */
-    protected HashMap< String, Price> _values;
+    protected HashMap< String, Object> _values = new HashMap< String, Object>();
 
 
     // Constructors
@@ -94,9 +94,6 @@ public class TickerImpl implements Ticker {
 
 	// Store a trade site reference in this ticker object.
 	_site = site;
-
-	// Create a new hash map to store the values.
-	_values = new HashMap< String, Price>();
     }
 
 
@@ -108,7 +105,7 @@ public class TickerImpl implements Ticker {
      * @return The BTC rate for buy orders.
      */
     public Price getBuy() {
-	return _values.get( "buy");
+	return (Price)_values.get( "buy");
     }
 
     /**
@@ -144,7 +141,7 @@ public class TickerImpl implements Ticker {
      * @return The BTC rate for sell orders.
      */
     public Price getSell() {
-	return _values.get( "sell");
+	return (Price)_values.get( "sell");
     }
 
     /**
@@ -163,7 +160,7 @@ public class TickerImpl implements Ticker {
      *
      * @return The value/price for the key or null, if there is no such value.
      */
-    public Price getValue( String key) {
+    public Object getValue( String key) {
 	return _values.get( key);
     }
 }

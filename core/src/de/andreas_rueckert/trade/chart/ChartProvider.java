@@ -451,7 +451,19 @@ public class ChartProvider {
      * @return all the buy rates from the current tickers.
      */
     public synchronized Map<String, Price> getBuys() {
-	return getTickerMapForKey( "buy");
+
+	// Get the values from the trade sites.
+	Map<String, Object> resultBuffer = getTickerMapForKey( "buy");
+
+	// Now convert the prices from Object to Price.
+	Map<String, Price> result = new HashMap<String, Price>();
+
+	// Loop over the map and convert each entry... :-( 
+	for( Map.Entry<String, Object> entry : resultBuffer.entrySet()) {
+	    result.put( entry.getKey(), (Price)entry.getValue());
+	}
+
+	return result;
     }
 
     /**
@@ -600,7 +612,19 @@ public class ChartProvider {
      * @return all the sell rates from the current tickers.
      */
     public synchronized Map<String, Price> getSells() {
-	return getTickerMapForKey( "sell");
+
+	// Get the values from the trade sites.
+	Map<String, Object> resultBuffer = getTickerMapForKey( "sell");
+
+	// Now convert the prices from Object to Price.
+	Map<String, Price> result = new HashMap<String, Price>();
+
+	// Loop over the map and convert each entry... :-( 
+	for( Map.Entry<String, Object> entry : resultBuffer.entrySet()) {
+	    result.put( entry.getKey(), (Price)entry.getValue());
+	}
+
+	return result;
     }
 
     /**
@@ -639,13 +663,13 @@ public class ChartProvider {
      *
      * @return The map with the results.
      */
-    private synchronized Map<String, Price> getTickerMapForKey( String key) {
+    private synchronized Map<String, Object> getTickerMapForKey( String key) {
 
-	HashMap<String, Price> result = new HashMap< String, Price>();
+	HashMap<String, Object> result = new HashMap< String, Object>();
 
 	for( Ticker t : getTickers()) {
 	    
-	    Price value = t.getValue( key);  // Try to fetch a value with this key.
+	    Object value = t.getValue( key);  // Try to fetch a value with this key.
 
 	    if( value != null) {  // If it was in the ticker,
 		result.put( t.getSite().getName(), t.getValue( key));  // add it to the result map.

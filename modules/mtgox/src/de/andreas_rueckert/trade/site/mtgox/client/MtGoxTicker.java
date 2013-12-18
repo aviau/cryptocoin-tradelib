@@ -66,7 +66,7 @@ public class MtGoxTicker extends TickerImpl {
 
 	// Parse the ticker values in the json object and store the values in the hash map.
 	for( String key : HASHKEYS) {
-	    _values.put( key, new Price( jsonTicker.getJSONObject( key).getString( "value")));
+	    _values.put( key, new Price( jsonTicker.getJSONObject( key).getString( "value"), currencyPair.getPaymentCurrency()));
 	}
     }
     
@@ -79,7 +79,7 @@ public class MtGoxTicker extends TickerImpl {
      * @return The average BTC rate.
      */
     public Price getAVG() {
-	return _values.get( "avg");
+	return (Price)_values.get( "avg");
     }
     
     /**
@@ -88,7 +88,7 @@ public class MtGoxTicker extends TickerImpl {
      * @return The highest BTC rate.
      */
     public Price getHigh() {
-	return _values.get( "high");
+	return (Price)_values.get( "high");
     }
 
     /**
@@ -97,7 +97,7 @@ public class MtGoxTicker extends TickerImpl {
      * @return The last BTC rate.
      */
     public Price getLast() {
-	return _values.get( "last");
+	return (Price)_values.get( "last");
     }
 
     /**
@@ -106,7 +106,7 @@ public class MtGoxTicker extends TickerImpl {
      * @return The lowest BTC rate.
      */
     public Price getLow() {
-	return _values.get( "low");
+	return (Price)_values.get( "low");
     }
 
     /**
@@ -124,6 +124,6 @@ public class MtGoxTicker extends TickerImpl {
      * @return The weighted average BTC rate.
      */
     public Price getVWAP() {
-	return _values.get( "vwap");
+	return (Price)_values.get( "vwap");
     }
 }
