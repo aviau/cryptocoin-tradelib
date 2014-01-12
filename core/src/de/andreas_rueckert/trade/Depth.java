@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -71,6 +71,40 @@ public interface Depth {
     public CurrencyPair getCurrencyPair();
 
     /**
+     * Get the price for a given amount of buy order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     *
+     * @return The price for the given amount.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForBuyOrderAmount( Amount amount) throws NotEnoughOrdersException;
+
+    /**
+     * Get the price for a given amount of order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     * @param buyOrders true, if we want to sum up the buy orders. False for the sell orders.
+     *
+     * @return The price for the given amount.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForAmount( Amount amount, boolean buyOrders) throws NotEnoughOrdersException;
+
+    /**
+     * Get the price for a given amount of sell order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     *
+     * @return The price for the given amount.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForSellOrderAmount( Amount amount) throws NotEnoughOrdersException;
+
+    /**
      * Get a sell order with a given index.
      *
      * @return The sell order with the given index.
@@ -99,6 +133,29 @@ public interface Depth {
      * @return The timestamp, when this Depth object was created (received from the trade site).
      */
     public long getTimestamp();
+
+    /**
+     * Get the total volume of the buy orders.
+     *
+     * @return The total volume of the buy orders.
+     */
+    public Amount getTotalBuyOrderVolume();
+
+    /**
+     * Get the total volume of the orders of a given type.
+     *
+     * @param buyOrders true, if we want the total volume of the buy orders. False for the sell orders.
+     *
+     * @return The total amount for the given order type.
+     */
+    public Amount getTotalOrderVolume( boolean buyOrders);
+
+    /**
+     * Get the total volume of the sell orders.
+     *
+     * @return The total volume of the sell orders.
+     */
+    public Amount getTotalSellOrderVolume();
 
     /**
      * Get the trade site, this depth belongs to.

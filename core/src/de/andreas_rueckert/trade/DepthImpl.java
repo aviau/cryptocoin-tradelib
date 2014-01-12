@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -25,12 +25,14 @@
 
 package de.andreas_rueckert.trade;
 
+import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.order.DepthOrder;
 import de.andreas_rueckert.trade.order.DepthOrderImpl;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.util.TimeUtils;
+import java.math.MathContext;
 import java.util.Collections;
 import java.util.List;
 import net.sf.json.JSONArray;
@@ -132,6 +134,112 @@ public class DepthImpl implements Depth {
     }
 
     /**
+     * Get the price for a given amount of buy order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     *
+     * @return The price for the given amount, or null if there was no reasonable way to calculate it.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForBuyOrderAmount( Amount amount) throws NotEnoughOrdersException {
+
+	return getPriceForAmount( amount, true);
+    }
+
+    /**
+     * Get the price for a given amount of order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     * @param buyOrders true, if we want to sum up the buy orders. False for the sell orders.
+     *
+     * @return The price for the given amount, or null if there was no reasonable way to calculate it.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForAmount( Amount amount, boolean buyOrders) throws NotEnoughOrdersException {
+
+	// This should never be necessary, but who know, what a bezerk strategy requests...
+	if( amount.compareTo( new Amount( "0")) <= 0) {
+
+
+	    if( amount.compareTo( new Amount( "0")) < 0) {
+		
+		return null;  // No way to calculate a price for a negative amount.
+		
+	    } else {  // Returning a price of 0 for a 0 amount, might be dangerous, because
+		      // a bot would consider this as a very low price and start buying?
+       
+		// So try to just get the best price.
+		DepthOrder firstOrder = buyOrders ? getBuy(0) : getSell( 0);
+
+		if( firstOrder != null) {
+
+		    return firstOrder.getPrice();
+
+		} else {   // There are no orders for the 0 amount?
+
+		    // Should hopefully never happpen anyway...
+		    throw new NotEnoughOrdersException( "Getting the price of the " 
+							+ ( buyOrders ? "buy" : "sell")
+							+ " orders for an amount of 0 is not possible. There are no orders to calculate a price");
+		}
+	    }
+	}
+
+	// ... end of the excessive error checking...
+
+	List<DepthOrder> orders = buyOrders ? getBuyOrders() : getSellOrders();
+	Amount currentAmount = new Amount( "0");
+	Price currentPrice = new Price( "0", getCurrencyPair().getPaymentCurrency());
+	
+	// Now loop over the orders and add them up
+	for( DepthOrder currentOrder : orders) {
+
+	    // If the amount of the order is smaller than the remaining missing amount,
+	    // just add the whole order.
+	    // Otherwise just add the missing amount
+	    Amount addedAmount = ( currentAmount.add( currentOrder.getAmount()).compareTo( amount) <= 0)
+		? currentOrder.getAmount()
+		: new Amount( amount.subtract( currentAmount));
+
+	    // Multiply the price with the amount, so we get a weighted price.
+	    currentPrice = new Price( currentPrice.add( currentOrder.getPrice().multiply( addedAmount)));
+
+	    // Add the added amount to the total amount, that was already added.
+	    currentAmount = currentAmount.add( addedAmount);
+
+	    // If we have reached the requested amount, calculate the price and return it.
+	    // Actually, the comparison should be a '==', but I'm concerned about rounding errors...
+	    if( currentAmount.compareTo( amount) >= 0) {
+
+		// Divide the price by the added amount to get the average price.
+		return new Price( currentPrice.divide( currentAmount, MathContext.DECIMAL128));
+	    }
+	}
+
+	throw new NotEnoughOrdersException( "Getting the price of the " 
+					    + ( buyOrders ? "buy" : "sell")
+					    + " orders for an amount of " 
+					    + amount 
+					    + " is not possible. Not enough order volume to do so.");
+    }
+
+    /**
+     * Get the price for a given amount of sell order volume.
+     *
+     * @param amount The amount, that we want to trade.
+     *
+     * @return The price for the given amount, or null if there was no reasonable way to calculate it.
+     *
+     * @throws An exception, if there's not enough order volume for the given amount.
+     */
+    public Price getPriceForSellOrderAmount( Amount amount) throws NotEnoughOrdersException {
+
+	return getPriceForAmount( amount, false);
+    }
+
+    /**
      * Get a sell order with a given index.
      *
      * @return The sell order with the given index.
@@ -167,6 +275,46 @@ public class DepthImpl implements Depth {
      */
     public long getTimestamp() {
 	return _timestamp;
+    }
+
+    /**
+     * Get the total volume of the buy orders.
+     *
+     * @return The total volume of the buy orders.
+     */
+    public Amount getTotalBuyOrderVolume() {
+
+	return getTotalOrderVolume( true);
+    }
+
+    /**
+     * Get the total volume of the orders of a given type.
+     *
+     * @param buyOrders true, if we want the total volume of the buy orders. False for the sell orders.
+     *
+     * @return The total amount for the given order type.
+     */
+    public Amount getTotalOrderVolume( boolean buyOrders) {
+
+	Amount totalAmount = new Amount( "0");
+
+	// Just loop over the requested order type and add the amounts up.
+	for( DepthOrder currentOrder : buyOrders ? getBuyOrders() : getSellOrders()) {
+
+	    totalAmount = totalAmount.add( currentOrder.getAmount());
+	}
+
+	return totalAmount;
+    }
+
+    /**
+     * Get the total volume of the sell orders.
+     *
+     * @return The total volume of the sell orders.
+     */
+    public Amount getTotalSellOrderVolume() {
+
+	return getTotalOrderVolume( false);
     }
 
     /**
