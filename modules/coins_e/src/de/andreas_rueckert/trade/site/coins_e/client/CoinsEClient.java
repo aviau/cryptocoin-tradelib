@@ -80,14 +80,17 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	_name = "Coins-E";
 	_url = "https://" + this.DOMAIN + "/";
 
+	// This request is just helpful to list the supported coin types
+	// requestSupportedCurrencies();
+
 	// I ignore most of the coins for now. Use the following code as an alternative with
 	// a better Currency implementation maybe.
-	_supportedCurrencyPairs = new CurrencyPair[1];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+	// _supportedCurrencyPairs = new CurrencyPair[1];
+	// _supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
 
 	// Fetch the supported currency pairs from the server. The number is just to high
 	// to list them manually.
-	// _supportedCurrencyPairs = requestSupportedCurrencyPairs();
+	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
     }
 
 
@@ -259,6 +262,70 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	return true;  // Just a dummy for now...
     }
 
+    
+    /**
+     * Request the supported currencies from the coins-e server.
+     *
+     * @return The supported currencies as an array or null if an error occurred.
+     */
+    private Currency [] requestSupportedCurrencies() {
+
+	String url = "http://www." + DOMAIN + "/api/v2/coins/list/";
+
+	String requestResult = HttpUtils.httpGet( url);  // Request the list of supported markets.
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+		// Convert the HTTP request return value to JSON to parse further.
+	        JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		if( jsonResult.getBoolean( "status") 
+		    && jsonResult.getString( "message").equals( "success")) {  // Are there markets to parse?
+
+		    // Get the coins as a JSON array.
+		    JSONArray coinJSONArray = jsonResult.getJSONArray( "coins");
+
+		    // Create a buffer for the result.
+		    ArrayList<Currency> resultBuffer = new ArrayList<Currency>();
+
+		    for( int currentCoinIndex = 0; currentCoinIndex < coinJSONArray.size(); ++currentCoinIndex) {
+			
+			// Get the current coin as a json object.
+			JSONObject currentCoin = coinJSONArray.getJSONObject( currentCoinIndex);
+
+			// Check if the status of this coin is ok...
+			if( currentCoin.getString( "status").equals( "healthy")) {
+
+			    String coinCode = currentCoin.getString( "coin");
+			    
+			    // This code is just to list the coin codes...
+			    // System.out.print( coinCode + ", ");
+			    //System.out.flush();
+
+			    Currency newCurrency = CurrencyImpl.findByString( coinCode);
+
+			    if( newCurrency != null) {           // If the new currency is found
+				resultBuffer.add( newCurrency);  // Add it to the result buffer.
+			    }
+			}
+		    }
+
+		    // Convert the result buffer to an array an return it.
+		    return resultBuffer.toArray( new Currency[ resultBuffer.size()]);
+		}
+	
+	    } catch( JSONException je) {
+	
+		System.err.println( "Cannot parse " + this._name + " currency list: " + je.toString());
+		
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
+
+	return null;  // An error occurred.
+    }
+
     /**
      * Request the supported currency pairs from the coins-e server.
      *
@@ -266,7 +333,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
      */
     private CurrencyPair [] requestSupportedCurrencyPairs() {
 
-	String url = "http://www.coins-e.com/api/v2/markets/list/";
+	String url = "http://www." + DOMAIN + "/api/v2/markets/list/";
 
 	String requestResult = HttpUtils.httpGet( url);  // Request the list of supported markets.
 
