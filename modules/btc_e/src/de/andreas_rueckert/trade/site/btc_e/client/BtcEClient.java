@@ -180,41 +180,79 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     /**
      * Create a new connection to the btc-e.com website.
      */
-    public BtcEClient() {
-	super();
+	public BtcEClient() {
+		super();
 
-	_name = "BTCe";
-	_url = "https://btc-e.com/";
+		_name = "BTCe";
+		_url = "https://btc-e.com/";
 
-	// Define the supported currency pairs for this trading site.
-	_supportedCurrencyPairs = new CurrencyPair[18];
-        _supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
-        _supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
-        _supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
-        _supportedCurrencyPairs[3] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
-        _supportedCurrencyPairs[4] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD);
-        _supportedCurrencyPairs[5] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.RUR);
-        _supportedCurrencyPairs[6] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR);
-        _supportedCurrencyPairs[7] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
-        _supportedCurrencyPairs[8] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD);
-        _supportedCurrencyPairs[9] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
-        _supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.USD);
-        _supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.RUR);
-        _supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
-        _supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
-        _supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
-	_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
-        _supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
-	_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+		// Define the supported currency pairs for this trading site.
+		initSupportedCurrencyPairs();
 
-	setCurrentCurrency( CurrencyImpl.USD);
+		setCurrentCurrency( CurrencyImpl.USD);
 
-	// Create a new parser for the btc-e.com website.
-	_htmlParser = new BtcEHtmlParser( this);
+		// Create a new parser for the btc-e.com website.
+		_htmlParser = new BtcEHtmlParser( this);
 
-	// Create a unixtime nonce for the new API.
-	_nonce = ( TimeUtils.getInstance().getCurrentGMTTimeMicros() / 1000000);
-    }
+		// Create a unixtime nonce for the new API.
+		_nonce = ( TimeUtils.getInstance().getCurrentGMTTimeMicros() / 1000000);
+	}
+
+
+	// Methods
+	
+	/**
+	 * Initialization of the supported currency pairs for btc-e.
+	 */
+	private void initSupportedCurrencyPairs() {
+		String requestResult = HttpUtils.httpGet("https://btc-e.com/api/3/info");
+		if( requestResult != null) {
+			List<CurrencyPairImpl> currencyPairs = new Vector<CurrencyPairImpl>();
+			JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+			Iterator it = ((JSONObject)jsonResult.get("pairs")).keys();
+			String pair;
+			String currency;
+			String paymentCurrency;
+			while(it.hasNext()){
+				pair = (String) it.next();
+				//format is btc_usd, nvc_usd, ftc_btc, etc...
+				currency = pair.substring(0, 3).toUpperCase();
+				paymentCurrency = pair.substring(4).toUpperCase();
+				currencyPairs.add(new CurrencyPairImpl(CurrencyImpl.findByString(currency), CurrencyImpl.findByString(paymentCurrency)));
+			}
+			_supportedCurrencyPairs = (CurrencyPairImpl []) currencyPairs.toArray(new CurrencyPairImpl[currencyPairs.size()]);
+		}
+		else {
+			//default values
+			initDefaultSupportedCurrencyPairs();
+		}
+	}
+	
+	/**
+	 * Initialization of the supported currency pairs for btc-e with default values.
+	 */
+	private void initDefaultSupportedCurrencyPairs() {
+		_supportedCurrencyPairs = new CurrencyPair[18];
+		_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
+		_supportedCurrencyPairs[3] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[4] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[5] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[6] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR);
+		_supportedCurrencyPairs[7] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[8] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[9] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
+		_supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+	}
 
 
     // Methods
