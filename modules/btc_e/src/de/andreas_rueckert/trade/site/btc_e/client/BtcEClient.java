@@ -554,50 +554,146 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @param price The price to format.
      * @param currencyPair The currency pair to trade.
      */
-    private final String formatPrice( BigDecimal price, CurrencyPair currencyPair) {
+	/**
+	 * Format the price for a given currency pair.
+	 *
+	 * @param price The price to format.
+	 * @param currencyPair The currency pair to trade.
+	 */
+	private final String formatPrice( BigDecimal price, CurrencyPair currencyPair) {
 
-	if( currencyPair.getCurrency().equals( CurrencyImpl.BTC) 
-	    && currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
+		if( currencyPair.getCurrency().equals( CurrencyImpl.BTC) 
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
 
-	    // btc has only 3 fraction digits for usd.
-	    DecimalFormat btcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
-	    
-	    return btcDecimalFormat.format( price);
+			// btc has only 3 fraction digits for usd.
+			DecimalFormat btcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
-	} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)) {
+			return btcDecimalFormat.format( price);
 
-	    // btc has 5 fraction digits
-	    DecimalFormat ltcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.BTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.RUR)) {
 
-	    return ltcDecimalFormat.format( price);
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
-	} else if( currencyPair.getCurrency().equals( CurrencyImpl.XPM)) {
+			return nmcDecimalFormat.format( price); 
 
-	    // XPM has 5 fraction digits
-	    DecimalFormat xpmDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.BTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.EUR)) {
 
-	    return xpmDecimalFormat.format( price); 
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
-	} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
-		   && currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
-	
-	    // NMC has 5 fraction digits
-	    DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+			return nmcDecimalFormat.format( price); 
 
-	    return nmcDecimalFormat.format( price); 
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
 
-	} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
-		   && currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
-	    // PPC has 3 fraction digits in USD.
-	    DecimalFormat ppcUsdDecimalFormat = new DecimalFormat("#######.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+			return nmcDecimalFormat.format( price); 
 
-	    return ppcUsdDecimalFormat.format( price); 
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
 
-	} else {
-	    throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.RUR)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.EUR)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
+				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NVC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NVC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.USD)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.RUR)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.EUR)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.TRC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.FTC)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		} else if( currencyPair.getCurrency().equals( CurrencyImpl.XPM)
+				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+
+			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
+
+			return nmcDecimalFormat.format( price); 
+
+		}
+		else {
+			throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
+		}
 	}
-    }
 
     /**
      * Get the current funds of the user via the new trade API.
