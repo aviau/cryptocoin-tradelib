@@ -47,6 +47,7 @@ import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
@@ -615,6 +616,37 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
   	// The request is not allowed at the moment, so throw an exception.
 	throw new TradeDataRequestNotAllowedException( "Request for depth not allowed at the moment at MtGox site");	
+    }
+
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	// For withdrawals and deposits, just use the default implementation for now..
+	if( ( order instanceof WithdrawOrder) || ( order instanceof DepositOrder)) {
+
+	    return super.getFeeForOrder( order);
+
+	} else {  // This is a trade order.
+
+	    if( ( order.getOrderType() == OrderType.SELL)  // If this is a sell order for US dollar
+		&& ( order.getCurrencyPair().getPaymentCurrency().equals( CurrencyImpl.USD)))  {
+
+		// There's no fee for btc sales at the moment, it seems.
+		return new Price( "0", order.getCurrencyPair().getPaymentCurrency());
+
+	    } else {  // Let the default implementation handle the fees.
+		
+		return super.getFeeForOrder( order);	
+	    }
+	}
     }
 
     /**
