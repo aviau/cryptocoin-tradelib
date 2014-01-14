@@ -207,7 +207,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	private void initSupportedCurrencyPairs() {
 		String requestResult = HttpUtils.httpGet("https://btc-e.com/api/3/info");
 		if( requestResult != null) {
-			List<CurrencyPairImpl> currencyPairs = new Vector<CurrencyPairImpl>();
+			List<CurrencyPairImpl> currencyPairs = new ArrayList<CurrencyPairImpl>();
 			JSONObject jsonResult = JSONObject.fromObject( requestResult);
 
 			Iterator it = ((JSONObject)jsonResult.get("pairs")).keys();

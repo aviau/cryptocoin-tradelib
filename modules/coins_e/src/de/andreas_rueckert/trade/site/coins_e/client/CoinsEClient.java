@@ -34,8 +34,12 @@ import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -43,8 +47,11 @@ import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -66,6 +73,16 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 
     // Instance variables
+
+    /**
+     * A map to store the trade fees for each coin type as percent.
+     */
+    Map< Currency, BigDecimal> _trade_fees = new HashMap< Currency, BigDecimal>();
+
+    /**
+     * A map to store the withdrawal fees for each coin type as percent.
+     */
+    Map< Currency, BigDecimal> _withdrawal_fees = new HashMap< Currency, BigDecimal>();
 
 
     // Constructors
@@ -90,7 +107,14 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	// Fetch the supported currency pairs from the server. The number is just to high
 	// to list them manually.
+	// Also set the trade fees for each coin type here!
 	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
+
+	// Set the deposit fee (always 0 % as it seems).
+	_feeForDeposit = new BigDecimal( "0");
+
+	// I cannot set the other fees here, because they depend on the coin type!
+	// They are parse in the requestSupportedCurrencyPairs() call!
     }
 
 
@@ -180,6 +204,91 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	return null;  // Request failed.
     }
+
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {
+
+	    // Try to get a withdrawal fee from the fee map.
+	    BigDecimal currentFee = _withdrawal_fees.get( order.getCurrencyPair().getCurrency());
+
+	    // If there's no fee stored, throw an exception.
+	    if( currentFee == null) {
+		
+		throw new CurrencyNotSupportedException( "No withdrawal fee stored, so I cannot compute fee for this order: " + order.toString());	
+	    }
+
+	    // If we have a fee, just multiply the percentage with the amount and get a price.
+	    return new Price( order.getAmount().multiply( currentFee), order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof DepositOrder) {  // If this is a deposit...
+
+	    // It seems deposits are free at coins-e at the moment.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else {  // This seems to be a regular trade (buy or sell).
+
+	    // Trade is more complicated, since the currency changes in a sell.
+	    
+	    if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
+
+		// Try to get the fee for the currency.
+		BigDecimal currentFee = _trade_fees.get( order.getCurrencyPair().getCurrency());
+
+		if( currentFee == null) {  // If there is no fee stored.
+
+		    throw new CurrencyNotSupportedException( "No trading fee stored, so I cannot compute fee for this order: " + order.toString());
+		}
+
+		// Just multiply the bought amount with the percentage to get the fee.
+		return new Price( order.getAmount().multiply( currentFee), order.getCurrencyPair().getCurrency());
+
+	    } else {  // this is a sell order, so the currency changes!
+
+		// Try to get the fee for the payment(!) currency now.
+		BigDecimal currentFee = _trade_fees.get( order.getCurrencyPair().getPaymentCurrency());
+
+		if( currentFee == null) {  // If there is no fee stored.
+
+		    throw new CurrencyNotSupportedException( "No trading fee stored, so I cannot compute fee for this order: " + order.toString());
+		}
+
+		// Compute the amount of the received payment currency and then multiply with the fee percentage.
+		return new Price( order.getAmount().multiply( order.getPrice()).multiply( currentFee)
+				  , order.getCurrencyPair().getPaymentCurrency());
+	    }
+	}
+    }
+
+    /**
+     * Get the fee for trades in percent.
+     *
+     * @return The fee for trades in percent.
+     */
+    public BigDecimal getFeeForTrade() {
+		
+        throw new NotYetImplementedException( "Calculating the fee for trades is not possible at coins-e without knowing the coin type. Please use getFeeForOrder() to get a correct fee for your order. The getFeeForTrade() method is most likely deprecated in a later version of this lib.");
+    }
+
+    /**
+     * Get the fee for a withdrawal in percent.
+     *
+     * @return The fee for a withdrawal in percent.
+     */
+    public BigDecimal getFeeForWithdrawal() {
+
+	throw new NotYetImplementedException( "Calculating the fee for withdrawals is not possible at coins-e without knowing the coin type. Please use getFeeForOrder() to get a correct fee for your order. The getFeeForWithdrawal() method is most likely deprecated in a later version of this lib.");
+    }
+
 
     /**
      * Get the shortest allowed requet interval in microseconds.
@@ -304,6 +413,12 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 			    //System.out.flush();
 
 			    Currency newCurrency = CurrencyImpl.findByString( coinCode);
+
+			    // Get the trading fee for this coin type.
+			    BigDecimal trade_fee = new BigDecimal( currentCoin.getString( "trade_fee"));
+			    
+			    // Get the withdrawal fee for this coin type.
+			    BigDecimal withdrawal_fee = new BigDecimal( currentCoin.getString( "withdrawal_fee"));
 
 			    if( newCurrency != null) {           // If the new currency is found
 				resultBuffer.add( newCurrency);  // Add it to the result buffer.
