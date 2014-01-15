@@ -98,8 +98,9 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	_name = "Coins-E";
 	_url = "https://" + this.DOMAIN + "/";
 
-	// This request is just helpful to list the supported coin types
-	// requestSupportedCurrencies();
+	// This request is helpful to list the supported coin types
+	// Also set the trade fees for each coin type here!
+	requestSupportedCurrencies();
 
 	// I ignore most of the coins for now. Use the following code as an alternative with
 	// a better Currency implementation maybe.
@@ -108,14 +109,13 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	// Fetch the supported currency pairs from the server. The number is just to high
 	// to list them manually.
-	// Also set the trade fees for each coin type here!
 	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
 
 	// Set the deposit fee (always 0 % as it seems).
 	_feeForDeposit = new BigDecimal( "0");
 
 	// I cannot set the other fees here, because they depend on the coin type!
-	// They are parse in the requestSupportedCurrencyPairs() call!
+	// They are parse in the requestSupportedCurrencies() call!
     }
 
 
@@ -446,8 +446,14 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 			    // Get the trading fee for this coin type.
 			    BigDecimal trade_fee = new BigDecimal( currentCoin.getString( "trade_fee"));
 			    
+			    // Store the trade fee in the list of trade fees.
+			    _trade_fees.put( newCurrency, trade_fee);
+
 			    // Get the withdrawal fee for this coin type.
 			    BigDecimal withdrawal_fee = new BigDecimal( currentCoin.getString( "withdrawal_fee"));
+
+			    // Store the withdrawal fee in the list of withdrawal fees.
+			    _withdrawal_fees.put( newCurrency, withdrawal_fee);
 
 			    if( newCurrency != null) {           // If the new currency is found
 				resultBuffer.add( newCurrency);  // Add it to the result buffer.
