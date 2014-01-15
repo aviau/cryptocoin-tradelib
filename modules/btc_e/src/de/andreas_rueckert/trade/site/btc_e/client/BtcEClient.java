@@ -4,6 +4,7 @@
  * Copyright (c) 2013 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
+ * @author gosucymp <gosucymp@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining 
  * a copy of this software and associated documentation files (the "Software"), 
@@ -214,11 +215,13 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 			String pair;
 			String currency;
 			String paymentCurrency;
+			String[] currencyDetail = new String[2];
 			while(it.hasNext()){
 				pair = (String) it.next();
 				//format is btc_usd, nvc_usd, ftc_btc, etc...
-				currency = pair.substring(0, 3).toUpperCase();
-				paymentCurrency = pair.substring(4).toUpperCase();
+				currencyDetail = pair.split("_");
+				currency = currencyDetail[0].toUpperCase();
+				paymentCurrency = currencyDetail[1].toUpperCase();
 				currencyPairs.add(new CurrencyPairImpl(CurrencyImpl.findByString(currency), CurrencyImpl.findByString(paymentCurrency)));
 			}
 			_supportedCurrencyPairs = (CurrencyPairImpl []) currencyPairs.toArray(new CurrencyPairImpl[currencyPairs.size()]);
