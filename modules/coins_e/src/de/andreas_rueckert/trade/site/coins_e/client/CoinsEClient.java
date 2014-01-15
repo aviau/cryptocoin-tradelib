@@ -26,6 +26,7 @@
 package de.andreas_rueckert.trade.site.coins_e.client;
 
 import de.andreas_rueckert.NotYetImplementedException;
+import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.Currency;
@@ -318,6 +319,28 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
     public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the open orders is not yet implemented for coins-e");	
+    }
+
+    /**
+     * Get the settings of the coins-e API implementation.
+     *
+     * @return The settings of the coins-e API implementation.
+     */
+    public PersistentPropertyList getSettings() {
+
+	// Create a new list for the settings.
+	PersistentPropertyList result = new PersistentPropertyList();
+	
+	/* 
+	 * Since the fees of coins-e are coin type specific, I don't store them in
+	 * the properties for now.
+	 * 
+	result.add( new PersistentProperty( "Fee for deposit", null, "" + getFeeForDeposit(), 1));
+	result.add( new PersistentProperty( "Fee for trades", null, "" + getFeeForTrade(), 2));
+	result.add( new PersistentProperty( "Fee for withdrawal", null, "" + getFeeForWithdrawal(), 0));
+	*/
+	
+	return result;
     }
 
     /**
