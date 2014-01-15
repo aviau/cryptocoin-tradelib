@@ -45,10 +45,12 @@ import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
@@ -99,16 +101,12 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	super();
 
 	_name = "Vircurex";
-	_url = "https://vircurex.com/";
+	_url = "https://api.vircurex.com/";
 
 	// Define the supported currency pairs for this trading site.
 	// This list is actually not complete, since Vircurex supports lots of pairs, but
 	// it should be sufficient for most apps, I guess.
-	_supportedCurrencyPairs = new CurrencyPair[4];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
-	_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
-	_supportedCurrencyPairs[3] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
     }
 
 
@@ -314,17 +312,6 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	return 61L * 1000000L;  // Vircurex doesn't want to get polled more often than once per minute.
     }
 
-
-    /**
-     * Set new settings for the btc-e client.
-     *
-     * @param settings The new settings for the vircurex client.
-     */
-    public void setSettings( PersistentPropertyList settings) {
-
-	super.setSettings( settings);
-    }
-
     /**
      * Check, if some request type is allowed at the moment. Most
      * trade site have limits on the number of request per time interval.
@@ -335,6 +322,102 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      */
     public boolean isRequestAllowed( TradeSiteRequestType requestType) {
 	return ((_lastRequest + getMinimumRequestInterval()) < TimeUtils.getInstance().getCurrentGMTTimeMicros());
+    }
+    
+    /**
+     * Request all the supported currency pairs from vircurex.
+     *
+     * @return The supported currency pairs as an array, or null if an error occured.
+     */
+    CurrencyPair [] requestSupportedCurrencyPairs() {
+
+	// The URL to fetch info on all the supported currency pairs.
+	// Some pairs are actually returned 2x with currency and payment currency exchanged,
+	// like euro_usd and usd_euro as an example.
+	String url = _url + "api/get_info_for_currency.json";
+
+	// Request the coin info from the server.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Create a buffer for the result.
+		ArrayList< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+		
+		// Convert the HTTP request return value to JSON to parse further.
+		JSONObject jsonInfo = JSONObject.fromObject( requestResult);
+		
+		// Get the keys as Strings.
+		JSONArray jsonNames = jsonInfo.names();
+
+		// Loop over the names.
+		for( Iterator iter = jsonNames.iterator(); iter.hasNext() ; ) {
+
+		    // The first key is the name of the currency.
+		    String currency = (String)iter.next();
+
+		    if( ! currency.equalsIgnoreCase( "STATUS")) {  // Is this just the market status?
+			
+			// Now get the info on the currency as a JSONObject.
+			JSONObject jsonCurrencyInfo = jsonInfo.getJSONObject( currency);
+			
+			// Get the keys as Strings.
+			// These are now the payment currencies.
+			JSONArray jsonPaymentNames = jsonCurrencyInfo.names();
+			
+			// Loop over the names.
+			for( Iterator iter2 = jsonPaymentNames.iterator(); iter2.hasNext() ; ) {
+			    
+			    // The second key is the name of the payment currency.
+			    String paymentCurrency = (String)iter2.next();
+			    
+			    // Now create a currency pair.
+			    CurrencyPair newPair = new CurrencyPairImpl( CurrencyImpl.findByString( currency.toUpperCase())
+									 , CurrencyImpl.findByString( paymentCurrency.toUpperCase()));
+			    
+			    // Create the same pair also inverted.
+			    CurrencyPair newPairInverted = new CurrencyPairImpl( CurrencyImpl.findByString( paymentCurrency.toUpperCase())
+										 , CurrencyImpl.findByString( currency.toUpperCase()));
+
+			    // Add the new pair only, if it's not already either exactly or inverted in the buffer.
+			    // This is just to minimize the number of pairs, since a huge number slows the arb bot
+			    // down.
+			    if( ! resultBuffer.contains( newPair) && ! resultBuffer.contains( newPairInverted)) {
+				
+				resultBuffer.add( new CurrencyPairImpl( CurrencyImpl.findByString( currency.toUpperCase())
+									, CurrencyImpl.findByString( paymentCurrency.toUpperCase())));
+			    }
+			}
+		    }
+		}
+
+		// System.out.println( "DEBUG: created " + resultBuffer.size() + " currency pairs");
+
+		// Now convert the buffer to an array and return it.
+		return resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+
+	    } catch( JSONException je) {
+
+		LogUtils.getInstance().getLogger().error( "Error while parsing the Vircurex info on currencies: " + je);
+	    }
+	} else {
+
+	    LogUtils.getInstance().getLogger().error( "Vircurex server did not return info on currency pairs."); 
+	}
+
+	return null;  // Error while reading the info on currency pairs.
+    }
+
+    /**
+     * Set new settings for the btc-e client.
+     *
+     * @param settings The new settings for the vircurex client.
+     */
+    public void setSettings( PersistentPropertyList settings) {
+
+	super.setSettings( settings);
     }
 
     /**
