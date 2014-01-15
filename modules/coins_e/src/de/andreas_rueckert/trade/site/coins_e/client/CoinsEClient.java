@@ -225,7 +225,9 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	    // If there's no fee stored, throw an exception.
 	    if( currentFee == null) {
 		
-		throw new CurrencyNotSupportedException( "No withdrawal fee stored, so I cannot compute fee for this order: " + order.toString());	
+		throw new CurrencyNotSupportedException( "No withdrawal fee for currency " 
+							 + order.getCurrencyPair().getCurrency() 
+							 + " stored, so I cannot compute fee for this order: " + order.toString());	
 	    }
 
 	    // If we have a fee, just multiply the percentage with the amount and get a price.
@@ -247,7 +249,9 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 		if( currentFee == null) {  // If there is no fee stored.
 
-		    throw new CurrencyNotSupportedException( "No trading fee stored, so I cannot compute fee for this order: " + order.toString());
+		    throw new CurrencyNotSupportedException( "No trading fee for currency " 
+							     + order.getCurrencyPair().getCurrency() 
+							     + " stored, so I cannot compute fee for this order: " + order.toString());
 		}
 
 		// Just multiply the bought amount with the percentage to get the fee.
@@ -260,7 +264,9 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 		if( currentFee == null) {  // If there is no fee stored.
 
-		    throw new CurrencyNotSupportedException( "No trading fee stored, so I cannot compute fee for this order: " + order.toString());
+		    throw new CurrencyNotSupportedException( "No trading fee for currency " 
+							     + order.getCurrencyPair().getPaymentCurrency() 
+							     + " stored, so I cannot compute fee for this order: " + order.toString());
 		}
 
 		// Compute the amount of the received payment currency and then multiply with the fee percentage.
