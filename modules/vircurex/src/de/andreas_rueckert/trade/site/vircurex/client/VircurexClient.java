@@ -36,8 +36,12 @@ import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
@@ -47,11 +51,14 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -90,6 +97,11 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      */
     private Currency _paymentCurrency;
 
+    /**
+     * A map to store the withdrawal fees for each coin type as percent.
+     */
+    Map< Currency, BigDecimal> _withdrawal_fees = new HashMap< Currency, BigDecimal>();
+
 
     // Constructors
 
@@ -103,10 +115,32 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	_name = "Vircurex";
 	_url = "https://api.vircurex.com/";
 
+	_feeForTrade = new BigDecimal( "0.002");  // The current trade fee.
+
 	// Define the supported currency pairs for this trading site.
 	// This list is actually not complete, since Vircurex supports lots of pairs, but
 	// it should be sufficient for most apps, I guess.
 	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
+
+	// Set the known withdrawal fees.
+	// Available at: https://vircurex.com/welcome/help?locale=en
+	_withdrawal_fees.put( CurrencyImpl.ANC, new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyImpl.BTC, new BigDecimal( "0.002"));
+	_withdrawal_fees.put( CurrencyImpl.DGC, new BigDecimal( "0.2"));
+	_withdrawal_fees.put( CurrencyImpl.DOGE, new BigDecimal( "5.0"));
+	_withdrawal_fees.put( CurrencyImpl.DVC, new BigDecimal( "100.0"));
+	_withdrawal_fees.put( CurrencyImpl.FRC, new BigDecimal( "10.0"));
+	_withdrawal_fees.put( CurrencyImpl.FTC, new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyImpl.I0C, new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyImpl.IXC, new BigDecimal( "8.0"));
+	_withdrawal_fees.put( CurrencyImpl.LTC, new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyImpl.NMC, new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyImpl.NVC, new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyImpl.PPC, new BigDecimal( "0.002"));
+	_withdrawal_fees.put( CurrencyImpl.QRK, new BigDecimal( "0.5"));
+	_withdrawal_fees.put( CurrencyImpl.TRC, new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyImpl.WDC, new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyImpl.XPM, new BigDecimal( "0.01"));
     }
 
 
@@ -190,6 +224,71 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {
+
+	    // Try to get a withdrawal fee from the fee map.
+	    BigDecimal currentFee = _withdrawal_fees.get( order.getCurrencyPair().getCurrency());
+
+	    // If there's no fee stored, throw an exception.
+	    if( currentFee == null) {
+		
+		throw new CurrencyNotSupportedException( "No withdrawal fee for currency " 
+							 + order.getCurrencyPair().getCurrency() 
+							 + " stored, so I cannot compute fee for this order: " + order.toString());	
+	    }
+
+	    // If we have a fee, just multiply the percentage with the amount and get a price.
+	    return new Price( order.getAmount().multiply( currentFee), order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof DepositOrder) {  // If this is a deposit...
+
+	    // It seems deposits are free at coins-e at the moment.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof DepositOrder) {  // If this is a deposit...
+
+	    // It seems deposits are free at coins-e at the moment.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else {  // This seems to be a regular trade (buy or sell).
+
+	    // Trade is more complicated, since the currency changes in a sell.
+	    
+	    if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
+
+		// Just multiply the bought amount with the percentage to get the fee.
+		return new Price( order.getAmount().multiply( getFeeForTrade()), order.getCurrencyPair().getCurrency());
+
+	    } else {  // this is a sell order, so the currency changes!
+
+		// Compute the amount of the received payment currency and then multiply with the fee percentage.
+		return new Price( order.getAmount().multiply( order.getPrice()).multiply( getFeeForTrade())
+				  , order.getCurrencyPair().getPaymentCurrency());
+	    }
+	}
+    }
+
+    /**
+     * Get the fee for a withdrawal in percent.
+     *
+     * @return The fee for a withdrawal in percent.
+     */
+    public BigDecimal getFeeForWithdrawal() {
+
+	throw new NotYetImplementedException( "Calculating the fee for withdrawals is not possible at coins-e without knowing the coin type. Please use getFeeForOrder() to get a correct fee for your order. The getFeeForWithdrawal() method is most likely deprecated in a later version of this lib.");
+    }
+
+    /**
      * Get the shortest allowed requet interval in microseconds.
      *
      * @return The shortest allowed request interval in microseconds.
@@ -224,7 +323,10 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
     public PersistentPropertyList getSettings() {
 
 	// Get the settings from the base class.
-	PersistentPropertyList result = super.getSettings();
+	PersistentPropertyList result = new PersistentPropertyList();
+
+	// The withdrawal fees depend on the coin type, so we would need a better structure for it?
+	result.add( new PersistentProperty( "Fee for trades", null, "" + getFeeForTrade(), 2));
 
 	return result;
     }
@@ -417,7 +519,8 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      */
     public void setSettings( PersistentPropertyList settings) {
 
-	super.setSettings( settings);
+	String currentFee = settings.getStringProperty( "Fee for trades");
+	setFeeForTrade( currentFee != null ? new BigDecimal( currentFee) : BigDecimal.ZERO);
     }
 
     /**

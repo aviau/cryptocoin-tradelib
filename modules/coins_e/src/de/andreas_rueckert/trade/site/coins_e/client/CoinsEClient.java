@@ -536,4 +536,13 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	return null;  // An error occurred.
     }
+
+    /**
+     * Set new settings for the trading site client.
+     *
+     * @param settings The new settings for the trading site client.
+     */
+    public void setSettings( PersistentPropertyList settings) {	
+    }
+
 }
