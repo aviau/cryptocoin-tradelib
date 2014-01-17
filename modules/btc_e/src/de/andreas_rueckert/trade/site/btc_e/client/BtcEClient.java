@@ -1274,7 +1274,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	if( requestResult != null) {  // If the HTTP request worked ok.
 	    try {
 		// Convert the result to an JSON array.
-		JSONArray resultArray = JSONArray.fromObject( requestResult);
+		JSONArray resultArray = JSONObject.fromObject( requestResult).getJSONArray(getCurrencyPairString(currencyPair));
 		
 		// Iterate over the array and convert each trade from json to a Trade object.
 		for( int i = 0; i < resultArray.size(); i++) {
