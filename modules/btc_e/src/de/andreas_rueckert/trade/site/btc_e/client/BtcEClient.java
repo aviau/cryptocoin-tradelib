@@ -1232,9 +1232,9 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Btc-E");
 	}
 
-	String url = "https://" + DOMAIN + "/api/2/" 
+	String url = "https://" + DOMAIN + "/api/3/trades/" 
 	    + getCurrencyPairString( currencyPair)
-	    + "/trades";
+	    + "/?limit=2000";
 
 	// System.out.println( "Fetching btc-e trades from: " + url);
 
@@ -1242,9 +1242,11 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	if( tempResult != null) {
 	    // Now filter the trades for the timespan.
+        long now = System.currentTimeMillis() * 1000L;
+        long threshold = now - since_micros;
 	    ArrayList<CryptoCoinTrade> resultBuffer = new ArrayList<CryptoCoinTrade>();
 	    for( int i = 0; i < tempResult.length; ++i) {
-		if( tempResult[i].getTimestamp() > since_micros) {
+		if( tempResult[i].getTimestamp() > threshold) {
 		    resultBuffer.add( tempResult[i]);
 		}
 	    }
@@ -1272,7 +1274,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	if( requestResult != null) {  // If the HTTP request worked ok.
 	    try {
 		// Convert the result to an JSON array.
-		JSONArray resultArray = JSONArray.fromObject( requestResult);
+		JSONArray resultArray = JSONObject.fromObject( requestResult).getJSONArray(getCurrencyPairString(currencyPair));
 		
 		// Iterate over the array and convert each trade from json to a Trade object.
 		for( int i = 0; i < resultArray.size(); i++) {

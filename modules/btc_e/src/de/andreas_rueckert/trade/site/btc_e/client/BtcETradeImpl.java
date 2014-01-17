@@ -63,7 +63,7 @@ public class BtcETradeImpl extends CryptoCoinTradeImpl {
 	// Parse the date.
 	try {
 	    // btc-e seems to have only the date as seconds.
-	    _timestamp = jsonTrade.getLong( "date") * 1000000;
+	    _timestamp = jsonTrade.getLong( "timestamp") * 1000000;
 	} catch( JSONException je) {
 	    throw new NumberFormatException( "Date is not a proper long variable");
 	}
@@ -90,7 +90,7 @@ public class BtcETradeImpl extends CryptoCoinTradeImpl {
 	}
 	
 	// Parse the trade type
-	String typeString = jsonTrade.getString( "trade_type");
+	String typeString = jsonTrade.getString( "type");
 
 	_type = typeString.equalsIgnoreCase( "bid" ) ? TradeType.Buy : TradeType.Sell;
     }
