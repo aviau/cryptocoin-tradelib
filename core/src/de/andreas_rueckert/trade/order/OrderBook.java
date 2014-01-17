@@ -180,12 +180,13 @@ public abstract class OrderBook {
 				++currentDependencyIndex;
 			    }
 			}
-
-			// If all the dependencies have been removed, execute the order now.
-			if( ! currentOrder.hasDependencies()) {
-			    executeOrder( currentOrder);
-			}
-		    }
+            }
+			
+            // If all the dependencies have been removed, execute the order now.
+            OrderStatus s = currentOrder.getStatus();
+			if( ! currentOrder.hasDependencies() && s != OrderStatus.FILLED && s != OrderStatus.PARTIALLY_FILLED) {
+                _executedOrders.put(currentOrder.getId(), currentOrder);
+            }
 		}
 	    }
 	}
