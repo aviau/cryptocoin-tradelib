@@ -185,6 +185,7 @@ public abstract class OrderBook {
             // If all the dependencies have been removed, execute the order now.
             OrderStatus s = currentOrder.getStatus();
 			if( ! currentOrder.hasDependencies() && s != OrderStatus.FILLED && s != OrderStatus.PARTIALLY_FILLED) {
+                executeOrder( currentOrder);
                 _executedOrders.put(currentOrder.getId(), currentOrder);
             }
 		}
