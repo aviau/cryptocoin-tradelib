@@ -108,6 +108,15 @@ public class BotRunner implements ListSelectionListener {
 
 		createGUI();
 	    }
+        else
+        {
+            /*for (TradeBot bot : _botsToStart)
+            {
+                bot.start();
+            }*/
+            TradeBot bot = new MaBot();
+            bot.start();
+        }
 	}
     }
 
