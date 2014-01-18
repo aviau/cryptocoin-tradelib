@@ -24,7 +24,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade.site.kraken.client;
+package de.andreas_rueckert.trade.site.cex_io.client;
 
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
@@ -43,18 +43,18 @@ import java.util.Collection;
 
 
 /**
- * Main class for the kraken API.
+ * Main class for the cex.io API.
  *
- * @see https://www.kraken.com/help/api
+ * @see https://cex.io/api
  */
-public class KrakenClient extends TradeSiteImpl implements TradeSite {
+public class CexIOClient extends TradeSiteImpl implements TradeSite {
 
     // Static variables
 
     /**
      * The domain of the service.
      */
-    public static String DOMAIN = "kraken.com";
+    public static String DOMAIN = "cex.io";
     
 
     // Instance variables
@@ -65,12 +65,12 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
     /**
      * Create a new connection to the btc-e.com website.
      */
-    public KrakenClient() {
+    public CexIOClient() {
 
 	super();
 
-	_name = "Kraken";
-	_url = "https://api.kraken.com/";
+	_name = "CexIO";
+	_url = "https://cex.io/api/";
     }
 
 
