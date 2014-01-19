@@ -119,7 +119,7 @@ public class ChartAnalyzer {
 	}
 
 	// Now call the ema method.
-	return this.ema( trades, TimeUtils.getInstance().getCurrentGMTTimeMicros() - timeIntervalMicros, timePeriod);
+	return this.ema( trades, timeIntervalMicros, timePeriod);
     }
 
     /**
@@ -227,7 +227,7 @@ public class ChartAnalyzer {
 	}
 
 	// Now scale the total of the weighted prices and return this price.
-	return new Price( totalPrice.divide( new BigDecimal( totalWeight, MathContext.DECIMAL128)));
+	return new Price( totalPrice.divide( new BigDecimal( totalWeight, MathContext.DECIMAL128), MathContext.DECIMAL128));
 	
 	// This method is not yet complete.
 	// throw new NotYetImplementedException( "EMA is not yet implemented");
