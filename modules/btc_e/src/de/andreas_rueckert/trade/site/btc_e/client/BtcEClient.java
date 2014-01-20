@@ -178,7 +178,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     /**
      * Map for fee trades
      */
-    private Map<CurrencyPair, String> currencyPairFeeTrade = new HashMap<CurrencyPair, String>();
+    private Map<CurrencyPair, BigDecimal> currencyPairFeeTrade = new HashMap<CurrencyPair, BigDecimal>();
     
     /**
      * BTC-E api info url
@@ -200,6 +200,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		
 		// Define the supported currency pairs for this trading site.
 		initSupportedCurrencyPairs();
+		System.out.println(currencyPairFeeTrade);
 
 		setCurrentCurrency( CurrencyImpl.USD);
 
@@ -229,7 +230,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	public boolean updateSupportedCurrencyPairs() {
 		String requestResult = HttpUtils.httpGet(API_URL_INFO);
 		if( requestResult != null) {
-			currencyPairFeeTrade = new HashMap<CurrencyPair, String>();
+			currencyPairFeeTrade = new HashMap<CurrencyPair, BigDecimal>();
 			//update the supported currency pairs
 			List<CurrencyPairImpl> currencyPairs = new ArrayList<CurrencyPairImpl>();
 			JSONObject jsonResult = JSONObject.fromObject( requestResult);
@@ -257,7 +258,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 				
 				//update the fees for currency pairs trades
 				pairFee = jsonResult.getJSONObject("pairs").getJSONObject(pair).getString("fee");
-				currencyPairFeeTrade.put(currencyPair, pairFee);
+				currencyPairFeeTrade.put(currencyPair, new BigDecimal(pairFee).multiply(new BigDecimal("0.01")));
 			}
 			_supportedCurrencyPairs = (CurrencyPairImpl []) currencyPairs.toArray(new CurrencyPairImpl[currencyPairs.size()]);
 			return true;
@@ -297,7 +298,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 					&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.RUR)) {
 				fee = "0.5";
 			}
-			currencyPairFeeTrade.put(currencyPair, fee);
+			currencyPairFeeTrade.put(currencyPair, new BigDecimal(fee));
 		}
 	}
 
@@ -1022,6 +1023,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 		throw new CurrencyNotSupportedException( "Cannot compute fee for this order: " + order.toString());
 	    }
+	} else if(( order.getOrderType() == OrderType.BUY) || ( order.getOrderType() == OrderType.SELL)) {
+		return new Price( getFeeForCurrencyPairTrade(order.getCurrencyPair()).multiply(order.getAmount())
+				, order.getCurrencyPair().getCurrency());
+		
 	} else if( order instanceof DepositOrder) {
 
 	    Currency depositedCurrency = ((DepositOrder)order).getCurrency();
@@ -1050,7 +1055,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @param the fee
      * @return
      */
-    public String getFeeForCurrencyPairTrade(CurrencyPair pair) {
+    public BigDecimal getFeeForCurrencyPairTrade(CurrencyPair pair) {
     	for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
 			if (currencyPair.getCurrency().equals(pair.getCurrency()) 
 					&& currencyPair.getPaymentCurrency().equals(pair.getPaymentCurrency())) {
