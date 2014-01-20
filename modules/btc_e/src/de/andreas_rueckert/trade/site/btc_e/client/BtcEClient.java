@@ -26,46 +26,13 @@
 
 package de.andreas_rueckert.trade.site.btc_e.client;
 
-import de.andreas_rueckert.MissingAccountDataException;
-import de.andreas_rueckert.NotYetImplementedException;
-import de.andreas_rueckert.persistence.PersistentProperty;
-import de.andreas_rueckert.persistence.PersistentPropertyList;
-import de.andreas_rueckert.trade.account.CryptoCoinAccount;
-import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
-import de.andreas_rueckert.trade.account.TradeSiteAccount;
-import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
-import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.Depth;
-import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
-import de.andreas_rueckert.trade.order.DepositOrder;
-import de.andreas_rueckert.trade.order.OrderNotInOrderBookException;
-import de.andreas_rueckert.trade.order.OrderStatus;
-import de.andreas_rueckert.trade.order.OrderType;
-import de.andreas_rueckert.trade.order.SiteOrder;
-import de.andreas_rueckert.trade.order.WithdrawOrder;
-import de.andreas_rueckert.trade.Price;
-import de.andreas_rueckert.trade.site.TradeSite;
-import de.andreas_rueckert.trade.site.TradeSiteImpl;
-import de.andreas_rueckert.trade.site.TradeSiteRequestType;
-import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
-import de.andreas_rueckert.trade.Ticker;
-import de.andreas_rueckert.trade.TradeDataNotAvailableException;
-import de.andreas_rueckert.util.HttpUtils;
-import de.andreas_rueckert.util.LogUtils;
-import de.andreas_rueckert.util.TimeUtils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException; 
+import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -73,18 +40,51 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
-import org.apache.commons.codec.binary.Base64;
+
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.codec.DecoderException;
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+
+import de.andreas_rueckert.MissingAccountDataException;
+import de.andreas_rueckert.NotYetImplementedException;
+import de.andreas_rueckert.persistence.PersistentProperty;
+import de.andreas_rueckert.persistence.PersistentPropertyList;
+import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.CurrencyImpl;
+import de.andreas_rueckert.trade.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.Price;
+import de.andreas_rueckert.trade.TradeDataNotAvailableException;
+import de.andreas_rueckert.trade.account.CryptoCoinAccount;
+import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
+import de.andreas_rueckert.trade.account.TradeSiteAccount;
+import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
+import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
+import de.andreas_rueckert.trade.order.DepositOrder;
+import de.andreas_rueckert.trade.order.OrderNotInOrderBookException;
+import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
+import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteImpl;
+import de.andreas_rueckert.trade.site.TradeSiteRequestType;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
+import de.andreas_rueckert.util.TimeUtils;
 
 
 /**
@@ -174,6 +174,16 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * The API secret.
      */
     private String _secret = null;
+    
+    /**
+     * Map for fee trades
+     */
+    private Map<CurrencyPair, String> currencyPairFeeTrade = new HashMap<CurrencyPair, String>();
+    
+    /**
+     * BTC-E api info url
+     */
+    private static final String API_URL_INFO = "https://btc-e.com/api/3/info";
 
 
     // Constructors
@@ -187,6 +197,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		_name = "BTCe";
 		_url = "https://btc-e.com/";
 
+		
 		// Define the supported currency pairs for this trading site.
 		initSupportedCurrencyPairs();
 
@@ -201,35 +212,57 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 
 	// Methods
-	
+
 	/**
 	 * Initialization of the supported currency pairs for btc-e.
 	 */
 	private void initSupportedCurrencyPairs() {
-		String requestResult = HttpUtils.httpGet("https://btc-e.com/api/3/info");
+		if( !updateSupportedCurrencyPairs()) {
+			initDefaultSupportedCurrencyPairs();
+		}
+	}
+	
+	/**
+	 * Update the supported currency pairs trades. 
+	 * @return true if update is made
+	 */
+	public boolean updateSupportedCurrencyPairs() {
+		String requestResult = HttpUtils.httpGet(API_URL_INFO);
 		if( requestResult != null) {
+			currencyPairFeeTrade = new HashMap<CurrencyPair, String>();
+			//update the supported currency pairs
 			List<CurrencyPairImpl> currencyPairs = new ArrayList<CurrencyPairImpl>();
 			JSONObject jsonResult = JSONObject.fromObject( requestResult);
 
-			Iterator it = ((JSONObject)jsonResult.get("pairs")).keys();
+			Iterator itPairs = ((JSONObject)jsonResult.get("pairs")).keys();
 			String pair;
 			String currency;
 			String paymentCurrency;
 			String[] currencyDetail = new String[2];
-			while(it.hasNext()){
-				pair = (String) it.next();
+			String pairFee;
+			CurrencyImpl currencyObject;
+			CurrencyImpl paymentCurrencyObject;
+			CurrencyPairImpl currencyPair;
+			while(itPairs.hasNext()){
+				Object current = itPairs.next();
+				pair = (String) current;
 				//format is btc_usd, nvc_usd, ftc_btc, etc...
 				currencyDetail = pair.split("_");
 				currency = currencyDetail[0].toUpperCase();
 				paymentCurrency = currencyDetail[1].toUpperCase();
-				currencyPairs.add(new CurrencyPairImpl(CurrencyImpl.findByString(currency), CurrencyImpl.findByString(paymentCurrency)));
+				currencyObject = CurrencyImpl.findByString(currency);
+				paymentCurrencyObject = CurrencyImpl.findByString(paymentCurrency);
+				currencyPair = new CurrencyPairImpl(currencyObject, paymentCurrencyObject);
+				currencyPairs.add(currencyPair);
+				
+				//update the fees for currency pairs trades
+				pairFee = jsonResult.getJSONObject("pairs").getJSONObject(pair).getString("fee");
+				currencyPairFeeTrade.put(currencyPair, pairFee);
 			}
 			_supportedCurrencyPairs = (CurrencyPairImpl []) currencyPairs.toArray(new CurrencyPairImpl[currencyPairs.size()]);
+			return true;
 		}
-		else {
-			//default values
-			initDefaultSupportedCurrencyPairs();
-		}
+		return false;
 	}
 	
 	/**
@@ -255,6 +288,17 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
 		_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
 		_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+		
+		//fees for trades
+		String fee;
+		for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
+			fee = "0.2";
+			if (currencyPair.getCurrency().equals(CurrencyImpl.USD)
+					&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.RUR)) {
+				fee = "0.5";
+			}
+			currencyPairFeeTrade.put(currencyPair, fee);
+		}
 	}
 
 
@@ -999,6 +1043,21 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	    return super.getFeeForOrder( order);
 	}
+    }
+    
+    /**
+     * Gets the fee for a currency pair trade, 
+     * @param the fee
+     * @return
+     */
+    public String getFeeForCurrencyPairTrade(CurrencyPair pair) {
+    	for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
+			if (currencyPair.getCurrency().equals(pair.getCurrency()) 
+					&& currencyPair.getPaymentCurrency().equals(pair.getPaymentCurrency())) {
+				return currencyPairFeeTrade.get(pair);
+			}
+		}
+    	return null;
     }
 
     /**
