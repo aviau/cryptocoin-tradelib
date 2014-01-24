@@ -1002,6 +1002,43 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
+    
+     /**
+     * Get the market depth as a Depth object with a limit, using api v3. Max limit is 2000 at the moment.
+     *
+     * @param currencyPair The queried currency pair.
+     * @param limit The first {limit} values of the depth
+     *
+     * @throws TradeDataNotAvailableException if the depth is not available.
+     */
+    public Depth getDepth( CurrencyPair currencyPair, int limit) throws TradeDataNotAvailableException {
+
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Btc-E");
+	}
+
+	String url = "https://" + DOMAIN + "/api/3/depth/" 
+	    + getCurrencyPairString( currencyPair)
+	    + "?limit=" + limit;
+
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+	    try {
+	    JSONObject requestResultObj = (JSONObject) JSONObject.fromObject( requestResult).get(getCurrencyPairString( currencyPair));
+		// Convert the HTTP request return value to JSON to parse further.
+		return new BtcEDepth( JSONObject.fromObject( requestResultObj), currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
+	
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    } 
 
     /**
      * Get the fee for an order in the resulting currency.
