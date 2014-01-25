@@ -1096,7 +1096,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     	for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
 			if (currencyPair.getCurrency().equals(pair.getCurrency()) 
 					&& currencyPair.getPaymentCurrency().equals(pair.getPaymentCurrency())) {
-				return currencyPairFeeTrade.get(pair);
+				return currencyPairFeeTrade.get(currencyPair);
 			}
 		}
     	return null;
