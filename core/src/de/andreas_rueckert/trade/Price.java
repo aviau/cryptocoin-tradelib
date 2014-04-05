@@ -37,6 +37,11 @@ public class Price extends BigDecimal{
     // Static variables
 
     /**
+     * A price of -1.
+     */
+    public final static Price MINUS_ONE = new Price( "-1");
+
+    /**
      * A price of zero.
      */
     public final static Price ZERO = new Price( "0");

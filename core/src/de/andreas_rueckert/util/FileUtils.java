@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -23,44 +23,51 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.persistence;
-
-import java.util.List;
+package de.andreas_rueckert.util;
 
 
 /**
- * This is an interface for all classes, that want their properties stored.
+ * Class with utility methods for files and filenames.
  */
-public interface PersistentProperties {
+public class FileUtils {
+    
+    // Inner classes
+
 
     // Static variables
+
+    
+    // Instance variables
+
+
+    // Constructors
 
 
     // Methods
 
     /**
-     * Get a list with the settings of the class.
+     * Get the suffix of a file including the leading dot.
      *
-     * @return The persistent settings as a map.
-     */
-    public PersistentPropertyList getSettings();
-
-    /**
-     * Get the section name in the global property file (sort of an hack to avoid duplicated key names).
-     */
-    public String getPropertySectionName();
-
-    /**
-     * Get the hashcode for these properties.
+     * @param filepath The path of the file.
      *
-     * @return The hash code for these properties.
-     */
-    public int hashCode();
-
-    /**
-     * Set new settings for the class.
+     * @return The suffix of the file or null if it has no suffix.
      *
-     * @param settings The new settings for the class.
+     * @see http://stackoverflow.com/questions/3571223/how-do-i-get-the-file-extension-of-a-file-in-java
      */
-    public void setSettings( PersistentPropertyList settings);
+    public static final String getFileSuffix( String filepath) {
+
+	// Get the last dot in the name.
+	int lastDot = filepath.lastIndexOf('.');
+
+	// Get the last file separator
+	int lastFileSeparator = Math.max( filepath.lastIndexOf( '/'), filepath.lastIndexOf( '\\'));
+	
+	// If the dot is after the last separator, return the suffix.
+	if( lastDot > lastFileSeparator) {
+	    
+	    return filepath.substring( lastDot);
+	}
+
+	return null;  // No suffix found.
+    }
 }

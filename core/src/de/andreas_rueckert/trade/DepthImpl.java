@@ -76,6 +76,18 @@ public class DepthImpl implements Depth {
 
 
     // Constructors
+    
+    /**
+     * Create a new depth object. To be overwritten by subclasses.
+     *
+     * @param tradeSite The trade, that send this ticker.
+     */
+    protected DepthImpl( TradeSite tradeSite) {
+
+	_tradeSite = tradeSite;              // Store the trade site in the depth object.
+
+	_timestamp = TimeUtils.getInstance().getCurrentGMTTimeMicros();  // Store the timestamp in the object.
+    }
 
     /**
      * Create a new depth object. To be overwritten by subclasses.
@@ -207,7 +219,7 @@ public class DepthImpl implements Depth {
 	    currentPrice = new Price( currentPrice.add( currentOrder.getPrice().multiply( addedAmount)));
 
 	    // Add the added amount to the total amount, that was already added.
-	    currentAmount = currentAmount.add( addedAmount);
+	    currentAmount = new Amount( currentAmount.add( addedAmount));
 
 	    // If we have reached the requested amount, calculate the price and return it.
 	    // Actually, the comparison should be a '==', but I'm concerned about rounding errors...
@@ -301,7 +313,7 @@ public class DepthImpl implements Depth {
 	// Just loop over the requested order type and add the amounts up.
 	for( DepthOrder currentOrder : buyOrders ? getBuyOrders() : getSellOrders()) {
 
-	    totalAmount = totalAmount.add( currentOrder.getAmount());
+	    totalAmount = new Amount( totalAmount.add( currentOrder.getAmount()));
 	}
 
 	return totalAmount;
@@ -372,4 +384,17 @@ public class DepthImpl implements Depth {
 	// Make sure, the buys are sorted (they should be anyway, but just in case...)
 	Collections.sort( _buys);
     }
+
+    /**
+     * Set the currency pair, that is used for this depth.
+     * This method has to be used, if the pair is not passed in the constructor,
+     * since many methods expect a correctly set currency pair in the depth.
+     *
+     * @param The currency pair, that is used for this depth.
+     */
+    public void setCurrencyPair( CurrencyPair currencyPair) {
+
+	_currencyPair = currencyPair;
+    }
+
 }

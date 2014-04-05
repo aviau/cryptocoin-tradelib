@@ -84,7 +84,7 @@ public class Amount extends BigDecimal {
      * @param amount The amount to add.
      */
     public final Amount add( Amount amount) {
-	return (Amount)super.add( amount);
+	return new Amount( super.add( amount));
     }
 
     /**

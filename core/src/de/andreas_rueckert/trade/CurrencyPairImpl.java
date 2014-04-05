@@ -161,6 +161,17 @@ public class CurrencyPairImpl implements CurrencyPair {
     }
 
     /**
+     * Get the hashcode for a currency pair.
+     *
+     * @return The hash code for this currency pair.
+     */
+    public int hashCode() {
+
+	// Just use the hash code of the string representation.
+	return toString().hashCode();
+    }
+
+    /**
      * Convert this currency pair to a string.
      *
      * @return This currency pair as a string.

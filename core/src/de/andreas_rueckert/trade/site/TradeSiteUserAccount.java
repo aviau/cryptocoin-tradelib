@@ -213,6 +213,17 @@ public class TradeSiteUserAccount {
     }
 
     /**
+     * Get the hashcode for this user account.
+     *
+     * @return The hash code for this user account.
+     */
+    public synchronized int hashCode() {
+
+	// Just use the hash code of the name, if it is available.
+	return getTradeSite() != null ? getTradeSite().getName().hashCode() : 0;
+    }
+
+    /**
      * Check, if this user account is activated at the moment.
      *
      * @return true, if the user account is activated at the moment. False otherwise.

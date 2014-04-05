@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -107,7 +107,8 @@ public class HttpUtils {
     public synchronized static String httpGet( String url, Map< String, String> headerlines) {
       URL requestURL;
       HttpURLConnection connection;
-      String agent = "Mozilla/4.0";  // Bitstamp seems to require this as an example.
+      // String agent = "Mozilla/4.0";  // Bitstamp seems to require this as an example.
+      String agent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:24.0) Gecko/20100101 Firefox/24.0";
       BufferedReader reader;
       String currentLine;
       StringBuffer result = new StringBuffer();
@@ -118,7 +119,9 @@ public class HttpUtils {
       }
 
       try { 
+
          requestURL = new URL( url);
+
       } catch( MalformedURLException me) {
 
 	  LogUtils.getInstance().getLogger().error( "URL format error: " + url);
@@ -127,7 +130,14 @@ public class HttpUtils {
       }
 
       try {
+
          connection = (HttpURLConnection)requestURL.openConnection();
+
+	 // HttpURLConnection.setFollowRedirects( false);
+
+	 connection.setConnectTimeout( 15 * 1000);  // 15 seconds should be enough for a working exchange.
+	                                            // @see http://stackoverflow.com/questions/3163693/java-urlconnection-timeout
+
       } catch( IOException ioe) {
 
 	  LogUtils.getInstance().getLogger().error( "Cannot open URL: " + url);

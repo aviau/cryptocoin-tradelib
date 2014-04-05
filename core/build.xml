@@ -23,7 +23,7 @@
     <mkdir dir="${lib}" />
 
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac srcdir="${src}" destdir="${build}">
+    <javac srcdir="${src}" destdir="${build}" debug="${debug}">
       <classpath>
 	<fileset dir="${lib}">
 	  <include name="**/*.jar" />

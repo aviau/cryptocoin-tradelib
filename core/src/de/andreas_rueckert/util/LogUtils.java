@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *

@@ -62,4 +62,11 @@ public interface CurrencyPair extends Comparable<CurrencyPair> {
      * @return The currency, that is used for payments.
      */
     public Currency getPaymentCurrency();
+
+    /**
+     * Get the hashcode for a currency pair.
+     *
+     * @return The hash code for this currency pair.
+     */
+    public int hashCode();
 }

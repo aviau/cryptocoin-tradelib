@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -34,6 +34,7 @@ import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.Price;
+import de.andreas_rueckert.trade.site.request.TradeSiteProxyInfo;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import java.math.BigDecimal;
@@ -85,6 +86,26 @@ public interface TradeSite extends PersistentProperties {
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
     public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException;
+
+    /**
+     * Get the market depths for all supported currency pairs from the trade site.
+     *
+     * @return The current market depths for all supported currency pairs.
+     *
+     * @throws TradeDataNotAvailableException if the depth is not available.
+     */
+    public Depth [] getDepths() throws TradeDataNotAvailableException;
+
+    /**
+     * Get the current market depths (minimal data of the orders) for a given list of currency pairs.
+     *
+     * @param currencyPairs The currency pairs to query.
+     *
+     * @return The current market depths for the given currency pairs.
+     *
+     * @throws TradeDataNotAvailableException if the depth is not available.
+     */
+    public Depth [] getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException;
 
     /**
      * Get the fee for deposits as percent.
@@ -140,6 +161,13 @@ public interface TradeSite extends PersistentProperties {
     public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAcount);
 
     /**
+     * Get some info, if proxies are allowed for requests to this trade site.
+     *
+     * @return Info if proxies are allowed for requests to this trade site or null. Null means no proxies are allowed.
+     */
+    public TradeSiteProxyInfo getProxyInfo();
+
+    /**
      * Get the supported currency pairs of this trading site.
      *
      * @return The supported currency pairs of this trading site.
@@ -183,6 +211,13 @@ public interface TradeSite extends PersistentProperties {
      * @return The URL of the trading site as a String object.
      */
     public String getURL();
+
+    /**
+     * Get the hashcode for this trade site.
+     *
+     * @return The hash code for this trade site.
+     */
+    public int hashCode();
 
     /**
      * Check, if some request type is allowed at the moment. Most

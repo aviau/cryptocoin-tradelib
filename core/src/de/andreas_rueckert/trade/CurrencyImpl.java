@@ -35,9 +35,33 @@ public enum CurrencyImpl implements Currency {
     /**
      * The values for the minimal currency implementation.
      */
-    ALP, AMC, ANC, BET, BQC, BTC, CGB, CIN, CNC, CNY, COL, CRC, DEM, DGC, DOGE, DTC, DVC, ELC, ELP, EMD, EUR
-	, FRC, FRK, FTC, GBP, GDC, GLC, IFC, I0C, IXC, KGC, LTC, MEC, NAN, NET, NMC, NRB, NVC, ORB, PLN, PPC
-	, PTS, QRK, REC, RED, RUC, RUR, SBC, SPT, TAG, TRC, UNO, USD, WDC, XNC, XPM, ZET;
+    ADT, ALF, ALP, AMC, ANC, ARG, ASC, AUR
+	, BAT, BC, BCX, BEN, BET, BQC, BTB, BTC, BTE, BTG, BUK
+	, CACH, CAP, CASH, CAT, CENT, CGB, CIN, CLR, CMC, CNC, CNH, CNY, COL, CPR, CRC, CSC, CTM
+	, DBL, DEM, DGB, DGC, DMD, DOGE, DRK, DTC, DVC
+	, EAC, ELC, ELP, EMD, EUR, EXE, EZC
+	, FFC, FLAP, FLO, FRC, FRK, FST, FTC
+	, GBP, GDC, GLC, GLD, GLX, GME
+	, HBN, HVC, HYC
+	, IFC, I0C, IXC
+	, JKC
+	, KDC, KGC
+	, LBW, LEAF, LK7, LKY, LOT, LTC, LYC
+	, MAX, MEC, MEM, MEOW, MINT, MNC, MOON, MST, MZC
+	, NAN, NBL, NEC, NET, NIB, NMC, NRB, NUC, NVC, NXT, NYAN
+	, ORB, OSC
+	, PHS, PLN, Points, POT, PPC, PTS, PWC, PXC, PYC
+	, QRK
+	, RCH, RDD, REC, RED, RPC, RUC, RUR, RYC
+	, SAT, SBC, SMC, SPA, SPT, SRC, STR, SXC
+	, TAG, TAK, TEK, TGC, TIPS, TIX, TRC
+	, UNO, USD, UTC 
+	, VLC, VTC
+	, WDC
+	, XJO, XNC, XPM
+	, YAC, YBC
+	, ZCC, ZED, ZEIT, ZET
+	, n42;  // These are the numeric currency symbols.
 
 
     // Methods
@@ -61,6 +85,13 @@ public enum CurrencyImpl implements Currency {
      * @return A CurrencyImpl object or null, if no matching constant was found.
      */
     public static CurrencyImpl findByString( String currencyString) {
+
+	// Since java doesn't allow numeric enum constants, I'll add a leading 'n' to the string.
+	if( isNumeric( currencyString)) {
+
+	    return findByString( "n" + currencyString);
+	}
+
 	return CurrencyImpl.valueOf( currencyString);
     }
 
@@ -71,5 +102,31 @@ public enum CurrencyImpl implements Currency {
      */
     public String getName() {
 	return name();
+    }
+
+    /**
+     * Check, if this currency symbol is a number (42 coin).
+     *
+     * @param currencyCode The code of the currency.
+     *
+     * @return true, if this currency symbol is a number.
+     */
+    public static boolean isNumeric( String currencyCode) {
+
+	return currencyCode.matches("\\d+");  // Just check for simple digits (positive integer).
+    }
+
+    /**
+     * Print a currency code and remove the leading 'n' from numeric coin symbols.
+     */
+    public String toString() {
+
+	// Check if this currency is a numeric coin type.
+	if( getName().matches( "n\\d+")) {
+
+	    return getName().substring( 1);   // Just return the numeric value in this case.
+	}
+	
+	return getName();  // Just return the name otherwise.
     }
 }

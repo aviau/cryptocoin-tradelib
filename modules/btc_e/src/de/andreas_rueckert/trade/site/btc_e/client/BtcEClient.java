@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  * @author gosucymp <gosucymp@gmail.com>
@@ -270,25 +270,32 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	 * Initialization of the supported currency pairs for btc-e with default values.
 	 */
 	private void initDefaultSupportedCurrencyPairs() {
-		_supportedCurrencyPairs = new CurrencyPair[18];
-		_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
-		_supportedCurrencyPairs[3] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[4] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[5] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[6] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR);
-		_supportedCurrencyPairs[7] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[8] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[9] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
-		_supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+		_supportedCurrencyPairs = new CurrencyPair[25];
+		_supportedCurrencyPairs[ 0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[ 1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[ 2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
+		_supportedCurrencyPairs[ 3] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNH);
+		_supportedCurrencyPairs[ 4] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.GBP);
+		_supportedCurrencyPairs[ 5] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[ 6] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[ 7] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[ 8] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR);
+		_supportedCurrencyPairs[ 9] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNH);
+		_supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.GBP);
+		_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
+		_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.RUR);
+		_supportedCurrencyPairs[18] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.CNH);
+		_supportedCurrencyPairs[19] = new CurrencyPairImpl( CurrencyImpl.GBP, CurrencyImpl.USD);
+		_supportedCurrencyPairs[20] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[21] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[22] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
+		_supportedCurrencyPairs[23] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[24] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
 		
 		//fees for trades
 		String fee;
@@ -317,6 +324,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @see http://pastebin.com/K25Nk2Sv
      */
     private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
+
 	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
 	Mac mac;
 	SecretKeySpec key = null;

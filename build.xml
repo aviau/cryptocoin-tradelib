@@ -13,6 +13,7 @@
     <!-- Build the core and modules distribution -->
     <subant target="dist">
       <fileset refid="buildFiles"/>
+      <property name="debug" value="true" />
     </subant>
 
     <antcall target="copy-modules" />

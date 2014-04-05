@@ -48,4 +48,11 @@ public interface Currency {
      * @return The name of this currency.
      */
     public String getName();
+
+    /**
+     * Get the hashcode for a currency.
+     *
+     * @return The hash code for this currency.
+     */
+    public int hashCode();
 }

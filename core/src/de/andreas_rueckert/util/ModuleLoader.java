@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -26,6 +26,7 @@
 package de.andreas_rueckert.util;
 
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.server.TradeServer;
 import de.andreas_rueckert.util.LogUtils;
 import java.io.File;
 import java.io.FileFilter;
@@ -96,7 +97,12 @@ public class ModuleLoader {
      * A map of interfaces to trade sites. Since exchanges are often searched
      * by their name, this is a hashmap< name, tradesite>.
      */
-    private HashMap<String, TradeSite> _registeredTradeSites = new HashMap< String, TradeSite>();
+    private HashMap< String, TradeSite> _registeredTradeSites = new HashMap< String, TradeSite>();
+
+    /**
+     * A map of the interfaces to trade site servers. 
+     */
+    private HashMap< String, TradeServer> _registeredTradeServers = new HashMap< String, TradeServer>();
 
 
     // Constructors
@@ -206,12 +212,32 @@ public class ModuleLoader {
     }
 
     /**
+     * Get a registered trade server from it's name.
+     *
+     * @param siteName The name of the trading server.
+     *
+     * @return The trading server, or null, if no such site was registered.
+     */
+    public TradeServer getRegisteredTradeServer( String siteName) {
+        return _registeredTradeServers.get( siteName);
+    }
+    
+    /**
      * Get all the registered trade sites.
      *
      * @return The registered trade sites.
      */
-    public Map<String,TradeSite> getRegisteredTradeSites() {
+    public Map< String, TradeSite> getRegisteredTradeSites() {
         return _registeredTradeSites;
+    }
+
+    /**
+     * Get all the registered trade servers.
+     *
+     * @return The registered trade servers.
+     */
+    public Map< String, TradeServer> getRegisteredTradeServers() {
+        return _registeredTradeServers;
     }
 
     /**
@@ -253,6 +279,7 @@ public class ModuleLoader {
 		    // Check all the implemented interfaces of this class for the tradesite
 		    for( Class currentInterface : loadedClass.getInterfaces()) {
 			
+			// If this is a trade site...
 			if( currentInterface.equals( TradeSite.class)) {
 			
 			    // Create a client instance from the class.
@@ -263,6 +290,21 @@ public class ModuleLoader {
 
 			    // And add it to the list of registered trade sites.
 			    registerTradeSite( tradeSite);
+
+			    break;  // End the loop for this class.
+			}
+
+			// If this is a trade server...
+			if( currentInterface.equals( TradeServer.class)) {
+			
+			    // Create a server instance from the class.
+			    // Since the client should have 0 arguments, this might work.
+			    // But it might be better to loop over the available
+			    // constructors and call the appropriate one?
+			    TradeServer tradeServer = (TradeServer)( loadedClass.newInstance());
+
+			    // And add it to the list of registered trade servers.
+			    registerTradeServer( tradeServer);
 
 			    break;  // End the loop for this class.
 			}
@@ -312,5 +354,25 @@ public class ModuleLoader {
 
 	// Log the loading of the exchange client.
         LogUtils.getInstance().getLogger().info( "Registered " + site.getName() + " interface");
+    }
+
+    /**
+     * Register a new trade server.
+     *
+     * @param server The new trade server to add to the list of servers.
+     */
+    private void registerTradeServer( TradeServer server) {
+
+        _registeredTradeServers.put( server.getName(), server);  // Add the trade server to the list of servers.
+        
+        // Keep the properties of the trade sites persistent.
+        // getAppProperties().registerPersistentPropertyObject( site);
+
+        /* if( ! _daemonMode) {
+            addTradeTablePanel( new TradeTable( site));  // Create UI elements for this trade server.
+	    } */
+
+	// Log the loading of the exchange server.
+        LogUtils.getInstance().getLogger().info( "Registered " + server.getName() + " server");
     }
 }

@@ -42,23 +42,37 @@ import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
 import de.andreas_rueckert.trade.Price;
+import de.andreas_rueckert.trade.site.request.ProxyRequestHandler;
+import de.andreas_rueckert.trade.site.request.ProxyRequestResult;
+import de.andreas_rueckert.trade.site.request.ProxyRequestResultType;
+import de.andreas_rueckert.trade.site.request.RatedProxy;
+import de.andreas_rueckert.trade.site.request.TradeSiteProxyInfo;
 import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.HttpUtilsProxy;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.math.BigDecimal;
 import java.text.ParseException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -71,12 +85,15 @@ import net.sf.json.JSONObject;
  */
 public class VircurexClient extends TradeSiteImpl implements TradeSite {
 
+    // Inner classes
+
+
     // Static variables
 
     /**
      * The domain of the trading site.
      */
-    final static String DOMAIN = "vircurex.com";
+    final static String DOMAIN = "api.vircurex.com";
 
 
     // Instance variables
@@ -141,6 +158,9 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	_withdrawal_fees.put( CurrencyImpl.TRC, new BigDecimal( "0.01"));
 	_withdrawal_fees.put( CurrencyImpl.WDC, new BigDecimal( "0.1"));
 	_withdrawal_fees.put( CurrencyImpl.XPM, new BigDecimal( "0.01"));
+
+	// Set some proxy info for faster requests.
+	//_proxyInfo = new TradeSiteProxyInfo( this, true, 10);
     }
 
 
@@ -193,6 +213,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	if( isRequestAllowed( TradeSiteRequestType.Depth)) { 
 
 	    if( ! isSupportedCurrencyPair( currencyPair)) {
+
 		throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Vircurex");
 	    }
 
@@ -222,6 +243,354 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	// The request is not allowed at the moment, so throw an exception.
 	throw new TradeDataRequestNotAllowedException( "Request for depth not allowed at the moment at Vircurex site");	
     }
+
+    /**
+     * Get the depths of all pairs with a given payment currency.
+     *
+     * @param paymentCurrency The currency to use for the payment.
+     *
+     * @return The depths of the pairs as an array.
+     *
+     * @throws TradeDataNotAvailableException if many of the depths are not available. A few missing depths are just set to null.
+     */
+    public Depth [] getDepthsForPaymentCurrency( Currency paymentCurrency) throws TradeDataNotAvailableException {
+
+	// Compute the url for the request.
+	String url = "https://" + DOMAIN + "/api/orderbook_alt.json?alt=" + paymentCurrency.getName();
+	
+	// Do the actual request on vircurex.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    // Convert the result to a JSON object.
+	    JSONObject resultJSON = JSONObject.fromObject( requestResult);
+
+	    // Check the status value for errors.
+	    int errorStatus = resultJSON.getInt( "status");
+
+	    if( errorStatus != 0) {  // If the exchange indicated an error.
+
+		String errorMessage = getErrorMessageForErrorCode( errorStatus);
+
+		if( errorMessage == null) {  // If this error is unknown to this API implementation.
+
+		    errorMessage = "(error type unknown to this API implementation)";
+		}
+		
+		throw new TradeDataNotAvailableException( _name 
+							  + " returned an error status of " 
+							  + errorStatus 
+							  + " : " 
+							  + errorMessage);
+	    }
+
+	    // Create a result buffer for the depths.
+	    List< Depth> resultBuffer = new ArrayList< Depth>();
+
+	    // Loop over the keys of the JSON result.
+	    for( Object currentKeyObject : resultJSON.keySet()) {
+
+		// Cast the key to a string.
+		String currentKey = (String)currentKeyObject;
+
+		// Filter the status valus.
+		if( currentKey.equalsIgnoreCase( "status") 
+		    || currentKey.equalsIgnoreCase( "statustext")) {
+
+		    continue;  // Ignore those values for now. (ToDo: check if status != 0 ?)
+		}
+
+		// Convert the key string to a currency object.
+		Currency currentCurrency = CurrencyImpl.findByString( currentKey.toUpperCase());
+
+		// Since this key is a currency, get the depth for this currency.
+		// The JSON for each currency is the same format as in the orderbook method.
+		Depth depth = new VircurexDepth( resultJSON.getJSONObject( currentKey), new CurrencyPairImpl( currentCurrency, paymentCurrency), this);
+
+		//Add this depth to the result buffer.
+		resultBuffer.add( depth);
+	    }
+
+	    // Convert the result buffer to an array and return it.
+	    return resultBuffer.toArray( new Depth[ resultBuffer.size()]);
+	}
+
+	// Since fetching the depths failed, just throw an exception, that the trade data are not available.
+	throw new TradeDataNotAvailableException( "Fetching the depths from " + this._name + " returned null");
+    }
+
+    /**
+     * Get the current market depths sequentially via orderbook_alt method.
+     *
+     * @param currencyPairs The currency pairs to query.
+     *
+     * @return The current market depths for the given currency pairs.
+     *
+     * @throws TradeDataNotAvailableException if to many depths are not available.
+     */
+    public Depth [] getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+
+	// Define a map to resort all the currency pairs according to their payment currencies.
+	Map< Currency, ArrayList< Currency>> _resortedCurrencyPairs = new HashMap< Currency, ArrayList< Currency>>();
+	
+	// Now loop over the currency pairs and resort them according to their payment currency.
+	for( CurrencyPair currentPair : currencyPairs) {
+
+	    // Get the current payment currency.
+	    Currency currentPaymentCurrency = currentPair.getPaymentCurrency();
+
+	    // If there is not list of currencies for this payment currency, create one.
+	    if( ! _resortedCurrencyPairs.containsKey( currentPaymentCurrency)) {
+		
+		// Create an empty list and add it to the map.
+		_resortedCurrencyPairs.put( currentPaymentCurrency, new ArrayList< Currency>());
+	    }
+
+	    // Now get the list for the current payment currency and add the currency, if it's not already 
+	    // in the list.
+	    Currency currentCurrency = currentPair.getCurrency();
+
+	    // Get the list from the map.
+	    ArrayList< Currency> currentList = _resortedCurrencyPairs.get( currentPaymentCurrency);
+
+	    if( currentList == null) {  // <= this should never happen!
+		
+		LogUtils.getInstance().getLogger().error( "Current currency list is null is getDepthsSequentially() !");
+
+		return null;  // Giving up here...
+	    }
+
+	    // If the current currency is not already in the list for the current payment currency.
+	    if( ! currentList.contains( currentCurrency)) {
+		
+		// Add it to the list.
+		currentList.add( currentCurrency);
+	    }
+	}
+
+	// Create a result buffer for the depths.
+	Map< Currency, Depth []> resultBuffer = new HashMap< Currency, Depth []>();
+
+	// Precalculate the sleeping time.
+	// sleep() works with miliseconds. The method returns microseconds,
+	// so divide by 1000.
+	long sleepInterval = getMinimumRequestInterval() / 1000 + 100;	
+
+	// The pairs are resorted now, so we can query the depths for each payment currency.
+	for( Map.Entry< Currency, ArrayList< Currency>> currentEntry : _resortedCurrencyPairs.entrySet()) {
+	    
+	    Currency currentPaymentCurrency = currentEntry.getKey();  // Get the payment currency for the currency list.
+	    ArrayList< Currency> currentList = currentEntry.getValue();  // Get the list for the payment currency.
+    
+	    // ToDo: check if there is only 1 currency in the list and do a regular getDepth() then?
+
+	    // Fetch all the depths for this payment currency.
+	    Depth [] currentDepths = getDepthsForPaymentCurrency( currentPaymentCurrency);
+
+	    // Write the result in the buffer.
+	    resultBuffer.put( currentPaymentCurrency, currentDepths);
+
+	    // Wait until the exchange allows another request.
+	    try {
+		
+		Thread.sleep( sleepInterval);
+		
+	    } catch( InterruptedException ie) {  // Should never happen, I guess...
+		
+		// So do nothing here.
+	    }	    
+	}
+
+	// Now resort those lists according to the currency pair parameter back again.
+	Depth [] result = new Depth[ currencyPairs.length];
+	int currentIndex = 0;
+
+	// Loop over the pair parameter.
+	pairLoop:
+	for( CurrencyPair currentPair : currencyPairs) {
+
+	    // Find the matching pair in the list
+	    for( Depth currentResult : resultBuffer.get( currentPair.getPaymentCurrency())) {
+
+		// If this is the depth for the current currency pair.
+		if( currentResult.getCurrencyPair().equals( currentPair)) {
+
+		    // Store the depth in the result array.
+		    result[ currentIndex++] = currentResult;
+
+		    // And continue with the next currency pair.
+		    continue pairLoop;
+		}
+	    }
+
+	    // We have found no matching result, so just set this depth to null;
+	    result[ currentIndex++] = null;
+	    System.out.println( "Setting depth to null");
+	}
+	
+
+	return result;  // Return the array with the result.
+    }
+
+    /**
+     * Get the current market depths (minimal data of the orders)for a given list of currency pairs.
+     * This is an attempt for a optimized implementation for the vircurex trading site using proxies.
+     *
+     * @param currencyPairs The currency pairs to query.
+     *
+     * @return The current market depths for the given currency pairs.
+     *
+     * @throws TradeDataNotAvailableException if the depth is not available.
+     */
+    public Depth [] getDepthsViaProxies( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+
+	// Create an array for the result.
+	Depth [] result = new Depth[ currencyPairs.length];
+
+	// Check, if all the currency pairs are actually supported here, so we
+	// don't have to interrupt the requests later.
+	for( CurrencyPair currentPair : currencyPairs) {
+
+	    if( ! isSupportedCurrencyPair( currentPair)) {
+
+		throw new CurrencyNotSupportedException( "Currency pair: " + currentPair.toString() + " is currently not supported on Vircurex");
+	    }
+	}
+
+	// @see: https://blogs.oracle.com/CoreJavaTechTips/entry/get_netbeans_6
+
+	// Create a thread pool to limit the number of concurrent requests.
+	ExecutorService pool = Executors.newFixedThreadPool( getProxyInfo().getMaxNumberOfParallelProxyRequests());
+	
+	// Create a new set to store the results of the callables.
+	Set<Future> fetchResults = new HashSet<Future>();
+
+	// Loop over the currency pairs to request but keep the number of running threads 
+	// within the proxy info limits.
+	for( CurrencyPair currentPair : currencyPairs) {
+
+	    // Copy the current pair to a final copy, so it's available in the inner class.
+	    final CurrencyPair currentPairCopy = currentPair;
+	    
+	    // Create and submit a new callable to the thread pool, so it's executed later.
+	    Future< Depth> future = pool.submit( new Callable< Depth>() {
+
+		    /**
+		     * This is the actual main method of the callable, that connections the server.
+		     *
+		     * @returns The depth or null, if the request failed.
+		     */
+		    @Override
+		    public Depth call() {
+
+			// Compute the url of the next currency pair.
+			String url = "https://" 
+			+ DOMAIN + "/api/orderbook.json?alt=" 
+			+ currentPairCopy.getPaymentCurrency().getName() + "&base=" + currentPairCopy.getCurrency().getName();
+
+			// Now do the actual request.
+			ProxyRequestResult requestResult = HttpUtilsProxy.getInstance().httpGet( url, null, VircurexClient.this);
+
+			// If the request went through
+			if( requestResult.getType().equals( ProxyRequestResultType.SUCCESS)) {
+
+			    try {
+
+				// Convert the HTTP request return value to JSON to parse further.
+				Depth depth = new VircurexDepth( JSONObject.fromObject( requestResult), currentPairCopy, VircurexClient.this);
+
+				return depth;  // If the parsing worked, return the depth.
+
+			    } catch( JSONException je) {
+
+				LogUtils.getInstance().getLogger().error( "Cannot parse Vircurex depth return: " + je.toString());
+			    }
+
+			} else {  // The request failed.
+			    
+			    LogUtils.getInstance().getLogger().error( "HTTP get to vircurex failed: " + requestResult.getType().toString());
+			}
+
+			return null;  // Couldn't return a depth successfully, so just return null.
+		    }
+		});
+
+	    // Add the future result to the set of results.
+	    fetchResults.add( future);
+
+	    // Loop over the list of thread results and copy them into a result array.
+	    int currentDepthIndex = 0;
+	    for( Future< Depth> currentFuture : fetchResults) { 
+
+		try {
+
+		    result[ currentDepthIndex] = currentFuture.get();
+
+		} catch( ExecutionException ee) {  // If we cannot execute the callable,
+
+		    result[ currentDepthIndex] = null;  // Just skip it.
+		
+		} catch( InterruptedException ie) {   // If we cannot get the result from the callable,
+
+		    result[ currentDepthIndex] = null;  // Just skip it. 
+
+		}
+
+		++currentDepthIndex;
+	    }
+	}
+
+	// Shutdown the pool, so all threads are terminated (should be empty anyway now
+	// , since all the results are (hopefully) returned.
+	pool.shutdown();
+
+	return result;  // Return the array with the results.
+    }
+
+    /**
+     * Translate an error code to an error message.
+     * 
+     * @param errorCode The error code to translate.
+     *
+     * @return An error message as a string, or null if this error code is unknown.
+     */
+    private String getErrorMessageForErrorCode( int errorCode) {
+
+	// Just check the error code for known error messages.
+	switch( errorCode) {
+
+	case 1: return "Order does not exist";
+	case 2: return "Order does not belong to the user";
+	case 3:	return "Order is already released";
+	case 4:	return "Unknown account name";
+	case 5:	return "Unknown order type";
+	case 6:	return "Missing parameter";
+	case 7:	return "Order is not released";
+	case 8:	return "Unknown currency";
+	case 9:	return "API not configured, either not active or blank security word";
+	case 10: return "Insufficient funds. Your available balance is less than the quantity you have specified in the API call";
+	case 12: return "Currency is missing";
+	case 13: return "Currency is not allowed. Currency1 cannot be a fiat currency";
+	case 14: return "Order type is missing";
+	case 15: return "Unknown order type";
+	case 16: return "Trading the specified currency pair is not allowed";
+	case 17: return "Order is already closed";
+	case 18: return "Unknown order type. Only values 0 or 1 are allowed.";
+	case 100: return "The ID was used already within the last 10 minutes.";
+	case 200: return "The order volume (quantity * unitprice) must be at least 0.0001";
+	case 201: return "Maximum number of open orders reached. A maximum of 50 are allowed";
+	case 7999: return "Functions not active. You have not activated this function in your user profile";
+	case 8000: return "Timestamp is off by more than 5 Minutes.";
+	case 8001: return "API function is not activated";
+	case 8002: return "User is banned from using the API";
+	case 8003: return "Authentication failed";
+	case 9001: return "API function is not available any more";
+	case 9999: return "Unspecified error. Please contact customerservice.";
+	default: return null;
+	}
+    }
+   
 
     /**
      * Get the fee for an order in the resulting currency.
@@ -411,7 +780,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      * @return The update interval in microseconds.
      */
     public long getUpdateInterval() {
-	return 61L * 1000000L;  // Vircurex doesn't want to get polled more often than once per minute.
+	return 6L * 1000000L;  // Vircurex doesn't want to get polled more often than every 5s. I use 6, just in case...
     }
 
     /**
@@ -423,7 +792,8 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      * @return true, if the given type of request is possible at the moment.
      */
     public boolean isRequestAllowed( TradeSiteRequestType requestType) {
-	return ((_lastRequest + getMinimumRequestInterval()) < TimeUtils.getInstance().getCurrentGMTTimeMicros());
+	
+	return ( _lastRequest == -1L) || ((_lastRequest + getMinimumRequestInterval()) < TimeUtils.getInstance().getCurrentGMTTimeMicros());
     }
     
     /**
@@ -460,7 +830,8 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 		    // The first key is the name of the currency.
 		    String currency = (String)iter.next();
 
-		    if( ! currency.equalsIgnoreCase( "STATUS")) {  // Is this just the market status?
+		    if( ! currency.equalsIgnoreCase( "status") &&           // Is this just the market status?
+			! currency.equalsIgnoreCase( "cache_timestamp")) {  // or the cache timestamp?
 			
 			// Now get the info on the currency as a JSONObject.
 			JSONObject jsonCurrencyInfo = jsonInfo.getJSONObject( currency);
