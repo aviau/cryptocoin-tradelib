@@ -201,17 +201,6 @@ public class ModuleLoader {
     }
     
     /**
-     * Get a registered trade site from it's name.
-     *
-     * @param siteName The name of the trading site.
-     *
-     * @return The trading site, or null, if no such site was registered.
-     */
-    public TradeSite getRegisteredTradeSite( String siteName) {
-        return _registeredTradeSites.get( siteName);
-    }
-
-    /**
      * Get a registered trade server from it's name.
      *
      * @param siteName The name of the trading server.
@@ -223,21 +212,32 @@ public class ModuleLoader {
     }
     
     /**
-     * Get all the registered trade sites.
-     *
-     * @return The registered trade sites.
-     */
-    public Map< String, TradeSite> getRegisteredTradeSites() {
-        return _registeredTradeSites;
-    }
-
-    /**
      * Get all the registered trade servers.
      *
      * @return The registered trade servers.
      */
     public Map< String, TradeServer> getRegisteredTradeServers() {
         return _registeredTradeServers;
+    }
+
+    /**
+     * Get a registered trade site from it's name.
+     *
+     * @param siteName The name of the trading site.
+     *
+     * @return The trading site, or null, if no such site was registered.
+     */
+    public TradeSite getRegisteredTradeSite( String siteName) {
+        return _registeredTradeSites.get( siteName);
+    }
+
+    /**
+     * Get all the registered trade sites.
+     *
+     * @return The registered trade sites.
+     */
+    public Map< String, TradeSite> getRegisteredTradeSites() {
+        return _registeredTradeSites;
     }
 
     /**
