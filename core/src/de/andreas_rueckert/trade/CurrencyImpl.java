@@ -35,9 +35,9 @@ public enum CurrencyImpl implements Currency {
     /**
      * The values for the minimal currency implementation.
      */
-    ADT, ALF, ALP, AMC, ANC, ARG, ASC, AUR
+    AC, ADT, ALF, ALP, AMC, ANC, ARG, ASC, AUR
 	, BAT, BC, BCX, BEN, BET, BQC, BTB, BTC, BTE, BTG, BUK
-	, CACH, CAP, CASH, CAT, CENT, CGB, CIN, CLR, CMC, CNC, CNH, CNY, COL, CPR, CRC, CSC, CTM
+	, CACH, CAP, CASH, CAT, CENT, CGB, CIN, CINNI, CLR, CMC, CNC, CNH, CNY, COL, COMM, CPR, CRC, CSC, CTM
 	, DBL, DEM, DGB, DGC, DMC, DMD, DOGE, DRK, DTC, DVC
 	, EAC, ELC, ELP, EMC2, EMD, EUR, EXE, EZC
 	, FFC, FLAP, FLO, FLT, FRC, FRK, FST, FTC
@@ -47,7 +47,7 @@ public enum CurrencyImpl implements Currency {
 	, JKC
 	, KARM, KDC, KGC
 	, LBW, LEAF, LK7, LKY, LOT, LTC, LYC
-	, MAX, MEC, MEM, MEOW, MINT, MNC, MN1, MOON, MRY, MST, MZC
+	, MAX, MEC, MEM, MEOW, MINT, MNC, MN1, MN2, MOON, MRY, MST, MYR, MZC
 	, NAN, NBL, NEC, NET, NIB, NMC, NRB, NUC, NVC, NXT, NYAN
 	, ORB, OSC
 	, PHS, PLN, Points, POT, PPC, PTS, PWC, PXC, PYC
