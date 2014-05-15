@@ -27,8 +27,10 @@ package de.andreas_rueckert.trade;
 
 
 /**
- Throw an exception, if a currency is not supported for this function on this platform.
-*/
+ * Throw an exception, if a currency is not supported for this function on this platform.
+ * (to be replaced by de.andreas_rueckert.trade.currency.CurrencyNotSupportedException .)
+ */
+@Deprecated
 public class CurrencyNotSupportedException extends RuntimeException {
  
     // Instance variables

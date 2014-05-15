@@ -29,6 +29,8 @@ package de.andreas_rueckert.trade.site.kraken.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.currency.CurrencySymbolMapper;
+import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -39,7 +41,15 @@ import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
+import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -59,6 +69,11 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 
     // Instance variables
 
+    /**
+     * A mapping from currency pair objects to the kraken specific names of currency pairs.
+     */
+    private Map< CurrencyPair, String> _registeredCurrencyPairNames = new HashMap< CurrencyPair, String>();
+
 
     // Constructors
 
@@ -71,10 +86,25 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 
 	_name = "Kraken";
 	_url = "https://api.kraken.com/";
+
+	// Fetch the supported currency pairs.
+	requestSupportedCurrencyPairs();
     }
 
 
     // Methods
+
+    /**
+     * Add the name for a new currency pair.
+     *
+     * @param currencyPair The currency pair.
+     * @param krakenName The name of the pair at kraken.
+     */
+    private final void addCurrencyPairName( CurrencyPair currencyPair, String krakenName) {
+
+	// Add the name of the pair to the map.
+	_registeredCurrencyPairNames.put( currencyPair, krakenName);
+    }
 
     /**
      * Cancel an order on the trade site.
@@ -114,6 +144,19 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Get the Kraken name for a given currency pair.
+     *
+     * @param currencyPair The currency pair.
+     *
+     * @return The Kraken name for the given pair or null, if it is not known.
+     */
+    private final String getCurrencyPairName( CurrencyPair currencyPair) {
+
+	// Get the Kraken name of the pair from the map of registered names.
+	return _registeredCurrencyPairNames.get( currencyPair);
+    }
+    
+    /**
      * Get the market depth as a Depth object.
      *
      * @param currencyPair The queried currency pair.
@@ -122,7 +165,50 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      */
     public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	throw new NotYetImplementedException( "Getting the depth is not yet implemented for " + _name);
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
+	}
+
+	// Get the Kraken name for the currency pair.
+	String krakenPairName = getCurrencyPairName( currencyPair);
+
+	// The URL for the depth request.
+	String url = "https://api.kraken.com/" + "0/public/Depth?pair=" + krakenPairName;
+
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultObj = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// Check for errors.
+		JSONArray errors = requestResultObj.getJSONArray( "errors!");
+
+		// If there are errors
+		if( errors.size() > 0) {
+
+		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while getting the Kraken depth. Error 0 is: " + errors.get( 0));
+		    
+		    // and return null.
+		    return null;
+		}
+
+		// Get the JSON object with the ask and bid arrays from the JSON result.
+		return new KrakenDepth( requestResultObj.getJSONObject( "result").getJSONObject( krakenPairName), currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
+	
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
     /**
@@ -168,8 +254,49 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
     public Ticker getTicker( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+	
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
+	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// Get the Kraken name for the currency pair.
+	String krakenPairName = getCurrencyPairName( currencyPair);
+
+	// The URL for the ticker request.
+	String url = "https://api.kraken.com/" + "0/public/Ticker?pair=" + krakenPairName;
+
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultObj = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// Check for errors.
+		JSONArray errors = requestResultObj.getJSONArray( "errors!");
+		
+		// If there are errors
+		if( errors.size() > 0) {
+
+		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while getting the Kraken depth. Error 0 is: " + errors.get( 0));
+		    
+		    // and return null.
+		    return null;
+		}
+
+		// Convert the HTTP request return value to JSON to parse further.
+		return new KrakenTicker( requestResultObj.getJSONObject( "result").getJSONObject( krakenPairName), currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse ticker object: " + je.toString());
+	    }
+	}
+	
+	throw new TradeDataNotAvailableException( "The " + _name + " ticker request failed");
     }
 
     /**
@@ -210,4 +337,70 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 	return true;  // Just a dummy for now.
     }
 
+    /**
+     * Check, if a given currency pair is supported on this site.
+     *
+     * @param currencyPair The currency pair to check for this site.
+     *
+     * @return true, if the currency pair is supported. False otherwise.
+     */
+    public boolean isSupportedCurrencyPair( CurrencyPair currencyPair) {
+
+	// If we have a Kraken name for this pair, it should be supported.
+	return _registeredCurrencyPairNames.containsKey( currencyPair);
+    }
+
+    /**
+     * Fetch the supported currency pairs from the Kraken server.
+     */
+    private boolean requestSupportedCurrencyPairs() {
+
+	String url = _url + "0/public/AssetPairs";  // The URL for fetching the traded pairs.
+
+	// Request info on the traded pairs from the server.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // If the server returned a response.
+
+	    // Try to parse the response.
+	    JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+	    // Test, if there is a result returned (might be missing, if an error occurred).
+	    if( jsonResult.containsKey( "result")) {
+
+		// The pairs are returned as a JSON object.
+		JSONObject pairListJSON = jsonResult.getJSONObject( "result");
+
+		// Iterate over the entries of this object.
+		for( Iterator keyIterator = pairListJSON.keys(); keyIterator.hasNext(); ) {
+
+		    // The key is the name of the pair in kraken style...
+		    String krakenPairName = (String)keyIterator.next(); 
+
+		    // Get the next currency pair as a JSON object.
+		    JSONObject currentCurrencyPairJSON = pairListJSON.getJSONObject( krakenPairName);
+
+		    de.andreas_rueckert.trade.Currency currency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "base"));
+
+		    de.andreas_rueckert.trade.Currency paymentCurrency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "quote"));
+
+		    // Create a pair from the currencies.
+		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+
+		    // Add the pair with it's kraken name to the map of pair names.
+		    addCurrencyPairName( currentPair, krakenPairName);
+
+		    System.out.println( "DEBUG: Kraken: found currency pair " + currentPair.toString());
+
+		    // ToDo: also parse decimals for precision etc?
+
+		    
+		}
+	    }
+	}
+
+	return false;   // Fetching the traded currency pairs failed.
+
+	// throw new NotYetImplementedException( "Fetching the supported currency pairs is not yet implemented for Kraken");
+    }
 }

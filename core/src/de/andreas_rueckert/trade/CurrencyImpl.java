@@ -45,7 +45,7 @@ public enum CurrencyImpl implements Currency {
 	, HBN, HVC, HYC
 	, IFC, I0C, IXC
 	, JKC
-	, KARM, KDC, KGC
+	, KARM, KDC, KGC, KRW
 	, LBW, LEAF, LK7, LKY, LOT, LTC, LYC
 	, MAX, MEC, MEM, MEOW, MINT, MNC, MN1, MN2, MOON, MRY, MST, MYR, MZC
 	, NAN, NBL, NEC, NET, NIB, NMC, NRB, NUC, NVC, NXT, NYAN
@@ -58,7 +58,7 @@ public enum CurrencyImpl implements Currency {
 	, UNO, USD, UTC 
 	, VLC, VTC
 	, WC, WDC
-	, XJO, XNC, XPM
+	, XBT, XDG, XJO, XNC, XPM, XRP, XVN
 	, YAC, YBC
 	, ZCC, ZED, ZEIT, ZET
 	, n42;  // These are the numeric currency symbols.
