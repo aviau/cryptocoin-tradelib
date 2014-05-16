@@ -38,7 +38,7 @@ public enum CurrencyImpl implements Currency {
     AC, ADT, ALF, ALP, AMC, ANC, ARG, ASC, AUR
 	, BAT, BC, BCX, BEN, BET, BQC, BTB, BTC, BTE, BTG, BUK
 	, CACH, CAP, CASH, CAT, CENT, CGB, CIN, CINNI, CLR, CMC, CNC, CNH, CNY, COL, COMM, CPR, CRC, CSC, CTM
-	, DBL, DEM, DGB, DGC, DMC, DMD, DOGE, DRK, DTC, DVC
+	, DBL, DEM, DGB, DGC, DIME, DMC, DMD, DOGE, DRK, DTC, DVC
 	, EAC, ELC, ELP, EMC2, EMD, EUR, EXE, EZC
 	, FFC, FLAP, FLO, FLT, FRC, FRK, FST, FTC
 	, GBP, GDC, GLC, GLD, GLX, GME
@@ -46,7 +46,7 @@ public enum CurrencyImpl implements Currency {
 	, IFC, I0C, IXC
 	, JKC
 	, KARM, KDC, KGC, KRW
-	, LBW, LEAF, LK7, LKY, LOT, LTC, LYC
+	, LBW, LEAF, LGD, LK7, LKY, LOT, LTB, LTC, LYC
 	, MAX, MEC, MEM, MEOW, MINT, MNC, MN1, MN2, MOON, MRY, MST, MYR, MZC
 	, NAN, NBL, NEC, NET, NIB, NMC, NRB, NUC, NVC, NXT, NYAN
 	, ORB, OSC
@@ -55,7 +55,7 @@ public enum CurrencyImpl implements Currency {
 	, RBBT, RCH, RDD, REC, RED, RPC, RUC, RUR, RYC
 	, SAT, SBC, SMC, SPA, SPT, SRC, STR, SXC
 	, TAG, TAK, TEK, TGC, TIPS, TIX, TRC
-	, UNO, USD, UTC 
+	, UNB, UNO, USD, USDe, UTC 
 	, VLC, VTC
 	, WC, WDC
 	, XBT, XDG, XJO, XNC, XPM, XRP, XVN

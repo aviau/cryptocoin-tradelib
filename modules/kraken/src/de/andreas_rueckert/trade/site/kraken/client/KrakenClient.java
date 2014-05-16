@@ -88,7 +88,19 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 	_url = "https://api.kraken.com/";
 
 	// Fetch the supported currency pairs.
-	requestSupportedCurrencyPairs();
+	if( requestSupportedCurrencyPairs()) {
+
+	    // Generate the array of supported currency pairs from the generated mapping.
+	    _supportedCurrencyPairs = _registeredCurrencyPairNames.keySet().toArray( new CurrencyPair[ _registeredCurrencyPairNames.size()]);
+
+	} else {
+
+	    // Log the problem.
+	    LogUtils.getInstance().getLogger().error( "Cannot fetch the supported currency pairs from " + _name);
+
+	    // Just use a array with a length of 0 as a dummy.
+	    _supportedCurrencyPairs = new CurrencyPair[ 0];
+	}
     }
 
 
@@ -390,12 +402,14 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 		    // Add the pair with it's kraken name to the map of pair names.
 		    addCurrencyPairName( currentPair, krakenPairName);
 
-		    System.out.println( "DEBUG: Kraken: found currency pair " + currentPair.toString());
+		    // System.out.println( "DEBUG: Kraken: found currency pair " + currentPair.toString());
 
 		    // ToDo: also parse decimals for precision etc?
 
 		    
 		}
+
+		return true;  // Parsing worked.
 	    }
 	}
 
