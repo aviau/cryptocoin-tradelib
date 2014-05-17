@@ -197,7 +197,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 		JSONObject requestResultObj = (JSONObject)JSONObject.fromObject( requestResult);
 
 		// Check for errors.
-		JSONArray errors = requestResultObj.getJSONArray( "errors!");
+		JSONArray errors = requestResultObj.getJSONArray( "error");
 
 		// If there are errors
 		if( errors.size() > 0) {
