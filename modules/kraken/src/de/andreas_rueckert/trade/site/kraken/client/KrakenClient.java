@@ -177,6 +177,8 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      */
     public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
+	// System.out.println( "DEBUG: getting depth for " + currencyPair.toString());
+
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
@@ -229,7 +231,10 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      * @return The shortest allowed request interval in microseconds.
      */
     public final long getMinimumRequestInterval() {
-	return getUpdateInterval();
+
+	// The actual minimum request interval is 5s, but I use 6 just to make sure...
+	// @see http://www.reddit.com/r/Bitcoin/comments/1rztum/release_the_kraken_part_2/
+	return 6L * 1000000L;
     }
 
 
