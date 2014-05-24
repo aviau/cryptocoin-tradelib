@@ -60,6 +60,15 @@ public class Amount extends BigDecimal {
     /**
      * Create a new amount from a string.
      *
+     * @param amount The amount as a double.
+     */
+    public Amount( double amount) {
+	super( amount);
+    }
+
+    /**
+     * Create a new amount from a string.
+     *
      * @param amount The amount as a string.
      */
     public Amount( String amount) {
