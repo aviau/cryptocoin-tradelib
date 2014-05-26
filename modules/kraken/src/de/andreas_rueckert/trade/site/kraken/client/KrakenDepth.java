@@ -59,7 +59,7 @@ public class KrakenDepth extends DepthImpl {
      */
     public KrakenDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
 
-	super( currencyPair, tradeSite);
+	super( currencyPair, tradeSite);  // Init the base depth variables.
 	
 	// Parse the nested JSON arrays in the response and convert them to DepthOrder objects.
 	// Kraken delivers the timestamp of the order as the third argument, but this is ignored

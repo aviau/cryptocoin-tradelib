@@ -768,7 +768,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
     /**
      * Fetch the supported currency pairs from the Kraken server.
      */
-    private boolean requestSupportedCurrencyPairs() {
+    private final boolean requestSupportedCurrencyPairs() {
 
 	String url = _url + "0/public/AssetPairs";  // The URL for fetching the traded pairs.
 
@@ -844,8 +844,6 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	return false;   // Fetching the traded currency pairs failed.
-
-	// throw new NotYetImplementedException( "Fetching the supported currency pairs is not yet implemented for Kraken");
     }
 
     /**

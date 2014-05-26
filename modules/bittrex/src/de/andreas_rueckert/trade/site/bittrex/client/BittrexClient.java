@@ -28,6 +28,7 @@ package de.andreas_rueckert.trade.site.bittrex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.Currency;  // <= to be replaced!
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
@@ -35,6 +36,7 @@ import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -42,7 +44,15 @@ import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -59,6 +69,11 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 
     // Instance variables
+
+    /**
+     * The trade fees are flat for now, so return a fixed price for each trade.
+     */
+    private Map< Currency, Price> _tradeFees = new HashMap< Currency, Price>();
 
 
     // Constructors
@@ -138,11 +153,40 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 	if( requestResult != null) {  // Request sucessful?
 
-	    System.out.println( "DEBUG: depth result: " + requestResult);
+	    try {
+
+		// System.out.println( "DEBUG: depth result: " + requestResult);
+		
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		// Check, if the success field indicates success.
+		boolean successFlag = jsonResult.getBoolean( "success");
+		
+		if( successFlag) {  // If the flag is set, parse the actual result.
+		    
+		    // The depth is returned as a JSON object. Parse it in the created BittrexDepth instance.
+		    return new BittrexDepth( jsonResult.getJSONObject( "result"), currencyPair, this); 
+
+		} else {  // There is an error message returned hopefully...
+
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+							  + _name 
+							  + " depth. Error is: " + jsonResult.getString( "message"));
+		    
+		    // and return null.
+		    return null;
+		}
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
 	}
 
-	// Default for now...
-	throw new NotYetImplementedException( "Getting the depth is not yet implemented for " + _name);
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
     /**
@@ -222,5 +266,126 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
     public boolean isRequestAllowed( TradeSiteRequestType requestType) {
 
 	return true;  // Just a dummy for now.
+    }
+
+    /**
+     * Request info on the traded currencies including the trading fees(!).
+     * (That's the main reason to implement this method here.)
+     *
+     * @return true, if the currency info including the fees was returned. False otherwise.
+     */
+    private final boolean requestCurrencyInfo() {
+
+	String url = _url + "public/getcurrencies";  // The URL for fetching the traded currencies.
+
+	// Request info on the traded currencies from the server.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // If the server returned a response.
+
+	    // Try to parse the response.
+	    JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+	    // Check, if the success field indicates success.
+	    boolean successFlag = jsonResult.getBoolean( "success");
+
+	    if( successFlag) {  // If the flag is set, parse the actual result.
+
+		// The info on the currencies is returned as a JSON array of JSON objects.
+		JSONArray currencyListJSON = jsonResult.getJSONArray( "result");
+
+		// Loop over the currency array and convert the entries to a Currency <=> Price map.
+		for( int currentCurrencyIndex = 0; currentCurrencyIndex < currencyListJSON.size(); ++currentCurrencyIndex) {
+
+		    // Get the current currency info as a JSON object.
+		    JSONObject currentCurrencyJSON = currencyListJSON.getJSONObject( currentCurrencyIndex);
+
+		    // Get the traded currency from the JSON object.
+		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentCurrencyJSON.getString( "Currency"));
+
+		    // Create a price from the tx fee and the parsed currency.
+		    Price fee = new Price( currentCurrencyJSON.getDouble( "TxFee"), currency);
+
+		    // Put the fee into the currency <=> fee map.
+		    _tradeFees.put( currency, fee);
+		    
+		}
+
+	    } else {  // There is an error message returned hopefully...
+
+		// Write the error message to the log. Should help to identify the problem.
+		LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+							  + _name 
+							  + " currency info. Error is: " + jsonResult.getString( "message"));
+	    }
+	}
+
+	return false;   // Fetching the traded currencies failed.
+    }
+
+    /**
+     * Request the supported currency pairs from the bittrex server.
+     *
+     * @return true, if the currencies were returned, false in case of an error.
+     */
+    private final boolean requestSupportedCurrencyPairs() {
+
+	String url = _url + "public/getmarkets";  // The URL for fetching the traded pairs.
+
+	// Request info on the traded pairs from the server.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // If the server returned a response.
+
+	    // Try to parse the response.
+	    JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+	    // Check, if the success field indicates success.
+	    boolean successFlag = jsonResult.getBoolean( "success");
+
+	    if( successFlag) {  // If the flag is set, parse the actual result.
+
+		// The pairs are returned as a JSON array.
+		JSONArray pairListJSON = jsonResult.getJSONArray( "result");
+
+		// Create a buffer for the parsed currency pairs.
+	        List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+
+		// Loop over the pair array and convert the entries to CurrencyPair objects.
+		for( int currentPairIndex = 0; currentPairIndex < pairListJSON.size(); ++currentPairIndex) {
+
+		    // Get the current pair as a JSON object.
+		    JSONObject currentPairJSON = pairListJSON.getJSONObject( currentPairIndex);
+
+		    // Get the traded currency from the JSON object.
+		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
+
+		    // Get the payment currency from the JSON object.
+		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
+
+		    // Create a pair from the currencies.
+		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+
+		    // ToDo: check, if this market is currently active? (really required? Are market deactivated frequently?)
+		    
+		    // Add the current pair to the result buffer.
+		    resultBuffer.add( currentPair);
+		}
+
+		// Convert the buffer to an array and store the currency pairs into the default client array.
+		_supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+
+		return true;  // Reading the currency pairs worked ok.
+
+	    } else {  // There is an error message returned hopefully...
+
+		// Write the error message to the log. Should help to identify the problem.
+		LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+							  + _name 
+							  + " supported currency pairs. Error is: " + jsonResult.getString( "message"));
+	    }
+	} 
+
+	return false;   // Fetching the traded currency pairs failed.
     }
 }

@@ -60,11 +60,32 @@ public class Price extends BigDecimal{
     /**
      * Create a new price from a string.
      *
+     * @param price The price as a double.
+     */
+    public Price( double price) {
+	super( price);
+    }
+
+    /**
+     * Create a new price from a string.
+     *
      * @param price The price as a string.
      */
     public Price( String price) {
 	super( price, MathContext.DECIMAL128);
     }
+
+    /**
+     * Create a new price from a double and a currency.
+     *
+     * @param price The price as a double.
+     * @param currency The currency of the price.
+     */
+    public Price( double price, Currency currency) {
+	super( price);
+
+	_currency = currency;
+    } 
 
     /**
      * Create a new price from a string and a currency.
