@@ -34,6 +34,7 @@ import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
 import de.andreas_rueckert.trade.Price;
@@ -86,6 +87,20 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	_name = "Bittrex";  // Set the name of this exchange.
 
 	_url = "https://bittrex.com/api/v1/";  // The URL for the version 1 API.
+
+	// Fetch the traded currency pairs.
+	if( ! requestSupportedCurrencyPairs()) {
+	    
+	    // Write the problem to the log. 
+	    LogUtils.getInstance().getLogger().error( "Error while fetching the traded currency pairs at " + _name);
+	}
+
+	// Fetch the fees for the currencies.
+	if( ! requestCurrencyInfo()) {
+
+	    // Write the problem to the log. 
+	    LogUtils.getInstance().getLogger().error( "Error while fetching the trade fees at " + _name);
+	}
     }
 
 
@@ -187,6 +202,50 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {
+
+	    // Bittrex doesn't charge for withdraw orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof DepositOrder) {
+
+	    // Bittrex doesn't charge for deposit orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} if(( order.getOrderType() == OrderType.BUY) || ( order.getOrderType() == OrderType.SELL)) {
+
+	    // Try to get the fee for the given currency.
+	    Price fee = _tradeFees.get( order.getCurrencyPair().getCurrency());
+
+	    // If there is no fee availble, log the problem and throw an execption.
+	    if( fee == null) {
+
+		// Write the an message to the log. Should help to identify the problem.
+		LogUtils.getInstance().getLogger().error( this._name + ": error while fetching the fee for " 
+							  + order.getCurrencyPair().getCurrency().getName());
+
+		throw new CurrencyNotSupportedException( this._name + ": cannot compute fee for this order: " + order.toString());
+	    }
+	    
+	    return fee;
+
+	} else {  // Just the default implementation for the other order forms.
+
+	    return super.getFeeForOrder( order);
+	}
     }
 
     /**
@@ -308,8 +367,9 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 		    // Put the fee into the currency <=> fee map.
 		    _tradeFees.put( currency, fee);
-		    
 		}
+
+		return true;  // Fees successfully fetched.
 
 	    } else {  // There is an error message returned hopefully...
 
