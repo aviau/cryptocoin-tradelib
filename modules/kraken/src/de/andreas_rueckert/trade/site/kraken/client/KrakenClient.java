@@ -824,7 +824,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 			// The format of the fees is [<min volume>, <fee>]
 			feeSet.addFee( new Amount( jsonCurrentFee.getDouble( 0)), new BigDecimal( jsonCurrentFee.getDouble( 1)));
 
-			System.out.println( "DEBUG: adding fee " + jsonCurrentFee.getDouble( 1) + " for currency pair " + currentPair.toString());
+			// System.out.println( "DEBUG: adding fee " + jsonCurrentFee.getDouble( 1) + " for currency pair " + currentPair.toString());
 		    }
 
 		    // Put the set of fees into the map of fees for currency pairs.

@@ -160,7 +160,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	// I use max 50 orders for now. Should be enough for most trading apps, I guess.
 	// @see 
 	String url = _url + "public/getorderbook?market=" 
-	    + currencyPair.getCurrency().getName() + "-" + currencyPair.getPaymentCurrency().getName()
+	    + currencyPair.getPaymentCurrency().getName() + "-" + currencyPair.getCurrency().getName()
 	    + "&type=both&depth=50";
 
 	// Do the actual request.
@@ -187,8 +187,10 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 		    // Write the error message to the log. Should help to identify the problem.
 		    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
-							  + _name 
-							  + " depth. Error is: " + jsonResult.getString( "message"));
+							      + _name 
+							      + " depth for " 
+							      + currencyPair.toString() 
+							      + ". Error is: " + jsonResult.getString( "message"));
 		    
 		    // and return null.
 		    return null;
@@ -246,6 +248,16 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 	    return super.getFeeForOrder( order);
 	}
+    }
+
+    /**
+     * Get the shortest allowed requet interval in microseconds.
+     *
+     * @return The shortest allowed request interval in microseconds.
+     */
+    public final long getMinimumRequestInterval() {
+
+	return 15L * 1000000L;  // Use a reasonable default value. Don't know any better for now.
     }
 
     /**
