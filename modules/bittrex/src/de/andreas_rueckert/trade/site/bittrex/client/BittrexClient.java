@@ -195,6 +195,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 		    // and return null.
 		    return null;
 		}
+
 	    } catch( JSONException je) {
 
 		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
@@ -298,7 +299,50 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// The URL for the ticker request.
+	String url = _url + "public/getticker?market="
+	    + currencyPair.getPaymentCurrency().getName() + "-" + currencyPair.getCurrency().getName();
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		// Check, if the success field indicates success.
+		boolean successFlag = jsonResult.getBoolean( "success");
+		
+		if( successFlag) {  // If the flag is set, parse the actual result.
+		    
+		    // The ticker is returned as a JSON object. Parse it in the created BittrexTicker instance.
+		    return new BittrexTicker( jsonResult.getJSONObject( "result"), currencyPair, this); 
+
+		} else {
+
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+							      + _name 
+							      + " ticker for " 
+							      + currencyPair.toString() 
+							      + ". Error is: " + jsonResult.getString( "message"));
+
+		    // and return null.
+		    return null;
+		}
+
+	    }  catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " ticker return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
+
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to ticker request");
     }
 
     /**
