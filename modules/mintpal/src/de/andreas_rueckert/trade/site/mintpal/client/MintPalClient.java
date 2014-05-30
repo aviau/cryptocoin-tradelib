@@ -30,6 +30,7 @@ import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
@@ -40,7 +41,11 @@ import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
+import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
 import java.util.Collection;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -67,6 +72,8 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
     public MintPalClient() {
 
 	_name = "MintPal";  // Set the name of this exchange.
+
+	_url = "https://api.mintpal.com/v1/";  // Current URL for API requests.
     }
 
 
@@ -107,6 +114,132 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
     public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for " + _name);
+    }
+
+    /**
+     * Get the market depth as a Depth object.
+     *
+     * @param currencyPair The queried currency pair.
+     *
+     * @throws TradeDataNotAvailableException if the depth is not available.
+     *
+     * @see https://www.mintpal.com/api#marketorders
+     */
+    public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
+	}
+
+	// Create 2 vars for the buy and sell orders.
+	JSONObject buyJSON = null,  sellJSON = null;
+
+	// Create the base URL for the requests (buy and sell have to be requested separately).
+	String url = _url + "market/orders/" + currencyPair.getCurrency() + "/" + currencyPair.getPaymentCurrency() + "/";
+
+	// Do the first request.
+	String requestResult = HttpUtils.httpGet( url + "BUY");
+	
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		// Check, if there is an error field in the response.
+		if( jsonResult.containsKey( "error")) {  // An error occurred.
+		    
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the buy orders for the "
+							      + _name
+							      + " depth for "
+							      +  currencyPair.toString() 
+							      + ". Error is: " + jsonResult.getJSONObject( "error").getString( "message"));
+
+		    throw new TradeDataNotAvailableException( "cannot fetch buy orders for depth for " + this._name);
+
+		} else {  // Fetching the data worked
+
+		    buyJSON = jsonResult;  // Set the result for the buy orders.
+		}
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+
+	} else {
+
+	    	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request for buy orders");
+	}
+	// End of first request.
+
+	// Respect the minimum request interval.
+	try {
+
+	    Thread.sleep( getMinimumRequestInterval() / 1000L);
+
+	} catch( InterruptedException ie) {
+
+	    // Should not happen...
+	}
+
+	// Do the second request.
+	requestResult = HttpUtils.httpGet( url + "SELL");
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		// Check, if there is an error field in the response.
+		if( jsonResult.containsKey( "error")) {  // An error occurred.
+		    
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the sell orders for the "
+							      + _name
+							      + " depth for "
+							      +  currencyPair.toString() 
+							      + ". Error is: " + jsonResult.getJSONObject( "error").getString( "message"));
+
+		    throw new TradeDataNotAvailableException( "cannot fetch sell orders for depth for " + this._name);
+
+		} else {  // Fetching the data worked.
+
+			sellJSON = jsonResult;  // Set the result for the sell orders.
+		}
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	} else {
+	    throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request for sell orders");
+	}
+	// End of second request.
+
+	// Now create a new depth object from the returned buy and sell orders.
+	return new MintPalDepth( buyJSON, sellJSON, currencyPair, this); 
+    }
+
+   /**
+     * Get the shortest allowed requet interval in microseconds.
+     *
+     * @return The shortest allowed request interval in microseconds.
+     */
+    public final long getMinimumRequestInterval() {
+
+	// The actual limit seems to be 10 requests / second.
+	// @see https://www.mintpal.com/api
+	// (in the overview.)
+	return 2L * 100000L;  // Use 5 requests per second just to make sure we don't violate the limit.
     }
 
     /**
