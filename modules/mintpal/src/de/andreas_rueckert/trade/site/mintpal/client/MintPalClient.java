@@ -28,13 +28,17 @@ package de.andreas_rueckert.trade.site.mintpal.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.CurrencyImpl;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -43,7 +47,10 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -62,6 +69,11 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 
 
     // Instance variables
+
+    /**
+     * The fees for withdraw orders.
+     */
+    Map< Currency, BigDecimal> _withdrawFees = null;
 
 
     // Constructors
@@ -229,6 +241,51 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	return new MintPalDepth( buyJSON, sellJSON, currencyPair, this); 
     }
 
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://www.mintpal.com/fees 
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof DepositOrder) {
+
+	    // MintPal doesn't seem to charge for deposit orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if(( order.getOrderType() == OrderType.BUY) || ( order.getOrderType() == OrderType.SELL)) {
+
+	    // Currently the fee for buy and sell orders seems to be 0.15 % for all currencies...
+	    // @see https://www.mintpal.com/fees
+	    // but the fee for buy orders is added to the paid amount?
+	    return new Price( order.getPrice().multiply( order.getAmount().multiply( new BigDecimal( "0.0015"))), order.getCurrencyPair().getPaymentCurrency());
+
+	} else if( order instanceof WithdrawOrder) {
+
+	    // We have to switch the coin types here, since there seems to be no API call to fetch the fees... :-(
+	    
+	    BigDecimal fee = getWithdrawFee( order.getCurrencyPair().getCurrency());
+
+	    if( fee == null) {
+
+		throw new CurrencyNotSupportedException( this._name + ": cannot compute withdraw fee for this order: " + order.toString());
+	    }
+
+	    // The fee is in percent so divide by 100.
+	    return new Price( order.getAmount().multiply( fee).multiply( new BigDecimal( "0.01")), order.getCurrencyPair().getCurrency());
+
+	} else {  // Unknown order type? Just use the default implementation for it.
+
+	    return super.getFeeForOrder( order);
+	}
+    }
+
    /**
      * Get the shortest allowed requet interval in microseconds.
      *
@@ -306,6 +363,91 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
      */
     public final long getUpdateInterval() {
 	return 15L * 1000000L;  // 15s should work for most exchanges. Dont't know the actual frequency (a_rueckert).
+    }
+
+    /**
+     * Get the withdraw fees as percent(!) for a given currency.
+     *
+     * @param currency The currency, we want the fee for.
+     *
+     * @return The withdraw fee as percent(!).
+     */
+    public BigDecimal getWithdrawFee( Currency currency) {
+
+	if( _withdrawFees == null) {  // No fees stored yet.
+
+	    // Create the map with the fees.
+	    _withdrawFees = new HashMap< Currency, BigDecimal>();
+
+	    // Add the known currencies to the map.
+	    _withdrawFees.put( CurrencyImpl.n365, new BigDecimal( "0.000002"));
+	    _withdrawFees.put( CurrencyImpl.AC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.AUR, new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyImpl.BC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.BTC, new BigDecimal( "0.000200"));
+	    _withdrawFees.put( CurrencyImpl.BTCS, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.CAIX, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.COMM, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.CTM, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.DGB, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.DOGE, new BigDecimal( "1.000000"));
+	    _withdrawFees.put( CurrencyImpl.DOPE, new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyImpl.DRK, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.ECC, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.EMC2, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.EMO, new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyImpl.FAC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.FLT, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.GRS, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.GRUMP, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.HIRO, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.HVC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.IVC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.KARM, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.KDC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.LTC, new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyImpl.METH, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.MINT, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.MRC, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.MRS, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.MYR, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.MZC, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.NAUT, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.NC2, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.NOBL, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.OLY, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.PANDA, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.PENG, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.PLC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.PND, new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyImpl.POT, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.Q2C, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.RBBT, new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyImpl.RIC, new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyImpl.SAT, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.SPA, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.SUN, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.SYNC, new BigDecimal( "0.000002"));
+	    _withdrawFees.put( CurrencyImpl.TAK, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.TES, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.TOP, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.UNO, new BigDecimal( "0.001000"));
+	    _withdrawFees.put( CurrencyImpl.USDe, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.UTC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.VTC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.WC, new BigDecimal( "1.000000"));
+	    _withdrawFees.put( CurrencyImpl.XC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.XLB, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.XXL, new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyImpl.YC, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.ZED, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyImpl.ZEIT, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.ZET, new BigDecimal( "0.020000"));
+	}
+
+	// Now try to fetch the fee from the map.
+	return _withdrawFees.get( currency);
     }
 
     /**
