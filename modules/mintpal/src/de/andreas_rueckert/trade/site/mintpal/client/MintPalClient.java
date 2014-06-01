@@ -526,37 +526,47 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	String requestResult = HttpUtils.httpGet( url);
 	
 	if( requestResult != null) {  // If the server returned a response.
-	    
-	    // Try to parse the response.
-	    // If it is an error message, this will be a JSONObject(!).
-	    JSONArray jsonResult = JSONArray.fromObject( requestResult);
 
-	    // Create a buffer for the parsed currency pairs.
-	    List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+	    try {
 
-	    // Loop over the returned JSON array and convert the entries to CurrencyPair objects.
-	    for( int currentPairIndex = 0; currentPairIndex < jsonResult.size(); ++currentPairIndex) {
-
-		// Get the current pair as a JSON object.
-		JSONObject currentPairJSON = jsonResult.getJSONObject( currentPairIndex);
-
-		// Get the traded currency from the JSON object.
-		de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code"));
-			
-		// Get the payment currency from the JSON object.
-		de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange"));
-
-		// Create a pair from the currencies.
-		de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		// Try to parse the response.
+		// If it is an error message, this will be a JSONObject(!).
+		JSONArray jsonResult = JSONArray.fromObject( requestResult);
 		
-		// Add the current pair to the result buffer.
-		resultBuffer.add( currentPair);
-	    }
+		// Create a buffer for the parsed currency pairs.
+		List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+		
+		// Loop over the returned JSON array and convert the entries to CurrencyPair objects.
+		for( int currentPairIndex = 0; currentPairIndex < jsonResult.size(); ++currentPairIndex) {
+		    
+		    // Get the current pair as a JSON object.
+		    JSONObject currentPairJSON = jsonResult.getJSONObject( currentPairIndex);
+		    
+		    // Get the traded currency from the JSON object.
+		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code"));
+		    
+		    // Get the payment currency from the JSON object.
+		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange"));
 
-	    // Convert the buffer to an array and store the currency pairs into the default client array.
-	    _supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
-	    
-	    return true;  // Reading the currency pairs worked ok.
+		    // Create a pair from the currencies.
+		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		
+		    // Add the current pair to the result buffer.
+		    resultBuffer.add( currentPair);
+	    }
+		
+		// Convert the buffer to an array and store the currency pairs into the default client array.
+		_supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+		
+		return true;  // Reading the currency pairs worked ok.
+
+	    } catch( JSONException je) {
+
+		// Write the exception to the log. Should help to identify the problem.
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " market stats return: " + je.toString());
+
+		return false;  // Reading the currency pairs failed.
+	    }
 
 	} else {  // The server did not return any reply.
 		    
