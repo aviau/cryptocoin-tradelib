@@ -48,9 +48,12 @@ import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -86,6 +89,13 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	_name = "MintPal";  // Set the name of this exchange.
 
 	_url = "https://api.mintpal.com/v1/";  // Current URL for API requests.
+
+	// Fetch the traded currency pairs.
+	if( ! requestSupportedCurrencyPairs()) {
+	    
+	    // Write the problem to the log. 
+	    LogUtils.getInstance().getLogger().error( "Error while fetching the traded currency pairs at " + _name);
+	}
     }
 
 
@@ -147,7 +157,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	JSONObject buyJSON = null,  sellJSON = null;
 
 	// Create the base URL for the requests (buy and sell have to be requested separately).
-	String url = _url + "market/orders/" + currencyPair.getCurrency() + "/" + currencyPair.getPaymentCurrency() + "/";
+	String url = _url + "market/orders/" + currencyPair.getCurrency().getName() + "/" + currencyPair.getPaymentCurrency().getName() + "/";
 
 	// Do the first request.
 	String requestResult = HttpUtils.httpGet( url + "BUY");
@@ -178,7 +188,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 
 	    } catch( JSONException je) {
 
-		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
 
 		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
 	    }
@@ -228,7 +238,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 
 	    } catch( JSONException je) {
 
-		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
 
 		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
 	    }
@@ -337,7 +347,47 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// Create the URL to fetch stats on the given market (there is no real ticker request).
+	String url = _url +"market/stats/" + currencyPair.getCurrency().getName() + "/" + currencyPair.getPaymentCurrency().getName();
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+		
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+		
+		// Check, if there is an error field in the response.
+		if( jsonResult.containsKey( "error")) {  // An error occurred.
+
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the market stats (ticker) on "
+							      + _name
+							      + " for "
+							      +  currencyPair.toString() 
+							      + ". Error is: " + jsonResult.getJSONObject( "error").getString( "message")); 
+		    
+		    throw new TradeDataNotAvailableException( "cannot fetch market stats (ticker) for " + this._name);
+
+		} else {  // Fetching the data worked
+
+		    // Create a new ticker object and return it.
+		    return new MintPalTicker( jsonResult, currencyPair, this);
+		}
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " ticker return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
+
+	// If the exchange returned no response throw an exception.
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to ticker request");
     }
 
     /**
@@ -461,5 +511,61 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
     public boolean isRequestAllowed( TradeSiteRequestType requestType) {
 
 	return true;  // Just a dummy for now.
+    }
+
+    /**
+     * Request the supported currency pairs from the bittrex server.
+     *
+     * @return true, if the currencies were returned, false in case of an error.
+     */
+    private final boolean requestSupportedCurrencyPairs() {
+
+	String url = _url + "market/summary/";  // The URL to fetch data on all the traded markets.
+
+	// Request info on the traded pairs from the server.
+	String requestResult = HttpUtils.httpGet( url);
+	
+	if( requestResult != null) {  // If the server returned a response.
+	    
+	    // Try to parse the response.
+	    // If it is an error message, this will be a JSONObject(!).
+	    JSONArray jsonResult = JSONArray.fromObject( requestResult);
+
+	    // Create a buffer for the parsed currency pairs.
+	    List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+
+	    // Loop over the returned JSON array and convert the entries to CurrencyPair objects.
+	    for( int currentPairIndex = 0; currentPairIndex < jsonResult.size(); ++currentPairIndex) {
+
+		// Get the current pair as a JSON object.
+		JSONObject currentPairJSON = jsonResult.getJSONObject( currentPairIndex);
+
+		// Get the traded currency from the JSON object.
+		de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code"));
+			
+		// Get the payment currency from the JSON object.
+		de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange"));
+
+		// Create a pair from the currencies.
+		de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		
+		// Add the current pair to the result buffer.
+		resultBuffer.add( currentPair);
+	    }
+
+	    // Convert the buffer to an array and store the currency pairs into the default client array.
+	    _supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+	    
+	    return true;  // Reading the currency pairs worked ok.
+
+	} else {  // The server did not return any reply.
+		    
+	    // Write the error message to the log. Should help to identify the problem.
+	    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+						      + _name 
+						      + " supported currency pairs. Server returned no reply.");
+	}
+
+	return false;   // Fetching the traded currency pairs failed.
     }
 }

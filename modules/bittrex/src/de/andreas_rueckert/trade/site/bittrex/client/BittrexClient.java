@@ -453,54 +453,68 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 	if( requestResult != null) {  // If the server returned a response.
 
-	    // Try to parse the response.
-	    JSONObject jsonResult = JSONObject.fromObject( requestResult);
-
-	    // Check, if the success field indicates success.
-	    boolean successFlag = jsonResult.getBoolean( "success");
-
-	    if( successFlag) {  // If the flag is set, parse the actual result.
-
-		// The pairs are returned as a JSON array.
-		JSONArray pairListJSON = jsonResult.getJSONArray( "result");
-
-		// Create a buffer for the parsed currency pairs.
-	        List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
-
-		// Loop over the pair array and convert the entries to CurrencyPair objects.
-		for( int currentPairIndex = 0; currentPairIndex < pairListJSON.size(); ++currentPairIndex) {
-
-		    // Get the current pair as a JSON object.
-		    JSONObject currentPairJSON = pairListJSON.getJSONObject( currentPairIndex);
-
-		    // Get the traded currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
-
-		    // Get the payment currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
-
-		    // Create a pair from the currencies.
-		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
-
-		    // ToDo: check, if this market is currently active? (really required? Are market deactivated frequently?)
+	    try {
+	    
+		// Try to parse the response.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+		
+		// Check, if the success field indicates success.
+		boolean successFlag = jsonResult.getBoolean( "success");
+		
+		if( successFlag) {  // If the flag is set, parse the actual result.
 		    
-		    // Add the current pair to the result buffer.
-		    resultBuffer.add( currentPair);
+		    // The pairs are returned as a JSON array.
+		    JSONArray pairListJSON = jsonResult.getJSONArray( "result");
+		    
+		    // Create a buffer for the parsed currency pairs.
+		    List< CurrencyPair> resultBuffer = new ArrayList< CurrencyPair>();
+		    
+		    // Loop over the pair array and convert the entries to CurrencyPair objects.
+		    for( int currentPairIndex = 0; currentPairIndex < pairListJSON.size(); ++currentPairIndex) {
+			
+			// Get the current pair as a JSON object.
+			JSONObject currentPairJSON = pairListJSON.getJSONObject( currentPairIndex);
+			
+			// Get the traded currency from the JSON object.
+			de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
+			
+			// Get the payment currency from the JSON object.
+			de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
+
+			// Create a pair from the currencies.
+			de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+			
+			// ToDo: check, if this market is currently active? (really required? Are market deactivated frequently?)
+			
+			// Add the current pair to the result buffer.
+			resultBuffer.add( currentPair);
+		    }
+
+		    // Convert the buffer to an array and store the currency pairs into the default client array.
+		    _supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+		    
+		    return true;  // Reading the currency pairs worked ok.
+
+		} else {  // There is an error message returned hopefully...
+		    
+		    // Write the error message to the log. Should help to identify the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+							      + _name 
+							      + " supported currency pairs. Error is: " + jsonResult.getString( "message"));
 		}
+	    } catch( JSONException je) {
 
-		// Convert the buffer to an array and store the currency pairs into the default client array.
-		_supportedCurrencyPairs = resultBuffer.toArray( new CurrencyPair[ resultBuffer.size()]);
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
 
-		return true;  // Reading the currency pairs worked ok.
-
-	    } else {  // There is an error message returned hopefully...
-
-		// Write the error message to the log. Should help to identify the problem.
-		LogUtils.getInstance().getLogger().error( "Error while fetching the " 
-							  + _name 
-							  + " supported currency pairs. Error is: " + jsonResult.getString( "message"));
+		return false;
 	    }
-	} 
+	} else {
+
+	    // Write the error message to the log. Should help to identify the problem.
+	    LogUtils.getInstance().getLogger().error( "Error while fetching the " 
+						      + _name 
+						      + " supported currency pairs. Server returned no reply.");
+	}
 
 	return false;   // Fetching the traded currency pairs failed.
     }
