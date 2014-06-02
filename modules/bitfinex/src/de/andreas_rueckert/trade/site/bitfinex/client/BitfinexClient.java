@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.List;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -76,6 +77,12 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	_name = "Bitfinex";  // Set the name of this exchange.
 
 	_url = "https://api.bitfinex.com/v1/";  // Base URL for API calls.
+
+	// Try to request the supported currency pairs.
+	if( ! requestSupportedCurrencyPairs()) {
+
+	    LogUtils.getInstance().getLogger().error( "Cannot fetch the supported currency pairs for " + _name);
+	}
     }
 
 
@@ -148,9 +155,40 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	// Create the URL to fetch the depth.
 	String url = _url + "book/" + getBitfinexCurrencyPairSymbol( currencyPair);
 
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
 
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// Check, if there is an error message in the returned object.
+		if( requestResultJSON.containsKey( "message")) {
+
+		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the depth from " 
+							      + _name 
+							      + ". Error message is: " + requestResultJSON.getString( "message"));
+
+		    throw new TradeDataNotAvailableException( "Error while fetching the depth from " + this._name);
+
+		} else {  // The JSON should contain asks and bids now.
+
+		    // Create a new depth instance from the data and return it.
+		    return new BitfinexDepth( requestResultJSON, currencyPair, this);
+		}
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+	    }
+	}
 	
-	throw new NotYetImplementedException( "Getting the depth is not yet implemented for " + _name);
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
     /**
