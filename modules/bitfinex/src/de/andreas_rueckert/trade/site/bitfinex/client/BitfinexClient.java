@@ -28,13 +28,17 @@ package de.andreas_rueckert.trade.site.bitfinex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.CurrencyImpl;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -43,6 +47,7 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -189,6 +194,75 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	}
 	
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://www.bitfinex.com/pages/fees
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {   // If this is a withdraw order
+
+	    // Get the withdrawn currency.
+	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
+
+	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)
+		|| withdrawnCurrency.equals( CurrencyImpl.LTC)) {
+
+		// Withdrawing LTC and BTC is free.
+		return new Price( "0", withdrawnCurrency);
+
+	    } else {
+
+		// Since I cannot check, if FIAT is send via wire or EGOpay, I just leave it away for now.
+		throw new CurrencyNotSupportedException( "The fees for FIAT withdraw are currently not implemented for " + _name);
+	    }
+
+	} else if( order instanceof DepositOrder) {   // If this is a deposit order
+
+	     // Get the deposited currency.
+	    Currency depositedCurrency = order.getCurrencyPair().getCurrency();
+
+	    if( depositedCurrency.equals( CurrencyImpl.BTC)
+		|| depositedCurrency.equals( CurrencyImpl.LTC)) {
+
+		// Depositing LTC and BTC is free.
+		return new Price( "0", depositedCurrency);
+
+	    } else {
+
+		// Since I cannot check, if FIAT is send via wire or EGOpay, I just leave it away for now.
+		throw new CurrencyNotSupportedException( "The fees for FIAT deposit are currently not implemented for " + _name);
+	    }
+
+	} else if( order.getOrderType() == OrderType.BUY) {  // Is this a buy trade order?
+
+	    // @see: https://www.bitfinex.com/pages/fees
+	    // It seems you pay 0.1% when the order is posted and 0.2% when the order is filled?
+	    // And there are discounts for higher trading volumes.
+	    // For now, I'll just implement a flat fixed fee of 0.3%, since
+	    // it's quite complicated to track the traded volume (see the Kraken API implementation).
+
+	    return new Price( order.getAmount().multiply( new BigDecimal( "0.003")), order.getCurrencyPair().getCurrency());
+	    
+	} else if( order.getOrderType() == OrderType.SELL) {  // This is a sell trade order
+
+	    // A sell order has the payment currency as the target currency.
+	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.003"))
+			      , order.getCurrencyPair().getPaymentCurrency());
+	    
+	} else {  // This is an unknown order type?
+
+	    return super.getFeeForOrder( order);  // Should never happen...
+	}
     }
 
     /**
