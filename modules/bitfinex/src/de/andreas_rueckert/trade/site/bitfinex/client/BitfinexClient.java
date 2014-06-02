@@ -251,12 +251,12 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	    // For now, I'll just implement a flat fixed fee of 0.3%, since
 	    // it's quite complicated to track the traded volume (see the Kraken API implementation).
 
-	    return new Price( order.getAmount().multiply( new BigDecimal( "0.003")), order.getCurrencyPair().getCurrency());
+	    return new Price( order.getAmount().multiply( new BigDecimal( "0.002")), order.getCurrencyPair().getCurrency());
 	    
 	} else if( order.getOrderType() == OrderType.SELL) {  // This is a sell trade order
 
 	    // A sell order has the payment currency as the target currency.
-	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.003"))
+	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.002"))
 			      , order.getCurrencyPair().getPaymentCurrency());
 	    
 	} else {  // This is an unknown order type?
@@ -352,7 +352,6 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
     private final boolean requestSupportedCurrencyPairs() {
 
 	String url = _url + "symbols";  // The URL to fetch the traded markets.
-
 	
 	// Request info on the traded pairs from the server.
 	String requestResult = HttpUtils.httpGet( url);
