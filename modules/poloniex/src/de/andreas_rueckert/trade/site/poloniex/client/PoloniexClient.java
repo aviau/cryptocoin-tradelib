@@ -31,8 +31,12 @@ import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
+import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -41,6 +45,7 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -164,6 +169,44 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 	}
     
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+	
+	if( order instanceof WithdrawOrder) {
+
+	    // Poloniex doesn't charge for withdraw orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof DepositOrder) {
+
+	    // Poloniex doesn't charge for deposit orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order.getOrderType() == OrderType.BUY) {
+
+	    // The fees for buys is 0.2% of the target currency.
+	    return new Price( order.getAmount().multiply( new BigDecimal( "0.002")), order.getCurrencyPair().getCurrency());
+
+	} else if( order.getOrderType() == OrderType.SELL) {
+
+	    // The fee for sell orders is 0.2% of the target currency (= payment currency).
+	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.002"))
+			      , order.getCurrencyPair().getPaymentCurrency());
+
+	} else {  // Just the default implementation for the other order forms.
+
+	    return super.getFeeForOrder( order);
+	}
     }
 
     /**
