@@ -159,7 +159,7 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 
 		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
 
-		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+		throw new TradeDataNotAvailableException( "cannot parse depth data from " + this._name);
 	    }
 	}
     
@@ -179,13 +179,14 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
-     * Get the Poloniex name for a currency pair.
+     * Get the Poloniex name for a currency pair. The ticker class needs access to this method,
+     * so it can't be private.
      *
      * @param currencyPair The currency pair.
      *
      * @return The Poloniex name for the currency pair.
      */
-    private final String getPoloniexCurrencyPairName( CurrencyPair currencyPair) {
+    final String getPoloniexCurrencyPairName( CurrencyPair currencyPair) {
 
 	// The Poloniex names look like 'BTC_NXT'
 	return currencyPair.getCurrency().getName().toUpperCase() 
@@ -219,7 +220,35 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// Create the URL to fetch the ticker.
+	// Poloniex fetches the ticker for all currency pairs at once, so we have to filter the correct pair later.
+	// That's why no currency pair is in the URL.
+	String url = _url + "?command=returnTicker";
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+		
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// ToDo: error checking, but Poloniex just returns an empty page in case of an error?
+		
+		// Create a new ticker instance from the data and return it.
+		return new PoloniexTicker( requestResultJSON, currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		System.err.println( "Cannot parse " + this._name + " ticker return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse ticker data from " + this._name);
+	    }
+	}
+
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
     /**
