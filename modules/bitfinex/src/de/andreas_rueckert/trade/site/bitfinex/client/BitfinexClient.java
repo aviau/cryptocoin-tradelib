@@ -187,9 +187,9 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 		}
 	    } catch( JSONException je) {
 
-		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
 
-		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
+		throw new TradeDataNotAvailableException( "cannot parse depth data from " + this._name);
 	    }
 	}
 	
@@ -303,7 +303,44 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// Create the URL for fetch the ticker for a given currency pair.
+	String url = _url + "pubticker/" + getBitfinexCurrencyPairSymbol( currencyPair);
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+	
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+		
+		// Check, if there is an error message in the returned object.
+		if( requestResultJSON.containsKey( "message")) {
+
+		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the ticker from " 
+							      + _name 
+							      + ". Error message is: " + requestResultJSON.getString( "message"));
+
+		    throw new TradeDataNotAvailableException( "Error while fetching the ticker from " + this._name);
+
+		} else {  // The JSON should contain the ticker data now.
+
+		    // Let a new ticker instance parse the data and return the instance.
+		    return new BitfinexTicker( requestResultJSON, currencyPair, this);
+		}
+
+	    } catch( JSONException je) {
+
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " ticker return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse ticker data from " + this._name);
+	    }
+	}
+
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to ticker request");
     }
 
     /**
