@@ -68,7 +68,9 @@ public class CryptsyDepth extends DepthImpl {
 	super( tradeSite);
 
 	// Get the 2 coin codes from the market, so we don't need the key for this json value.
-	String currencyPairString = jsonMarket.getString( "primarycode") + "<=>" + jsonMarket.getString( "secondarycode");
+	String currencyPairString = jsonMarket.getString( "primarycode").toUpperCase() 
+	    + "<=>" 
+	    + jsonMarket.getString( "secondarycode").toUpperCase();
 
 	// Try to create a currency pair for this market.
 	CurrencyPair newCurrencyPair = CurrencyPairImpl.findByString( currencyPairString);

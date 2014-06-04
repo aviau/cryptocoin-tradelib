@@ -753,10 +753,10 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
 	    String marketID = "" + currentMarket.getInt( "marketid");
 
 	    // Get the currency of this market.
-	    Currency currency = CurrencyImpl.findByString( currentMarket.getString( "primary_currency_code"));
+	    Currency currency = CurrencyImpl.findByString( currentMarket.getString( "primary_currency_code").toUpperCase());
 
 	    // Get the payment currency of this market.
-	    Currency paymentCurrency = CurrencyImpl.findByString( currentMarket.getString( "secondary_currency_code"));
+	    Currency paymentCurrency = CurrencyImpl.findByString( currentMarket.getString( "secondary_currency_code").toUpperCase());
 
 	    // Add the currency pair with the ID to the result buffer.
 	    resultBuffer.put( new CurrencyPairImpl( currency, paymentCurrency), marketID);

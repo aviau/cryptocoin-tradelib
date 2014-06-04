@@ -266,6 +266,16 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Get the shortest allowed requet interval in microseconds.
+     *
+     * @return The shortest allowed request interval in microseconds.
+     */
+    public long getMinimumRequestInterval() {
+
+	return 15L * 1000000L;  // I couldn't find another, so I use 15s for now (A Rueckert).
+    }
+
+    /**
      * Get the open orders on this trade site.
      *
      * @param userAccount The account of the user on the exchange. Null, if the default account should be used.

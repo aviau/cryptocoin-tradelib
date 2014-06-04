@@ -338,7 +338,7 @@ public class TradeSiteImpl {
      */
     public long getMinimumRequestInterval() {
 
-	throw new NotYetImplementedException( "Getting the minimum request interval is not implemented in the base class, but the actual API implementations should overwrite this method");
+	throw new NotYetImplementedException( "Getting the minimum request interval is not implemented in the base class, but the actual API implementations should overwrite this method. See " + _name);
     }
 
     /**

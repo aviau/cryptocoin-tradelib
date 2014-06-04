@@ -483,7 +483,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	    _withdrawFees.put( CurrencyImpl.TES, new BigDecimal( "0.200000"));
 	    _withdrawFees.put( CurrencyImpl.TOP, new BigDecimal( "0.200000"));
 	    _withdrawFees.put( CurrencyImpl.UNO, new BigDecimal( "0.001000"));
-	    _withdrawFees.put( CurrencyImpl.USDe, new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyImpl.USDE, new BigDecimal( "0.200000"));
 	    _withdrawFees.put( CurrencyImpl.UTC, new BigDecimal( "0.020000"));
 	    _withdrawFees.put( CurrencyImpl.VTC, new BigDecimal( "0.020000"));
 	    _withdrawFees.put( CurrencyImpl.WC, new BigDecimal( "1.000000"));
@@ -543,10 +543,11 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 		    JSONObject currentPairJSON = jsonResult.getJSONObject( currentPairIndex);
 		    
 		    // Get the traded currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code"));
+		    // MintPal added CAIX to their coins, but uses CAIx as the spelling. Therefore the upper case.
+		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code").toUpperCase());
 		    
 		    // Get the payment currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange"));
+		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange").toUpperCase());
 
 		    // Create a pair from the currencies.
 		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
