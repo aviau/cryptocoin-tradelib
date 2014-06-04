@@ -90,7 +90,7 @@ public class MintPalDepth extends DepthImpl {
 	// Loop over the orders and create a DepthOrder object from each of them
 	for( int i = 0; i < sells.size(); ++i) {
 
-	    JSONObject sellOrder = buys.getJSONObject( i);  // Get the current sell order
+	    JSONObject sellOrder = sells.getJSONObject( i);  // Get the current sell order
 
 	    _sells.add(  new DepthOrderImpl( OrderType.SELL
 					    , new Price( sellOrder.getDouble( "price"))
