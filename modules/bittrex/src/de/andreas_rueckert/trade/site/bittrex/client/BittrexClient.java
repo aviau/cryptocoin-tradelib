@@ -160,7 +160,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	// I use max 50 orders for now. Should be enough for most trading apps, I guess.
 	// @see 
 	String url = _url + "public/getorderbook?market=" 
-	    + currencyPair.getPaymentCurrency().getName() + "-" + currencyPair.getCurrency().getName()
+	    + currencyPair.getPaymentCurrency().toString() + "-" + currencyPair.getCurrency().toString()
 	    + "&type=both&depth=50";
 
 	// Do the actual request.
