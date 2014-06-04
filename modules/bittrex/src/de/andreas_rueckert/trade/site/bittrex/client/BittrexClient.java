@@ -475,19 +475,23 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 			// Get the current pair as a JSON object.
 			JSONObject currentPairJSON = pairListJSON.getJSONObject( currentPairIndex);
 			
-			// Get the traded currency from the JSON object.
-			de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
-			
-			// Get the payment currency from the JSON object.
-			de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
+			// Check, if this market is currently active
+			boolean isActive = currentPairJSON.getBoolean( "IsActive");
 
-			// Create a pair from the currencies.
-			de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+			if( isActive) {  // If the market is active, add the currency pair.
+
+			    // Get the traded currency from the JSON object.
+			    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
 			
-			// ToDo: check, if this market is currently active? (really required? Are market deactivated frequently?)
+			    // Get the payment currency from the JSON object.
+			    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
+
+			    // Create a pair from the currencies.
+			    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
 			
-			// Add the current pair to the result buffer.
-			resultBuffer.add( currentPair);
+			    // Add the current pair to the result buffer.
+			    resultBuffer.add( currentPair);
+			}
 		    }
 
 		    // Convert the buffer to an array and store the currency pairs into the default client array.
