@@ -26,6 +26,7 @@
 package de.andreas_rueckert.util;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -163,6 +164,12 @@ public class HttpUtils {
 	      result.append( currentLine);
 	  }
 	  reader.close();
+
+      } catch( FileNotFoundException fnfe) {  // Some site return this as an error (i.e. coins-e and MintPal).
+
+	  LogUtils.getInstance().getLogger().error( "File not found exception for URL: " + fnfe.toString());
+
+	  result = null;  // return null
 
       } catch( ProtocolException pe) {
 

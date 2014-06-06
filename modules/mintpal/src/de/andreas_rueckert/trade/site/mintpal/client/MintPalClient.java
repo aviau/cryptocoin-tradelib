@@ -157,7 +157,9 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	JSONObject buyJSON = null,  sellJSON = null;
 
 	// Create the base URL for the requests (buy and sell have to be requested separately).
-	String url = _url + "market/orders/" + currencyPair.getCurrency().getName() + "/" + currencyPair.getPaymentCurrency().getName() + "/";
+	String url = _url + "market/orders/" + currencyPair.getCurrency().toString() 
+	    + "/" 
+	    + currencyPair.getPaymentCurrency().toString() + "/";
 
 	// Do the first request.
 	String requestResult = HttpUtils.httpGet( url + "BUY");
