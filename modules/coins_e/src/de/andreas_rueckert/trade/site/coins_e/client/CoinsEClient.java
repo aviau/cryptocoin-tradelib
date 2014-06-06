@@ -115,6 +115,10 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	// to list them manually.
 	_supportedCurrencyPairs = requestSupportedCurrencyPairs();
 
+	// If an error occurred, just use an empty array for the currencies. 
+	// Null might break some bots.
+	_supportedCurrencyPairs = new CurrencyPair[ 0];
+
 	// Set the deposit fee (always 0 % as it seems).
 	_feeForDeposit = new BigDecimal( "0");
 
