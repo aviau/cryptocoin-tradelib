@@ -27,10 +27,13 @@ package de.andreas_rueckert.trade.currency;
 
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.util.LogUtils;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 
@@ -43,6 +46,11 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 
 
     // Static variables
+
+    /**
+     * The delimiter, that separates the elements of a line.
+     */
+    private final String PART_SEPARATOR = "|";
 
 
     // Instance variables
@@ -91,10 +99,88 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 
     /**
      * Load the known currencies.
+     *
+     * @return true, if loading the currencies worked. False otherwise.
      */
-    public void load() {
+    public boolean load() {
 
-	throw new NotYetImplementedException( "Loading currencies is not yet implemented");
+	// Access the file for the currency info.
+	File persistenceFile = new File( _datadir, getFilename());
+
+	try {
+
+	    // Create a reader for the persistence file.
+	    BufferedReader reader = new BufferedReader( new FileReader( persistenceFile));
+
+	    String currentLine = null;
+
+	    while( ( currentLine = reader.readLine()) != null) {  // While there are lines to read.
+
+		// Remove all spaces at both ends of the line.
+		currentLine = currentLine.trim();
+
+		if( currentLine.length() > 0) {  // If this line is not empty, process it...
+		 
+		    String [] lineParts = currentLine.split( PART_SEPARATOR);
+
+		    // URL-decode all the elements of the line.
+		    for( int currentElementIndex = 0; currentElementIndex < lineParts.length; ++currentElementIndex) {
+			
+			// Decode the current line element.
+			lineParts[ currentElementIndex] = URLDecoder.decode( lineParts[ currentElementIndex]);
+		    }
+
+		    // A code is the minimal info, we need from a currency. Rest is optional.
+		    String currencyCode = lineParts[ 0];
+
+		    // Fetch the optional elements of the currency info.
+		    // If they are not available, an empty string was written, but
+		    // the field should be available anyway.
+
+		    // The name of the currency.
+		    String currencyName = lineParts[ 1];
+
+		    // A description for the currency.
+		    String currencyDescription = lineParts[ 2];
+
+		    // The type name of the currency.
+		    String currencyTypeName = lineParts[ 3];
+
+		    // Convert the type name to a type object.
+		    CurrencyType currencyType = CurrencyType.UNKNOWN;
+
+		    if( currencyTypeName.equals( "FIAT")) {
+
+			currencyType = CurrencyType.FIAT;
+
+		    } else if( currencyTypeName.equals( "CRYPTO")) {
+
+			currencyType = CurrencyType.CRYPTO;
+		    }
+		    
+		    // Create a new CurrencyImpl instance from the data.
+		    CurrencyImpl newCurrency = new CurrencyImpl( currencyCode, currencyName, currencyDescription, currencyType);
+		    
+		    // Check, if this currency is already loaded in the currency provider.
+		    // Just try to add it to the provider and check the return value.
+		    if( ! CurrencyProvider.getInstance().addCurrency( newCurrency)) {
+
+			LogUtils.getInstance().getLogger().error( "Cannot add new currency " 
+								  + currencyCode
+								  + " to the provider, since there is already a currency with the same code.");
+		    }
+		}
+	    }
+
+	    return true;  // Loading of the currencies worked.
+
+	} catch( IOException ioe) {  // Error while reading the currency file.
+	    
+	    LogUtils.getInstance().getLogger().error( "Cannot read currencies from file. Error: " 
+						      + ioe.toString());
+
+	    return false;  // Indicate the error to the caller.
+	}
     }
 
     /**
@@ -115,11 +201,11 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 	    for( Currency currentCurrency : CurrencyProvider.getInstance().getRegisteredCurrencies()) {
 
 		writer.write( currentCurrency.getCode() == null ? "" : URLEncoder.encode( currentCurrency.getCode()));
-		writer.write( "|");
+		writer.write( PART_SEPARATOR);
 		writer.write( currentCurrency.getName() == null ? "" : URLEncoder.encode( currentCurrency.getName()));
-		writer.write( "|");
+		writer.write( PART_SEPARATOR);
 		writer.write( currentCurrency.getDescription() == null ? "" : URLEncoder.encode( currentCurrency.getDescription()));
-		writer.write( "|");
+		writer.write( PART_SEPARATOR);
 		writer.write( URLEncoder.encode( currentCurrency.getCurrencyType().name()));
 		writer.newLine();
             }

@@ -38,8 +38,10 @@ public interface CurrencyPersistence {
 
     /**
      * Load the known currencies.
+     *
+     * @return true, if loading the currencies worked. False otherwise.
      */
-    public void load();
+    public boolean load();
 
     /**
      * Save the known currencies.

@@ -68,12 +68,25 @@ public class CurrencyProvider {
      * Add a new currency to the list of registered currencies.
      *
      * @param newCurrency The new currency to add to the list of registered currencies.
+     *
+     * @return true, if the currency was successfully added. False, if a currency with this code was already in the map.
      */
-    public final void addCurrency( Currency newCurrency) {
+    public final boolean addCurrency( Currency newCurrency) {
+
+	// Get the code of the new currency.
+	String currencyCode = newCurrency.getCode();
+
+	// If the currency is already in the list, return false.
+	if( _registeredCurrencies.containsKey( currencyCode)) {
+
+	    return false;
+	}
 
 	// Use the currency code as the key for the currency map.
 	// This code should always be unique.
-	_registeredCurrencies.put( newCurrency.getCode(), newCurrency);
+	_registeredCurrencies.put( currencyCode, newCurrency);
+
+	return true;  // Adding the new currency worked.
     }
 
     /**

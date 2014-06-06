@@ -38,6 +38,8 @@ public class CurrencyImpl implements Currency {
 
     /**
      * The ISO 4217 code of this currency.
+     * It seems, some exchanges use different capitalizations of the same code for their site.
+     * Maybe add a map of codes, so the code for tradesite x could be requested? ( getCode( TradeSite tradeSite); ) ...
      */
     private String _code = null;
 
@@ -66,7 +68,9 @@ public class CurrencyImpl implements Currency {
      */
     public CurrencyImpl( String code) {
 
-	_code = code;
+	// Convert the code to uppercase, just in case 2 exchanges use different
+	// capitalization.
+	_code = code. toUpperCase();
     }
 
     /**
@@ -77,7 +81,7 @@ public class CurrencyImpl implements Currency {
      */
     public CurrencyImpl( String code, String name) {
 
-	this( code.toUpperCase());  // Convert the code just in case...
+	this( code);  // Convert the code just in case...
 
 	_name = name;
     }
@@ -96,10 +100,25 @@ public class CurrencyImpl implements Currency {
 	_description = description;
     }
 
+   /**
+     * Create a new currency implementation with code, name and description.
+     *
+     * @param code The ISO 4217 code of the currency.
+     * @param name The name of the currency.
+     * @param description A optional description of the currency.
+     * @param type The type of this currency (FIAT, cryptocurrency etc).
+     */
+    public CurrencyImpl( String code, String name, String description, CurrencyType currencyType) {
+
+	this( code, name, description);
+
+	_currencyType = currencyType;  // Store the type in the instance.
+    }
+
 
     // Methods
 
-        /**
+    /**
      * Get the ISO 4217 currency code (or similar for some newer cryptocurrencies)
      * for the currency.
      *
