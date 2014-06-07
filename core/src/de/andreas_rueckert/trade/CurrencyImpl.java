@@ -35,9 +35,9 @@ public enum CurrencyImpl implements Currency {
     /**
      * The values for the minimal currency implementation.
      */
-    A3C, AAA, AC, ACC, ADT, ALF, ALP, AMC, ANC, APH, ARG, ASC, AUR, AV
+    A3C, AAA, AC, ACC, ADT, ALF, ALP, AMC, ANC, APH, ARG, ASC, AUR, AV, AXIS
 	, BANK, BAT, BBR, BC, BCAT, BCC, BCX, BDG, BEA, BELA, BELI, BEN, BET, BITS, BLC, BLTZ, BLU, BN, BNS, BONES, BOST, BQC, BTB, BTC, BTCS, BTCX, BTE, BTG, BTL, BUK
-	, C2, CACH, CAIX, CAKE, CAP, CASH, CAT, CATC, CC, CCN, CCX, CENT, CESC, CFC, CGA, CGB, CIN, CINNI, CLOAK, CLR, CMC, CNC, CNH, CNY, COIN2, COL, COMM, CPR, CPTL, CRC, CRY, CSC, CT, CTM, CTZ, CURE, CX
+	, C2, CACH, CAIX, CAKE, CAP, CASH, CAT, CATC, CC, CCN, CCX, CENT, CESC, CFC, CGA, CGB, CHCC, CIN, CINNI, CLOAK, CLR, CMC, CNC, CNH, CNY, COIN2, COL, COMM, CPR, CPTL, CRC, CRY, CSC, CT, CTM, CTZ, CURE, CX
 	, DB, DBL, DCM, DEM, DGB, DGC, DIG, DIME, DIS, DMC, DMD, DOGE, DOJE, DOPE, DRK, DRM, DTC, DVC, DVK
 	, EAC, ECC, EFL, ELC, ELP, ELT, EMC2, EMD, EMO, ENC, ENRG, ERC, EUR, EXE, EZC
 	, FAC, FCN, FFC, FLAP, FLO, FLT, FRC, FRK, FRX, FST, FTC, FUEL, FUR
@@ -58,7 +58,7 @@ public enum CurrencyImpl implements Currency {
 	, UNB, UNO, URO, USD, USDE, UTC, UVC
 	, VGC, VIO, VLC, VLT, VMC, VOOT, VRC, VTC
 	, WATER, WC, WDC, WEST, WIFI, WIN
-	, X13C, XBC, XBT, XC, XDG, XDQ, XJO, XLB, XLC, XMR, XNC, XPM, XRP, XSI, XSS, XSV, XVN, XXL
+	, X13C, XBC, XBT, XC, XDG, XDQ, XHC, XJO, XLB, XLC, XMR, XNC, XPM, XRP, XSI, XSS, XSV, XVN, XXL
 	, YAC, YANG, YBC, YDC, YC, YIN, YMC
 	, ZCC, ZED, ZEIT, ZET, ZIP, ZS
 	, n10_to_5, n42, n365, n500, n888;  // These are the numeric currency symbols or names with special characters.
