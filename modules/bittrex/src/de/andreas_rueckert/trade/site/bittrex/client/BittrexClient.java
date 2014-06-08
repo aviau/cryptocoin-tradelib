@@ -258,7 +258,11 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
      */
     public final long getMinimumRequestInterval() {
 
-	return 15L * 1000000L;  // Use a reasonable default value. Don't know any better for now.
+	// On 20140608, bittrex-rami said in the #bittrex IRC channel:
+	// [18:14] <daybyter> bittrex-rami: is 1 api call every 5s ok?
+	// [18:15] <bittrex-rami> daybyter: not a problem
+	// [18:15] <bittrex-rami> that rate is fine
+	return 5L * 1000000L; 
     }
 
     /**

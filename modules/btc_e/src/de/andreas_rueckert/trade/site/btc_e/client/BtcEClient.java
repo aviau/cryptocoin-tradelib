@@ -1205,7 +1205,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @return The shortest allowed request interval in microseconds.
      */
     public long getMinimumRequestInterval() {
-	return getUpdateInterval();
+
+	// According to the btc-e support, a 12s - 15s interval is ok, 
+	// so I use 12s and hope it is fine...
+	return 12L * 1000000L;
     }
 
     /**
