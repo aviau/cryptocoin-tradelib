@@ -680,7 +680,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 
 	    } catch( JSONException je) {
 
-		System.err.println( "Cannot parse ticker object: " + je.toString());
+		LogUtils.getInstance().getLogger().error( "Cannot parse ticker object: " + je.toString());
 	    }
 	}
 	
