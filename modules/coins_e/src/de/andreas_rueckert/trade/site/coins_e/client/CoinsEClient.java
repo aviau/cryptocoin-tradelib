@@ -655,6 +655,8 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 		    // Create a buffer for the result.
 		    ArrayList<CurrencyPair> resultBuffer = new ArrayList<CurrencyPair>();
 
+		    // System.out.println( "DEBUG: fetched " + marketJSONArray.size() + " currency pairs");
+
 		    for( int currentMarketIndex = 0; currentMarketIndex < marketJSONArray.size(); ++currentMarketIndex) {
 			
 			// Get the current market as a json object.
