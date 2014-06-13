@@ -32,17 +32,25 @@ import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyImpl;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
+import de.andreas_rueckert.util.HttpUtils;
+import de.andreas_rueckert.util.LogUtils;
 import java.util.Collection;
+import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -71,6 +79,11 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 	_name = "OKCoin";  // Set the name of this exchange.
 
 	_url = "https://www.okcoin.cn/api/";  // Base URL for API calls.
+
+	// Set the supported currency pairs.
+	_supportedCurrencyPairs = new CurrencyPair[2];
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
     }
 
 
@@ -126,7 +139,72 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the depth is not yet implemented for " + _name);
+	// Create the URL to fetch the depth.
+	String url = _url + "depth.do?symbol=" + getOKCoinCurrencyCode( currencyPair);
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// It seems OKCoin always returns a depth, no matter what the currencypair code is?
+		// @see: https://bitcointalk.org/index.php?topic=342952.msg7293837#msg7293837
+
+		// So try to convert the response to a depth object and return it.
+		return new OKCoinDepth( requestResultJSON, currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse depth data from " + this._name);
+	    }
+	}
+
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://www.okcoin.com/about/vip.do
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {   // If this is a withdraw order
+
+	    throw new NotYetImplementedException( "Getting the withdraw fee is not yet implemented for " + _name);
+
+	} else if( order instanceof DepositOrder) {   // If this is a deposit order
+
+	    throw new NotYetImplementedException( "Getting the deposit fee is not yet implemented for " + _name);
+
+	} else if( order.getOrderType() == OrderType.BUY) {  // Is this a buy trade order?
+
+	    // According to the fee schedule (see method header)m the fee is always 0?
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+	    
+	} else if( order.getOrderType() == OrderType.SELL) {  // This is a sell trade order
+
+	    // A sell order has the payment currency as the target currency.
+	    // According to the fee schedule (see method header)m the fee is always 0?
+	    return new Price( "0", order.getCurrencyPair().getPaymentCurrency());
+	    
+	} else {  // This is an unknown order type?
+
+	    return super.getFeeForOrder( order);  // Should never happen...
+	}
     }
 
     /**
@@ -137,6 +215,21 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
     public long getMinimumRequestInterval() {
 
 	return 15L * 1000000L;  // Just a default of 15s for now.
+    }
+
+    /**
+     * Get the OKCoin code for a given currency pair.
+     *
+     * @param currencyPair The currency pair to get the code for.
+     *
+     * @return The String representation of the currency pair, or null, if it cannot be encoded.
+     */
+    private final String getOKCoinCurrencyCode( CurrencyPair currencyPair) {
+
+	// OKCoin uses codes like 'ltc_cny'.
+	return currencyPair.getCurrency().toString().toLowerCase()
+	    + "_"
+	    + currencyPair.getPaymentCurrency().toString().toLowerCase();
     }
 
     /**
