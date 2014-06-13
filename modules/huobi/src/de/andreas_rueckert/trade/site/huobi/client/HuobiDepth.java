@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade.site.okcoin.client;
+package de.andreas_rueckert.trade.site.huobi.client;
 
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.DepthImpl;
@@ -32,12 +32,11 @@ import net.sf.json.JSONObject;
 
 
 /**
- * This class implements the depth of the OKCoin trading site.
+ * This class implements the depth of the Huobi trading site.
  *
- * @see https://www.okcoin.com/about/publicApi.do
- * @see https://www.okcoin.cn/api/depth.do?symbol=ltc_cny
+ * @see https://www.huobi.com/help/index.php?a=market_help
  */
-public class OKCoinDepth extends DepthImpl {
+public class HuobiDepth extends DepthImpl {
 
     // Inner classes
 
@@ -51,13 +50,13 @@ public class OKCoinDepth extends DepthImpl {
     // Constructors
 
     /**
-     * Create a new OKCoin depth object from the JSON response from the server.
+     * Create a new Huobi depth object from the JSON response from the server.
      *
      * @param jsonResponse The jsonResponse from the server.
      * @param currencyPair The currency pair, that was queried.
      * @param tradeSite The trade site, that delivered the data.
      */
-    public OKCoinDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
+    public HuobiDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
 
 	super( currencyPair, tradeSite);  // Init the base depth variables.
 

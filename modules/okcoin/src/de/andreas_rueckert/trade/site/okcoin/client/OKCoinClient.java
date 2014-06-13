@@ -166,6 +166,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 	    }
 	}
 
+	// Response from server was null.
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
     }
 
