@@ -34,9 +34,12 @@ import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
@@ -45,11 +48,15 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
+import net.sf.json.JSONObject;
 
 
 /**
@@ -66,6 +73,16 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 
 
     // Instance variables
+
+    /**
+     * The fees for buys, that differ from the default fee of 0.25% .
+     */
+    private Map< Currency, BigDecimal> _buyFees = new HashMap< Currency, BigDecimal>();
+
+    /**
+     * The fees for sells, that differ from the default fee of 0.25%.
+     */
+    private Map< Currency, BigDecimal> _sellFees = new HashMap< Currency, BigDecimal>();
 
 
     // Constructors
@@ -84,6 +101,20 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 
 	    LogUtils.getInstance().getLogger().error( "Cannot fetch the supported currency pairs for " + _name);
 	}
+
+	// Set the buy fees, that differ from the default 0.25%.
+	_buyFees.put( CurrencyImpl.BEL, new BigDecimal( "0.001"));    // BellsCoin has 0.1%
+	_buyFees.put( CurrencyImpl.CCS, new BigDecimal( "0"));        // CCS has 0%
+	_buyFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.005"));  // CinniCoin has 0.5%
+	_buyFees.put( CurrencyImpl.SVC, new BigDecimal( "0.0015"));   // Sovereigncoin has 0.15%
+	_buyFees.put( CurrencyImpl.USD, new BigDecimal( "0.0075"));   // US Dollar has 0.75%
+	_buyFees.put( CurrencyImpl.XDQ, new BigDecimal( "0.003"));    // Dirac has 0.3%
+
+	// Set the sell fees, that differ from the default 0.25%.
+	_sellFees.put( CurrencyImpl.CCS, new BigDecimal( "0.001"));   // CCS has 1%
+	_sellFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.005")); // Cinnicoin has 0.5%
+	_sellFees.put( CurrencyImpl.USD, new BigDecimal( "0.0075"));  // US Dollar has 0.75%
+	_sellFees.put( CurrencyImpl.XDQ, new BigDecimal( "0.003"));   // Dirac has 0.3%
     }
 
 
@@ -146,10 +177,88 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 	    + "&p="
 	    + currencyPair.getPaymentCurrency().toString();
 
-	// There is a problem with this API call.
-	// @see: https://bitcointalk.org/index.php?topic=395192.msg7292671#msg7292671
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
 
-	throw new NotYetImplementedException( "Getting the depth is not yet implemented for " + _name);
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// Try to parse the market data and turn them into a depth object.
+		return new AtomicTradeDepth( requestResultJSON.getJSONObject( "market"), currencyPair, this);
+
+	    } catch( JSONException je) {
+
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " depth return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse depth data from " + this._name);
+	    }
+	}
+
+	// Response from server was null.
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://www.atomic-trade.com/Fees
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {   // If this is a withdraw order
+
+	    throw new NotYetImplementedException( "Getting the withdraw fee is not yet implemented for " + _name);
+
+	} else if( order instanceof DepositOrder) {   // If this is a deposit order
+
+	    throw new NotYetImplementedException( "Getting the deposit fee is not yet implemented for " + _name);
+
+	} else if( order.getOrderType() == OrderType.BUY) {  // Is this a buy trade order?
+
+	    // Get the bought currency.
+	    Currency boughtCurrency = order.getCurrencyPair().getCurrency();
+
+	    // Check, if this currency has a non-default fee.
+	    BigDecimal fee = _buyFees.get( boughtCurrency);
+
+	    if( fee == null) {  // If no fee is returned,
+
+		fee = new BigDecimal( "0.0025");  // use the default fee of 0.25%.
+	    }
+		
+	    // Create the fee as a price with the bought currency.
+	    return new Price( order.getAmount().multiply( fee), order.getCurrencyPair().getCurrency());
+	     
+	} else if( order.getOrderType() == OrderType.SELL) {  // This is a sell trade order
+
+	    // Get the sold currency.
+	    Currency soldCurrency = order.getCurrencyPair().getCurrency();
+
+	    // Check, if this currency has a non-default fee.
+	    BigDecimal fee = _sellFees.get( soldCurrency);
+
+	    if( fee == null) {  // If no fee is returned,
+
+		fee = new BigDecimal( "0.0025");  // use the default fee of 0.25%.
+	    }
+		
+	    // A sell order has the payment currency as the target currency.
+	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( fee), order.getCurrencyPair().getPaymentCurrency());
+	    
+	} else {  // This is an unknown order type?
+
+	    return super.getFeeForOrder( order);  // Should never happen...
+	}
     }
 
     /**
