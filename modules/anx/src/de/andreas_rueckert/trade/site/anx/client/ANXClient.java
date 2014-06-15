@@ -510,7 +510,50 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
 	}
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for " + _name);
+	// Create the URL to fetch the ticker
+	String url = _url + getANXCurrencyPairString( currencyPair) + "/money/ticker";
+	    
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+	
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+		
+		// Convert the result to JSON.
+		JSONObject requestResultJSON = (JSONObject)JSONObject.fromObject( requestResult);
+
+		// Check the result field for success.
+		String resultField = requestResultJSON.getString( "result");
+
+		if( resultField.equalsIgnoreCase( "success")) {  // Check, if the request worked ok.
+		    
+		    // Get the data and convert them to a depth object.
+		    return new ANXTicker( requestResultJSON.getJSONObject( "data"), currencyPair, this);
+
+		} else {
+
+		     // Get the error message.
+		    String errorField = requestResultJSON.getString( "error");
+
+		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the depth from " 
+							      + _name 
+							      + ". Error message is: " + requestResultJSON.getString( "error"));
+
+		    throw new TradeDataNotAvailableException( "Error while fetching the ticker from " + this._name);
+		}
+
+	    } catch( JSONException je) {
+		
+		LogUtils.getInstance().getLogger().error( "Cannot parse " + this._name + " ticker return: " + je.toString());
+
+		throw new TradeDataNotAvailableException( "cannot parse depth data from " + this._name);
+	    }
+	}
+		    
+	// The server return was null...
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to ticker request");
     }
 
     /**
