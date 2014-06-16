@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List; 
 import java.util.Map;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -536,7 +537,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 		     // Get the error message.
 		    String errorField = requestResultJSON.getString( "error");
 
-		    // Write the first error to the log for now. Hopefully it should explain the problem.
+		    // Write the error to the log. Hopefully it should explain the problem.
 		    LogUtils.getInstance().getLogger().error( "Error while fetching the depth from " 
 							      + _name 
 							      + ". Error message is: " + requestResultJSON.getString( "error"));
@@ -568,7 +569,77 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
+	}
+
+	// Create the URL to fetch the trades.
+	String url = _url 
+	    + getANXCurrencyPairString( currencyPair) 
+	    + "/money/trade/fetch?since=" 
+	    + (since_micros / 1000);
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+	
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the HTTP request return value to JSON to parse further.
+		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+		// Create a buffer for the result.
+		List<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+
+		// Get the result value to check for success
+		if( ! "success".equals( jsonResult.getString( "result"))) {
+
+		    // Write the error to the log. Hopefully it should explain the problem.
+		    LogUtils.getInstance().getLogger().error( "Error while fetching the trades from " 
+							      + _name 
+							      + ". Error message is: " + jsonResult.getString( "error"));
+
+		    throw new TradeDataNotAvailableException( this._name + " reported an error while fetching the trades.");
+		}
+
+		// Convert the trade data to a JSON array.
+		JSONArray jsonData = jsonResult.getJSONArray( "data");
+
+		// Iterate over the json array and convert each trade from json to a Trade object.
+		for( int i = 0; i < jsonData.size(); ++i) {
+
+		    JSONObject tradeObject = jsonData.getJSONObject(i);
+		    
+		    try {
+			
+			trades.add( new ANXTrade( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
+			
+		    } catch( JSONException je) {  // Cannot parse the JSON trade.
+
+			// Write the error to the log. Hopefully it should explain the problem.
+			LogUtils.getInstance().getLogger().error( "Error while parsing a trades from " 
+								  + _name 
+								  + ". Error message is: " + je.toString());
+
+			throw new TradeDataNotAvailableException( this._name + " reported an error while parsing a trade.");
+		    }
+		}
+
+		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
+		    
+		// updateLastRequest( TradeSiteRequestType.Trades);  // Update the timestamp of the last request.
+
+		return tradeArray;  // And return the array.
+
+	    } catch( JSONException je) {
+
+		    System.err.println( "Cannot parse trade object: " + je.toString());
+	    }
+	}
+
+	// The server return was null...
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to trades request");
     }
 
     /**

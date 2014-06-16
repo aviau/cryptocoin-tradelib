@@ -344,12 +344,12 @@ public class ChartProvider {
     /**
      * A map of cached ticker ojects.
      */
-    private ArrayList<Ticker> _cachedTickers = null;
+    private List<Ticker> _cachedTickers = null;
 
     /**
      * A map of trade caches. One for each tradesite.
      */
-    private ArrayList<TradeCache> _cachedTrades = null;
+    private List<TradeCache> _cachedTrades = null;
 
     /**
      * The current currency to query.
