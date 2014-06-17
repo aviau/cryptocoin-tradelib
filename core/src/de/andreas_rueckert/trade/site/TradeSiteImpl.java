@@ -223,9 +223,9 @@ public class TradeSiteImpl {
 		    
 		Thread.sleep( sleepInterval);
 		    
-	    } catch( InterruptedException ie) {  // Should never happen, I guess...
+	    } catch( InterruptedException ie) {  // Return if the requests are interrupted.
 
-		// So do nothing here.
+		return result;  // Return, what we got so far.
 	    }	    
 
 	    ++currentIndex;
