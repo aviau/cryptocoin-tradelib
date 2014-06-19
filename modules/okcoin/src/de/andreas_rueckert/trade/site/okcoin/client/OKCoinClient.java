@@ -48,7 +48,10 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -140,7 +143,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Create the URL to fetch the depth.
-	String url = _url + "depth.do?symbol=" + getOKCoinCurrencyCode( currencyPair);
+	String url = _url + "depth.do?symbol=" + getOKCoinCurrencyPairCode( currencyPair);
 
 	// Do the actual request.
 	String requestResult = HttpUtils.httpGet( url);
@@ -225,7 +228,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The String representation of the currency pair, or null, if it cannot be encoded.
      */
-    private final String getOKCoinCurrencyCode( CurrencyPair currencyPair) {
+    private final String getOKCoinCurrencyPairCode( CurrencyPair currencyPair) {
 
 	// OKCoin uses codes like 'ltc_cny'.
 	return currencyPair.getCurrency().toString().toLowerCase()
@@ -286,7 +289,64 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
      */
     public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
+	if( ! isSupportedCurrencyPair( currencyPair)) {
+	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
+	}
+
+	// Create the URL to fetch the trades.
+	String url = _url 
+	    +"trades.do?symbol="
+	    + getOKCoinCurrencyPairCode( currencyPair) 
+	    + "&since=" 
+	    + (since_micros / 1000);
+
+	// Do the actual request.
+	String requestResult = HttpUtils.httpGet( url);
+	
+	if( requestResult != null) {  // Request sucessful?
+
+	    try {
+
+		// Convert the HTTP request return value to JSON to parse further.
+		JSONArray jsonResult = JSONArray.fromObject( requestResult);
+
+		// Create a buffer for the result.
+		List<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+
+		// Iterate over the json array and convert each trade from json to a Trade object.
+		for( int i = 0; i < jsonResult.size(); ++i) {
+
+		    JSONObject tradeObject = jsonResult.getJSONObject(i);
+		    
+		    try {
+			
+			trades.add( new OKCoinTrade( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
+			
+		    } catch( JSONException je) {  // Cannot parse the JSON trade.
+
+			// Write the error to the log. Hopefully it should explain the problem.
+			LogUtils.getInstance().getLogger().error( "Error while parsing a trades from " 
+								  + _name 
+								  + ". Error message is: " + je.toString());
+
+			throw new TradeDataNotAvailableException( this._name + " reported an error while parsing a trade.");
+		    }
+		}
+
+		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
+		    
+		// updateLastRequest( TradeSiteRequestType.Trades);  // Update the timestamp of the last request.
+
+		return tradeArray;  // And return the array.
+
+	    } catch( JSONException je) {
+
+		    System.err.println( "Cannot parse trade object: " + je.toString());
+	    }
+	}
+
+	// The server return was null...
+	throw new TradeDataNotAvailableException( this._name + " server did not respond to trades request");
     }
 
     /**
