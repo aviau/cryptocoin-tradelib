@@ -200,7 +200,9 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		
 		// Define the supported currency pairs for this trading site.
 		initSupportedCurrencyPairs();
-		System.out.println(currencyPairFeeTrade);
+
+		// A. Rueckert: just removed the output at app start. Hope it's ok.
+		//System.out.println(currencyPairFeeTrade);
 
 		setCurrentCurrency( CurrencyImpl.USD);
 
