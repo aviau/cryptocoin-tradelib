@@ -561,7 +561,12 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	String requestResult = HttpUtils.httpGet( url);  // Request the list of supported markets.
 
-	if( requestResult != null) {  // Request sucessful?
+	//System.out.println( "DEBUG: coins.e server returned: '" + requestResult + "' as the currency list.");
+
+	// Request sucessful?
+	// It happened here, that coins-e returned an empty string as the market list, therefore the
+	// test for an empty string.
+	if( ( requestResult != null) && ( requestResult.trim().length() > 0)) {  
 
 	    try {
 		// Convert the HTTP request return value to JSON to parse further.
@@ -640,7 +645,12 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 	String requestResult = HttpUtils.httpGet( url);  // Request the list of supported markets.
 
-	if( requestResult != null) {  // Request sucessful?
+	//System.out.println( "DEBUG: coins.e server returned: '" + requestResult + "' as the market list.");
+
+	// Request sucessful?
+	// It happened here, that coins-e returned an empty string as the market list, therefore the
+	// test for an empty string.
+	if( ( requestResult != null) && ( requestResult.trim().length() > 0)) {  
 
 	    try {
 		// Convert the HTTP request return value to JSON to parse further.
