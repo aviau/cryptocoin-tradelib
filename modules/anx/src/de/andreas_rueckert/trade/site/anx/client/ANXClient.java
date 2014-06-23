@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site.anx.client;
 
+import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
@@ -35,7 +36,9 @@ import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
 import de.andreas_rueckert.trade.order.DepositOrder;
+import de.andreas_rueckert.trade.order.OrderNotInOrderBookException;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
@@ -49,16 +52,23 @@ import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
+import de.andreas_rueckert.util.TimeUtils;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List; 
 import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import org.apache.commons.codec.binary.Base64;
 
 
 /**
@@ -160,6 +170,57 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
     // Methods
 
     /**
+     * Perform a query with user authentication and return the HTTP post reply as a string.
+     *
+     * @param requestUrl The URL to query.
+     * @param parameters Additional parameters for the request.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
+     * @return The request result as a JSONObject, if the JSON result object has a success value. null otherwise
+     */
+    private final JSONObject authenticatedQuery( String requestUrl, Map< String, String> parameters, TradeSiteUserAccount userAccount) {
+
+	// Create the post data to identify the logged in user.
+	String postData = "nonce=" + TimeUtils.getInstance().getCurrentGMTTimeMicros();
+
+	// Add the otional parameters to the query
+	if( parameters != null) {
+
+	    // Loop over the parameters
+	    for( Map.Entry< String, String> entry : parameters.entrySet()) {
+
+		// Add each parameter with it's value to the list of parameters.
+		postData += "&" + entry.getKey() + "=" + entry.getValue();
+	    }
+	}
+
+	// Query the exchange server and return the HTTP result as a string.
+	String requestResult = HttpUtils.httpPost( requestUrl, getAuthenticationHeader( postData, userAccount), postData);
+
+	try {
+	    // Convert the HTTP request return value to JSON to parse further.
+	    JSONObject jsonResult = JSONObject.fromObject( requestResult);
+
+	    // Get the result value to check for an error
+	    if( "error".equals( jsonResult.getString( "result"))) {
+
+		// Output the error to the error stream.
+		System.err.println( _name + " query error: " + jsonResult.getString( "error"));
+
+		return null;  // Query did not success, so just return null.
+	    }
+	    
+	    // Return the entire json result object.
+	    return jsonResult;
+
+	} catch( JSONException je) {
+	    System.err.println( "Cannot parse json request result: " + je.toString());
+
+	    return null;  // An error occured...
+	}
+    }
+
+    /**
      * Cancel an order on the trade site.
      *
      * @param order The order to cancel.
@@ -168,7 +229,59 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     public boolean cancelOrder( SiteOrder order) {
 
-	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + _name);
+	// Create the URL for the request.
+	String url = _url + getANXCurrencyPairString( order.getCurrencyPair()) + "/money/order/cancel";
+
+	// The parameters for the HTTP post call.
+	HashMap<String, String> parameter = new HashMap<String, String>();
+
+	// Get the site id of this order.
+	String site_id =  order.getSiteId();
+
+	// If there is no site id, we cannot cancel the order.
+	if( site_id == null) {
+
+	    return false;
+
+	}
+
+	parameter.put( "oid", order.getSiteId());  // Pass the site id of the order.
+
+	// Do the actual request.
+	JSONObject jsonResponse = authenticatedQuery( url, parameter, order.getTradeSiteUserAccount());
+
+	if( jsonResponse == null) {
+
+	    LogUtils.getInstance().getLogger().error( "No response from " + getName() + " while attempting to cancel an order");
+
+	    return false;
+
+	} else {  // Check, if the tradesite signals success.
+	    
+	    String tradeSiteResult = jsonResponse.getString( "result");
+
+	    if( tradeSiteResult.equalsIgnoreCase( "success")) {  // If the tradesite signals success..
+
+		return true;  // canceling worked!
+
+	    } else if( tradeSiteResult.equalsIgnoreCase( "error"))  {
+
+		LogUtils.getInstance().getLogger().error( "Tradesite " 
+							  + getName() 
+							  + " signaled error while trying to cancel an order: "
+							  + jsonResponse.getString( "error"));
+
+		return false;
+
+	    } else {  // This is an unknown condition. Should never be reached, if this implementation is complete and the API did not change.
+
+		LogUtils.getInstance().getLogger().error( "Tradesite " 
+							  + getName() 
+							  + " signaled an unknown condition while trying to cancel an order.");
+		
+		return false;
+	    }
+	}
     }
 
     /**
@@ -181,7 +294,62 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     public synchronized OrderStatus executeOrder( SiteOrder order) {
 
-	throw new NotYetImplementedException( "Executing an order is not yet implemented for " + _name);
+	OrderType orderType = order.getOrderType();  // Get the type of this order.
+
+	if( ( orderType == OrderType.BUY) || ( orderType == OrderType.SELL)) {  // If this is a buy or sell order, run the trade code.
+
+	    // Get the traded currency pair.
+	    CurrencyPair tradedPair = order.getCurrencyPair();
+
+	    if( ! isSupportedCurrencyPair( tradedPair)) {
+
+		throw new CurrencyNotSupportedException( _name + " does not support this currency pair: " + tradedPair.toString());
+	    }
+
+	    // Create the URL for the request.
+	    String url = _url + getANXCurrencyPairString( tradedPair) + "/money/order/add";
+		
+	    // The parameters for the HTTP post call.
+	    HashMap<String, String> parameters = new HashMap<String, String>();
+	    
+	    parameters.put( "type", order.getOrderType() == OrderType.BUY ? "bid" : "ask");  // Indicate buy or sell.
+	    
+	    // The amount seems to be formatted with 10^8 with the current pairs:
+	    // http://docs.anxv2.apiary.io/#Multiplier
+	    parameters.put( "amount_int", "" + order.getAmount().multiply( new BigDecimal( "100000000")).longValue());
+	    
+	    // The price is multiplied with 10000 if the currency is BTC or LTC. 100000000 otherwise.
+	    BigDecimal multiplier = tradedPair.getCurrency().equals( CurrencyImpl.BTC)
+		|| ( tradedPair.getCurrency().equals( CurrencyImpl.BTC)) ? new BigDecimal( "10000") : new BigDecimal( "100000000");
+	    parameters.put( "price_int", "" + order.getPrice().multiply( multiplier).longValue());
+	    
+	    // Query the server and fetch the result as a json object.
+	    JSONObject jsonResult = authenticatedQuery( url, parameters, order.getTradeSiteUserAccount());
+	    
+	    if( jsonResult != null) {
+
+		if( "success".equalsIgnoreCase( jsonResult.getString( "result"))) {  // The order was executed.
+		    
+		    // Now store the site id of the order in the order object,
+		    // so we can check the status of the order later.
+		    order.setSiteId( jsonResult.getString( "return"));  
+		    
+		    // We could check the status of the order now, or just return, that it is unknown.
+		    order.setStatus( OrderStatus.UNKNOWN);
+
+		    return order.getStatus();
+
+		} else {
+
+		    order.setStatus( OrderStatus.ERROR);
+
+		    return order.getStatus();
+		}
+	    }
+	}
+
+	// The other order types are not yet implemented.
+	throw new NotYetImplementedException( "Executing this order type is not yet implemented for " + _name);
     }
 
     /**
@@ -206,6 +374,84 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
     private final String getANXCurrencyPairString( CurrencyPair currencyPair) {
 
 	return currencyPair.getCurrency().toString() + currencyPair.getPaymentCurrency().toString();
+    }
+
+    /**
+     * Create authentication entries for a HTTP post header.
+     *
+     * @param postData The data to post via HTTP.
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
+     *
+     * @return The header entries as a map or null if an error occured.
+     */
+    Map< String, String> getAuthenticationHeader( String postData, TradeSiteUserAccount userAccount) {
+
+	HashMap<String, String> result = new HashMap<String, String>();
+	Mac mac;
+	String accountKey = null;
+	String accountSecret = null;
+
+	// Try to get user account and secret.
+	if( userAccount != null) {
+
+	    accountKey = userAccount.getAPIkey();
+	    accountSecret = userAccount.getSecret();
+
+	} else {  // Throw an error.
+
+	    throw new MissingAccountDataException( "No user account given for " + _name + " request");
+	}
+
+	// Check, if key and secret are available for the request.
+	if( accountKey == null) {
+	    throw new MissingAccountDataException( "Key not available for authenticated request to " + _name);
+	}
+	if( accountSecret == null) {
+	    throw new MissingAccountDataException( "Secret not available for authenticated request to " + _name);
+	}
+
+	result.put( "Rest-Key", accountKey);
+
+	// Create a new secret key
+	SecretKeySpec key = new SecretKeySpec( Base64.decodeBase64( accountSecret), "HmacSHA512" );       
+
+	// Create a new mac
+	try {
+
+	    mac = Mac.getInstance( "HmacSHA512" );
+
+	} catch( NoSuchAlgorithmException nsae) {
+
+	    System.err.println( "No such algorithm exception: " + nsae.toString());
+
+	    return null;
+	}
+
+	// Init mac with key.
+	try {
+
+	    mac.init( key );
+
+	} catch( InvalidKeyException ike) {
+
+	    System.err.println( "Invalid key exception: " + ike.toString());
+
+	    return null;
+	}
+
+	// Encode the post data by the secret and encode the result as base64.
+	try {
+
+	    result.put( "Rest-Sign", Base64.encodeBase64String( mac.doFinal( postData.getBytes( "UTF-8"))));
+
+	} catch( UnsupportedEncodingException uee) {
+
+	    System.err.println( "Unsupported encoding exception: " + uee.toString());
+
+	    return null;
+	}
+
+	return result;
     }
 
     /**
@@ -482,7 +728,45 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
 
-	throw new NotYetImplementedException( "Getting the open orders is not yet implemented for " + _name);
+	// Create a URL to request the open orders.
+	// Note 1: no matter what the currency pair is, orders from _all_ pairs will be returned! 
+	// ( @see http://docs.anxv2.apiary.io/#post-%2Fapi%2F2%2F{currency_pair}%2Fmoney%2Forders )
+	// So I just use the first supported currency pair as a dummy for now.
+	JSONObject jsonResult = authenticatedQuery( _url + _supportedCurrencyPairs[0] + "/money/orders", null, userAccount);
+
+	if( jsonResult != null) {
+
+	    JSONArray requestReturn = jsonResult.getJSONArray( "return");  // Get the return value as an array
+
+	    // Create a buffer for the result.
+	    List<SiteOrder> result = new ArrayList<SiteOrder>();
+
+	    // Now loop over the open orders.
+	    for( Iterator orderIterator = requestReturn.iterator();  orderIterator.hasNext(); ) {
+
+		JSONObject currentJSONOrder = (JSONObject)orderIterator.next();
+
+		// Get the site id from this order.
+		String currentSiteId = currentJSONOrder.getString( "oid");
+
+		// Since we know the tradesite and the site id now, we can query the order book for the order.
+		SiteOrder currentOrder = CryptoCoinOrderBook.getInstance().getOrder( this, currentSiteId);
+
+		if( currentOrder != null) {     // If the order book returned an order,
+
+		    result.add( currentOrder);  // add it to the result buffer.
+
+		} else {  // It seems, this order is not in the order book. I can consider this an error at the moment,
+		          // since every order should go through the order book.
+
+		    throw new OrderNotInOrderBookException( "Error: " + _name + " order with site id " + currentSiteId + " is not in order book!");
+		}
+	    }
+	    
+	    return result;  // Return the buffer with the orders.
+	}
+
+	return null;  // The query failed.
     }
 
     /**
