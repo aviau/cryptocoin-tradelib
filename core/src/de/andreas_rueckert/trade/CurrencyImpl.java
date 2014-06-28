@@ -58,7 +58,7 @@ public enum CurrencyImpl implements Currency {
 	, UNB, UNO, UNVC, URO, USD, USDE, UTC, UVC
 	, VEIL, VGC, VIO, VLC, VLT, VMC, VOOT, VRC, VTC, VVV
 	, WATER, WC, WDC, WEST, WIFI, WIN, WKC, WVS
-	, X13C, XBC, XBT, XC, XDG, XDN, XDQ, XHC, XJO, XLB, XLC, XMR, XNC, XPM, XRP, XSI, XSS, XSV, XVN, XXL
+	, X13C, XBC, XBT, XC, XDG, XDN, XDQ, XFC, XHC, XJO, XLB, XLC, XMR, XNC, XPM, XRP, XSI, XSS, XSV, XVN, XXL
 	, YAC, YANG, YBC, YDC, YC, YIN, YMC
 	, ZCC, ZED, ZEIT, ZET, ZIP, ZS
 	, n10_to_5, n42, n365, n500, n888;  // These are the numeric currency symbols or names with special characters.
