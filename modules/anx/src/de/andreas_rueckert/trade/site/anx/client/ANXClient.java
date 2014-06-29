@@ -28,6 +28,7 @@ package de.andreas_rueckert.trade.site.anx.client;
 import de.andreas_rueckert.MissingAccountDataException;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
+import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
 import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyImpl;
@@ -378,7 +379,56 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
-	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for " + _name);
+	// Create the URL for the request.
+	String url = _url + "money/info";
+
+	// Do the actual request.
+	JSONObject jsonResponse = authenticatedQuery( url, null, userAccount);
+
+	if( jsonResponse == null) {
+
+	    LogUtils.getInstance().getLogger().error( "No response from " + getName() + " while attempting to get the funds");
+ 
+	    return null;
+
+	} else {
+
+	    String tradeSiteResult = jsonResponse.getString( "result");
+
+	    if( tradeSiteResult.equalsIgnoreCase( "success")) {  // If the tradesite signals success..
+
+		// Get the wallets as a JSON object.
+		JSONObject jsonWallet = jsonResponse.getJSONObject( "data").getJSONObject( "Wallets");
+
+		// A buffer for the parsed funds.
+		List<TradeSiteAccount> result = new ArrayList<TradeSiteAccount>();
+
+		// Now iterate over all the currencies in the funds.
+		for( Iterator currencyIterator = jsonWallet.keys(); currencyIterator.hasNext(); ) {
+
+		    String currentCurrency = (String)currencyIterator.next();  // Get the next currency.
+		    
+		    // Get the balance for this currency.
+		    BigDecimal balance = new BigDecimal( jsonWallet.getJSONObject( currentCurrency).getJSONObject( "Balance").getString( "value"));
+
+		    // Create an account and add it to the result.
+		    result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currentCurrency.toUpperCase()), this));
+		}
+		
+		return result; // Return the list with the accounts.
+
+	    } else if( tradeSiteResult.equalsIgnoreCase( "error"))  {
+		
+		LogUtils.getInstance().getLogger().error( "Tradesite " 
+							  + getName() 
+							  + " signaled error while trying to get the funds: "
+							  + jsonResponse.getString( "error"));
+		
+		return null;
+	    }
+	}
+
+	return null;  // Should never be reached.
     }
 
     /**
