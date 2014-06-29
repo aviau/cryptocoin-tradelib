@@ -83,6 +83,11 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 
     // Static variables
 
+    /**
+     * This flag is mainly for debugging and deactivates the actual trading.
+     */
+    private final static boolean SIMULATION = true;
+
 
     // Instance variables
 
@@ -323,6 +328,18 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 		|| ( tradedPair.getCurrency().equals( CurrencyImpl.BTC)) ? new BigDecimal( "10000") : new BigDecimal( "100000000");
 	    parameters.put( "price_int", "" + order.getPrice().multiply( multiplier).longValue());
 	    
+	    // If this is a simulation, don't execute the query
+	    if( SIMULATION) {
+
+		System.out.println( "Simulation mode for " + _name + ".\nWould make request to " + url + " with parameters:");
+		for( Map.Entry parameterEntry : parameters.entrySet()) {
+
+		    System.out.println( "Parameter " + parameterEntry.getKey() + " has value " + parameterEntry.getValue());
+		}
+		
+		return OrderStatus.UNKNOWN;  // What else can we say?
+	    }
+
 	    // Query the server and fetch the result as a json object.
 	    JSONObject jsonResult = authenticatedQuery( url, parameters, order.getTradeSiteUserAccount());
 	    
