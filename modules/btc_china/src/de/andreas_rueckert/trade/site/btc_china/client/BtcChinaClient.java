@@ -53,6 +53,7 @@ import java.util.Map;
  * Main class for the btc-china API.
  *
  * @see https://gist.github.com/mkraemer/7483878
+ * @see http://btcchina.org/api-market-data-documentation-en
  */
 public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 
@@ -80,8 +81,10 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	_url = "https://btcchina.com/";
 
 	// Define the supported currency pairs for this trading site.
-	_supportedCurrencyPairs = new CurrencyPair[1];
+	_supportedCurrencyPairs = new CurrencyPair[3];
 	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
+	_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
     }
 
 
@@ -160,6 +163,19 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Get the btc-china name for a given currency pair.
+     *
+     * @param currencyPair The given currency pair.
+     *
+     * @return The currency pair as a String.
+     */
+    private final String getBtcChinaCurrencyPairName( CurrencyPair currencyPair) {
+
+	return currencyPair.getCurrency().toString().toLowerCase() 
+	    + currencyPair.getPaymentCurrency().toString().toLowerCase();
+    }
+
+    /**
      * Get the market depth as a Depth object.
      *
      * @param currencyPair The queried currency pair.
@@ -172,8 +188,11 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
 	}
 	
-	String url = "https://" + "data." + DOMAIN + "/data/orderbook";
+	// Create the URL for the request.
+	// This URL scheme is not in the docs yet, but it seems to work.
+	String url = "https://" + "data." + DOMAIN + "/data/orderbook?market=" + getBtcChinaCurrencyPairName( currencyPair);
 
+	// Perform the actual request.
 	String requestResult = HttpUtils.httpGet( url);
 
 	if( requestResult != null) {  // Request sucessful?
@@ -238,9 +257,11 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
 	}
 
-	// There's only 1 currency supported, so the URL is dead simple.
-	String url = "https://" + "data." + DOMAIN + "/data/ticker";
+	// Create the URL for the request.
+	// This URL scheme is not in the docs yet, but it seems to work.
+	String url = "https://" + "data." + DOMAIN + "/data/ticker?market=" + getBtcChinaCurrencyPairName( currencyPair);
 
+	// Perform the actual request.
 	String requestResult = HttpUtils.httpGet( url);
 
 	if( requestResult != null) {  // Request sucessful?
@@ -276,9 +297,9 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
 	}
 
-	// Btc-China only supports 1 currency pair at the moment, so the URL is dead simple.
-	// see http://www.reddit.com/r/Bitcoin/comments/1qteyu/any_apis_for_chinese_exchanges/
-	String url = "https://" + "data." + DOMAIN + "/data/trades";
+	// Create the URL for the request.
+	// This URL scheme is not in the docs yet, but it seems to work.
+	String url = "https://" + "data." + DOMAIN + "/data/trades?market=" + getBtcChinaCurrencyPairName( currencyPair);
 
 	throw new NotYetImplementedException( "Getting the trades is not implemented for " + this._name);
 
