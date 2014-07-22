@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade.site.btc_china.client;
+package de.andreas_rueckert.trade.site.lakebtc.client;
 
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
@@ -40,73 +40,50 @@ import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.Ticker;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
- * Main class for the btc-china API.
+ * Main class for the LakeBTC API.
  *
- * @see https://gist.github.com/mkraemer/7483878
- * @see http://btcchina.org/api-market-data-documentation-en
+ * @see https://www.lakebtc.com/s/api?locale=en
  */
-public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
+public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 
+    // Inner classes
+
+    
     // Static variables
-
-    /**
-     * The domain of the service.
-     */
-    public static String DOMAIN = "btcchina.com";
 
 
     // Instance variables
 
 
     // Constructors
-
+    
     /**
-     * Create a new connection to the btcchina.com website.
+     * Create a new connection to the LakeBTC website.
      */
-    public BtcChinaClient() {
+    public LakeBtcClient() {
 
 	super();
 
-	_name = "BtcChina";
-	_url = "https://btcchina.com/";
+	_name = "LakeBTC";
+	_url = "https://www.lakebtc.com/api_v1/";
 
 	// Define the supported currency pairs for this trading site.
-	_supportedCurrencyPairs = new CurrencyPair[3];
+	_supportedCurrencyPairs = new CurrencyPair[2];
 	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
     }
 
 
     // Methods
-
-    /**
-     * Execute a authenticated query on this trade site.
-     *
-     * @param method The method to execute.
-     * @param arguments The arguments to pass to the server.
-     * @param userAccount The user account on the exchange, or null if the default account should be used.
-     *
-     * @return The returned data as JSON or null, if the request failed.
-     *
-     * @see https://gist.github.com/mkraemer/7483878
-     */
-    private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
-
-	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
-
-	throw new NotYetImplementedException( "Authenticated requests are not yet implemented for " + this._name);
-    }
 
     /**
      * Cancel an order on the trade site.
@@ -120,7 +97,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	throw new NotYetImplementedException( "Cancelling an order is not implemented for " + this._name);
     }
 
-    /**
+   /**
      * Execute an order on the trade site.
      * Synchronize this method, since several users might execute orders in parallel via an API implementation instance.
      *
@@ -130,26 +107,9 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      */
     public synchronized OrderStatus executeOrder( SiteOrder order) {
 
-	OrderType orderType = order.getOrderType();  // Get the type of this order.
-
-	if( ( orderType == OrderType.BUY) || ( orderType == OrderType.SELL)) {  // If this is a buy or sell order, run the trade code.
-
-	    throw new NotYetImplementedException( "Trade orders are not yet implemented for " + this._name);
-	    
-	} else if( orderType == OrderType.DEPOSIT) {  // This is a deposit order..
-
-	    throw new NotYetImplementedException( "Deposit orders are not yet implemented for " + this._name);
-
-	} else if( orderType == OrderType.WITHDRAW) {  // This is a withdraw order.
-
-	    throw new NotYetImplementedException( "Withdraw orders are not yet implemented for " + this._name);
-
-	}
-
-	return null;  // An error occured, or this is an unknow order type?
+	throw new NotYetImplementedException( "Executing is not yet implemented for " + this._name);
     }
 
-    
     /**
      * Get the current funds of the user.
      *
@@ -160,19 +120,6 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
     public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
 
 	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for " + this._name);
-    }
-
-    /**
-     * Get the btc-china name for a given currency pair.
-     *
-     * @param currencyPair The given currency pair.
-     *
-     * @return The currency pair as a String.
-     */
-    private final String getBtcChinaCurrencyPairName( CurrencyPair currencyPair) {
-
-	return currencyPair.getCurrency().toString().toLowerCase() 
-	    + currencyPair.getPaymentCurrency().toString().toLowerCase();
     }
 
     /**
@@ -187,18 +134,21 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
 	}
-	
+
 	// Create the URL for the request.
-	// This URL scheme is not in the docs yet, but it seems to work.
-	String url = "https://" + "data." + DOMAIN + "/data/orderbook?market=" + getBtcChinaCurrencyPairName( currencyPair);
+	String url = _url +  "bcorderbook";
+	if( currencyPair.getPaymentCurrency().equals( CurrencyImpl.CNY)) {
+	    url += "_cny";
+	}
 
 	// Perform the actual request.
 	String requestResult = HttpUtils.httpGet( url);
 
 	if( requestResult != null) {  // Request sucessful?
+
 	    try {
 		// Convert the HTTP request return value to JSON to parse further.
-		return new BtcChinaDepth( JSONObject.fromObject( requestResult), currencyPair, this);
+		return new LakeBtcDepth( JSONObject.fromObject( requestResult), currencyPair, this);
 
 	    } catch( JSONException je) {
 
@@ -209,15 +159,6 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	}
 	
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
-    }
-
-    /**
-     * Get the shortest allowed requet interval in microseconds.
-     *
-     * @return The shortest allowed request interval in microseconds.
-     */
-    public long getMinimumRequestInterval() {
-	return getUpdateInterval();
     }
 
     /**
@@ -238,51 +179,27 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      * @return The name of the property section as a String.
      */
     public String getPropertySectionName() {
-	return "BtcChina";
+
+	return _name;
     }
 
     /**
-     * Get the current ticker from the btc-china API.
+     * Get the current ticker from the LakeBTC API.
      *
      * @param currencyPair The currency pair to query.
      * @param paymentCurrency The currency for the payments.
      *
-     * @return The current btc-china ticker.
+     * @return The current LakeBTC ticker.
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public BtcChinaTicker getTicker( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public Ticker getTicker( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	if( ! isSupportedCurrencyPair( currencyPair)) {
-	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
-	}
-
-	// Create the URL for the request.
-	// This URL scheme is not in the docs yet, but it seems to work.
-	String url = "https://" + "data." + DOMAIN + "/data/ticker?market=" + getBtcChinaCurrencyPairName( currencyPair);
-
-	// Perform the actual request.
-	String requestResult = HttpUtils.httpGet( url);
-
-	if( requestResult != null) {  // Request sucessful?
-	    try {
-
-		// Convert the HTTP request return value to JSON to parse further.
-		return new BtcChinaTicker( JSONObject.fromObject( requestResult), currencyPair, this);
-
-	    } catch( JSONException je) {
-
-		System.err.println( "Cannot parse ticker object: " + je.toString());
-	    }
-	}
-	
-	throw new TradeDataNotAvailableException( "The " + this._name + " ticker request failed");
-    }
+	throw new NotYetImplementedException( "Getting the ticker is not implemented for " + this._name);
+    }	
 
     /**
      * Get a list of recent trades.
-     *
-     * @see http://www.reddit.com/r/Bitcoin/comments/1qteyu/any_apis_for_chinese_exchanges/
      *
      * @param since_micros The GMT-relative epoch in microseconds.
      * @param currencyPair The currency pair to query.
@@ -293,17 +210,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      */
     public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	if( ! isSupportedCurrencyPair( currencyPair)) {
-	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
-	}
-
-	// Create the URL for the request.
-	// This URL scheme is not in the docs yet, but it seems to work.
-	String url = "https://" + "data." + DOMAIN + "/data/trades?market=" + getBtcChinaCurrencyPairName( currencyPair);
-
 	throw new NotYetImplementedException( "Getting the trades is not implemented for " + this._name);
-
-	// return null;
     }
 
     /**
@@ -314,7 +221,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      */
     public long getUpdateInterval() {
 
-	return 15L * 1000000L;  // Just a guess. No clue yet, how btc-china handles this.
+	return 15L * 1000000L;  // Just a guess. No clue yet, how LakeBTC handles this.
     }
 
     /**
@@ -327,8 +234,6 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      */
     public boolean isRequestAllowed( TradeSiteRequestType requestType) {
 
-	return true;  // Just a dummy for now, since I don't have any info, how btc-china handles things...
-	              // If anyone has more info, please mail me!
+	return true;  // Just a dummy for now, since I don't have any info, how LakeBTC handles things...
     }
-
 }

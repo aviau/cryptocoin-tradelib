@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade.site.btc_china.client;
+package de.andreas_rueckert.trade.site.lakebtc.client;
 
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.DepthImpl;
@@ -32,9 +32,9 @@ import net.sf.json.JSONObject;
 
 
 /**
- * This class implements the depth of the btcchina.com trading site.
+ * This class implements the depth of the LakeBTC.com trading site.
  */
-public class BtcChinaDepth extends DepthImpl {
+public class LakeBtcDepth extends DepthImpl {
 
     // Static variables
 
@@ -45,13 +45,13 @@ public class BtcChinaDepth extends DepthImpl {
     // Constructors
 
     /**
-     * Create a new btcchina.com depth object from the JSON response from the server.
+     * Create a new LakeBTC.com depth object from the JSON response from the server.
      *
      * @param jsonResponse The jsonResponse from the server.
      * @param currencyPair The currency pair, that was queried.
      * @param tradeSite The trade site, that delivered the data.
      */
-    public BtcChinaDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
+    public LakeBtcDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
 
 	super( currencyPair, tradeSite);
 
