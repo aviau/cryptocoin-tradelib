@@ -28,13 +28,17 @@ package de.andreas_rueckert.trade.site.lakebtc.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
+import de.andreas_rueckert.trade.Currency;
 import de.andreas_rueckert.trade.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.CurrencyImpl;
 import de.andreas_rueckert.trade.CurrencyPair;
 import de.andreas_rueckert.trade.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
@@ -45,6 +49,7 @@ import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import java.math.BigDecimal;
 import java.util.Collection;
 
 
@@ -159,6 +164,86 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 	}
 	
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://lakebtc.com/s/fees?locale=en
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {   // If this is a withdraw order
+
+	    // Get the withdrawn currency.
+	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
+
+	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)) {
+
+		// I always use the worst-case fee for now.
+		// That's 0.5% + 0.001 btc
+		// @see https://lakebtc.com/s/fees?locale=en
+		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "0.001")), withdrawnCurrency);
+
+	    } else if( withdrawnCurrency.equals( CurrencyImpl.CNY)) {
+
+		// Use 0.5% + 10 CNY
+		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "10")), withdrawnCurrency);
+
+	    } else if( withdrawnCurrency.equals( CurrencyImpl.USD)) {
+
+		// Use 0.5% + 5 USD. Bank fees might be added, but are not known to the lib.
+		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "10")), withdrawnCurrency);
+
+	    } else {
+
+		// This currency is not known to the lib for now.
+		throw new CurrencyNotSupportedException( "The fees for " + withdrawnCurrency+ " withdraw are currently not implemented for " + _name);
+	    }
+
+	} else if( order instanceof DepositOrder) {   // If this is a deposit order
+
+	    // Get the deposited currency.
+	    Currency depositedCurrency = order.getCurrencyPair().getCurrency();
+
+	    // These currencies are currently mentioned with a 0% fee at the fee page, so I check
+	    // for them in case a new currency is added. Better throw an exception then.
+	    if( depositedCurrency.equals( CurrencyImpl.BTC)
+		|| depositedCurrency.equals( CurrencyImpl.USD)
+		|| depositedCurrency.equals( CurrencyImpl.CNY)) {
+
+		// Depositing cryptocoins is free.
+		return new Price( "0", depositedCurrency);
+
+	    } else {
+
+		// Since I cannot request a fee for a different currency, I just throw an exception for now.
+		throw new CurrencyNotSupportedException( "The fees for " 
+							 + depositedCurrency 
+							 + "  are currently not implemented for " + _name);
+	    }
+
+	} else if( order.getOrderType() == OrderType.BUY) {  // Is this a buy trade order?
+
+	    // Just use 0.5% for now. Discounts may apply, but are not known to the lib.
+	    return new Price( order.getAmount().multiply( new BigDecimal( "0.005")), order.getCurrencyPair().getCurrency());
+	    
+	} else if( order.getOrderType() == OrderType.SELL) {  // This is a sell trade order
+
+	    // A sell order has the payment currency as the target currency.
+	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.005"))
+			      , order.getCurrencyPair().getPaymentCurrency());
+	    
+	} else {  // This is an unknown order type?
+
+	    return super.getFeeForOrder( order);  // Should never happen...
+	}
     }
 
     /**
