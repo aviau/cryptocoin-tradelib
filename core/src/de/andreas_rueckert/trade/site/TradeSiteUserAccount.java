@@ -28,6 +28,7 @@ package de.andreas_rueckert.trade.site;
 import de.andreas_rueckert.util.ModuleLoader;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,6 +52,11 @@ public class TradeSiteUserAccount {
     private boolean _activated = true;
 
     /**
+     * The time, when this account was created.
+     */
+    private Date _created;
+
+    /**
      * A map to store all the parameters in one data structure.
      */
     private Map< String, String> _parameters = new HashMap< String, String>();
@@ -62,6 +68,23 @@ public class TradeSiteUserAccount {
 
 
     // Constructors
+
+    /**
+     * Create a new account.
+     */
+    public TradeSiteUserAccount() {
+    }
+
+    /**
+     * Create a new account for a given trade site.
+     *
+     * @param tradeSite The trade site, this account is for.
+     */
+    public TradeSiteUserAccount( TradeSite tradeSite) {
+
+	// Store the trade site in the instance.
+	_tradeSite = tradeSite;
+    }
 
 
     // Methods
@@ -98,6 +121,25 @@ public class TradeSiteUserAccount {
 	}
 
 	return resultBuffer.toString();  // Return the converted buffer.
+    }
+
+    /**
+     * Compare this account with another account.
+     *
+     * @param account The account to compare.
+     *
+     * @return true, if the accounts are equal. False otherwise.
+     */
+    public boolean equals( TradeSiteUserAccount account) {
+
+	// Check the trade site first.
+	if( ! getTradeSite().equals( account.getTradeSite())) {
+
+	    return false;  // The 2 accounts are for different trade sites.
+	}
+
+	// Just compare the 2 hash maps now.
+	return _parameters.equals( account.getParameters());
     }
 
     /**
@@ -170,6 +212,28 @@ public class TradeSiteUserAccount {
     public String getEmail() {
 
 	return _parameters.get( "email");
+    }
+
+    /**
+     * Get a parameter with a given name.
+     *
+     * @param fieldname The name of the parameter.
+     *
+     * @return The value of the parameter or null, if no such parameter exists.
+     */
+    public String getParameter( String fieldname) {
+
+	return _parameters.get( fieldname);
+    }
+
+    /**
+     * Get the entire map of parameters.
+     *
+     * @return The entire map of parameters.
+     */
+    public Map<String,String> getParameters() {
+
+	return _parameters;
     }
 
     /**
@@ -251,6 +315,17 @@ public class TradeSiteUserAccount {
     public final void setActivated( boolean activated) {
 
 	_activated = activated;
+    }
+
+    /**
+     * Set the time, when this account was created.
+     *
+     * @param created The time, when this account was created.
+     */
+    public final void setCreated( Date created) {
+	
+	// Store the time in the instance.
+	_created = created;
     }
 
     /**

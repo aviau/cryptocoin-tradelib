@@ -86,7 +86,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 	_name = "Bittrex";  // Set the name of this exchange.
 
-	_url = "https://bittrex.com/api/v1/";  // The URL for the version 1 API.
+	_url = "https://bittrex.com/api/v1.1/";  // The URL for the version 1 API.
 
 	// Fetch the traded currency pairs.
 	if( ! requestSupportedCurrencyPairs()) {
