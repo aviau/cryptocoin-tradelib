@@ -57,6 +57,11 @@ public class TradeSiteUserAccount {
     private Date _created;
 
     /**
+     * The id of the account.
+     */
+    private int _id = -1;
+
+    /**
      * A map to store all the parameters in one data structure.
      */
     private Map< String, String> _parameters = new HashMap< String, String>();
@@ -94,7 +99,7 @@ public class TradeSiteUserAccount {
      *
      * @return This user account as a property value.
      */
-    public String encodeAsPropertyValue() {
+    public final String encodeAsPropertyValue() {
 
 	StringBuffer resultBuffer = new StringBuffer();  // A buffer for the result.
 
@@ -130,7 +135,7 @@ public class TradeSiteUserAccount {
      *
      * @return true, if the accounts are equal. False otherwise.
      */
-    public boolean equals( TradeSiteUserAccount account) {
+    public final boolean equals( TradeSiteUserAccount account) {
 
 	// Check the trade site first.
 	if( ! getTradeSite().equals( account.getTradeSite())) {
@@ -149,7 +154,7 @@ public class TradeSiteUserAccount {
      *
      * @return The decoded property value as a TradeSiteUserAccount object.
      */
-    public static TradeSiteUserAccount fromPropertyValue( String propertyValue) {
+    public final static TradeSiteUserAccount fromPropertyValue( String propertyValue) {
 
 	// Create a buffer for the result.
 	TradeSiteUserAccount result = new TradeSiteUserAccount();
@@ -189,7 +194,7 @@ public class TradeSiteUserAccount {
      *
      * @return The name of this account.
      */
-    public String getAccountName() {
+    public final String getAccountName() {
 
 	return _parameters.get( "accountName");
     }
@@ -199,9 +204,19 @@ public class TradeSiteUserAccount {
      *
      * @return The API key of this account.
      */
-    public String getAPIkey() {
+    public final String getAPIkey() {
 
 	return _parameters.get( "APIkey");
+    }
+
+    /**
+     * Get the date and time, when this account was created.
+     *
+     * @return The date and time, when this account was created.
+     */
+    public final Date getCreated() {
+
+	return _created;
     }
 
     /**
@@ -209,9 +224,17 @@ public class TradeSiteUserAccount {
      *
      * @return The email address of this account.
      */
-    public String getEmail() {
+    public final String getEmail() {
 
 	return _parameters.get( "email");
+    }
+    
+    /**
+     * Get the id of this account.
+     */
+    public final int getId() {
+
+	return _id;
     }
 
     /**
@@ -221,7 +244,7 @@ public class TradeSiteUserAccount {
      *
      * @return The value of the parameter or null, if no such parameter exists.
      */
-    public String getParameter( String fieldname) {
+    public final String getParameter( String fieldname) {
 
 	return _parameters.get( fieldname);
     }
@@ -231,7 +254,7 @@ public class TradeSiteUserAccount {
      *
      * @return The entire map of parameters.
      */
-    public Map<String,String> getParameters() {
+    public final Map<String,String> getParameters() {
 
 	return _parameters;
     }
@@ -241,7 +264,7 @@ public class TradeSiteUserAccount {
      *
      * @return The password of this account.
      */
-    public String getPassword() {
+    public final String getPassword() {
 
 	return _parameters.get( "password");
     }
@@ -251,7 +274,7 @@ public class TradeSiteUserAccount {
      *
      * @return The secret of this account or null if no secret was set.
      */
-    public String getSecret() {
+    public final String getSecret() {
 
 	return _parameters.get( "secret");
     }
@@ -261,7 +284,7 @@ public class TradeSiteUserAccount {
      *
      * @return The trade site, this account is for.
      */
-    public TradeSite getTradeSite() {
+    public final TradeSite getTradeSite() {
 
 	return _tradeSite;
     }
@@ -271,7 +294,7 @@ public class TradeSiteUserAccount {
      *
      * @return The user ID.
      */
-    public String getUserId() {
+    public final String getUserId() {
 
 	return _parameters.get( "userId");
     }
@@ -343,9 +366,19 @@ public class TradeSiteUserAccount {
      *
      * @param email The new email address for this account.
      */
-    public void setEmail( String email) {
+    public final void setEmail( String email) {
 
 	_parameters.put( "email", email);
+    }
+
+    /**
+     * Set a new id for this account.
+     *
+     * @param id The new id to set.
+     */
+    public final void setId( int id) {
+
+	_id = id;
     }
 
     /**
@@ -354,7 +387,7 @@ public class TradeSiteUserAccount {
      * @param fieldname The name of the parameter.
      * @param value The new value of the parameter.
      */
-    public void setParameter( String fieldname, String value) {
+    public final void setParameter( String fieldname, String value) {
 	
 	_parameters.put( fieldname, value);
     }
@@ -364,7 +397,7 @@ public class TradeSiteUserAccount {
      *
      * @param password The new password to set.
      */
-    public void setPassword( String password) {
+    public final void setPassword( String password) {
 
 	_parameters.put( "password", password);
     }
@@ -374,7 +407,7 @@ public class TradeSiteUserAccount {
      *
      * @param secret The new secret of this account.
      */
-    public void setSecret( String secret) {
+    public final void setSecret( String secret) {
 
 	_parameters.put( "secret", secret);
     }
@@ -384,7 +417,7 @@ public class TradeSiteUserAccount {
      *
      * @param userId The new user ID.
      */
-    public void setUserId( String userId) {
+    public final void setUserId( String userId) {
 
 	_parameters.put( "userId", userId);
     }
