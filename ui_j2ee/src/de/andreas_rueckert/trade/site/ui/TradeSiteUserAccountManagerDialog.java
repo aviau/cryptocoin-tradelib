@@ -27,6 +27,7 @@ package de.andreas_rueckert.trade.site.ui;
 
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.Frame;
@@ -108,6 +109,20 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
 	JTable accountTable = new JTable( new TradeSiteUserAccountTableModel());
 	accountTable.setFillsViewportHeight(true);
 	accountTable.setGridColor( Color.BLUE);
+	accountTable.setMinimumSize( new Dimension( 700, 300));
+
+	// Set the widths of the table columns.
+	accountTable.getColumnModel().getColumn( 0).setPreferredWidth( 50);  // ID is small.
+	accountTable.getColumnModel().getColumn( 1).setPreferredWidth( 160); // Name is longer.
+	accountTable.getColumnModel().getColumn( 2).setPreferredWidth( 120);  // Site names are usually short.
+	accountTable.getColumnModel().getColumn( 3).setPreferredWidth( 160); // Email is a bit longer.
+	accountTable.getColumnModel().getColumn( 4).setPreferredWidth( 160); // Password should be long.
+	accountTable.getColumnModel().getColumn( 5).setPreferredWidth( 180); // API key is 64 characters?
+	accountTable.getColumnModel().getColumn( 6).setPreferredWidth( 180); // Secret is even longer.
+	accountTable.getColumnModel().getColumn( 7).setPreferredWidth( 50);  // Just the active checkmark.
+	accountTable.getColumnModel().getColumn( 8).setPreferredWidth( 60);  // Just the timestamp of the account creating.
+	accountTable.setAutoResizeMode( JTable.AUTO_RESIZE_LAST_COLUMN);  // Important to have preferred width actually effective.
+
 
 	// Use a scrollpane to access the whole table.
 	accountListPanel.add( new JScrollPane( accountTable)); 
