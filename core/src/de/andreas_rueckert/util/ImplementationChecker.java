@@ -26,9 +26,10 @@
 package de.andreas_rueckert.util;
 
 import de.andreas_rueckert.NotYetImplementedException;
-import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.Trade;
+import java.util.List;
 
 
 /**
@@ -77,7 +78,7 @@ public class ImplementationChecker {
 	// I just use the first currency pair and the last 5 seconds as the filter.
 	try {
 
-	    CryptoCoinTrade [] testTrades = tradeSite.getTrades( currentTime - 5000000L, supportedCurrencyPairs[0]);
+	    List<Trade> testTrades = tradeSite.getTrades( currentTime - 5000000L, supportedCurrencyPairs[0]);
 
 	    // If we can fetch the trades, the implementation seems to work.
 	    return true;

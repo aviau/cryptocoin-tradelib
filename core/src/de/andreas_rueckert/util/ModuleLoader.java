@@ -36,10 +36,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.List;
 import java.util.Map;
 
 
@@ -117,16 +119,44 @@ public class ModuleLoader {
 
 	if( moduleJars != null) {
 
+	    // Create a list of threads for loading the modules.
+	    List<Thread> loadThreads = new ArrayList<Thread>();
+
 	    // Load all the module jars and 
 	    // loop over the files and load all the classes in them.
-	    for( File currentJar : getModuleJars()) {
+	    for( final File currentJar : getModuleJars()) {
 
-		// Log, that a module is loaded.
-		LogUtils.getInstance().getLogger().info( "Loading module jar: " + currentJar.getName());
-		
-		// Load all the classes in the jar.
-		loadClassesFromJar( currentJar);
+		// Create a thread to load the module.
+		Thread newThread = new Thread() {
+
+			public void run() {
+			    
+			    // Log, that a module gets loaded.
+			    LogUtils.getInstance().getLogger().info( "Loading module jar: " + currentJar.getName());
+			    
+			    // Load all the classes in the jar.
+			    loadClassesFromJar( currentJar);
+			}
+		    };
+
+		newThread.start();  // Start the thread to load the module.
+
+		// Add the thread to the list of load threads.
+		loadThreads.add( newThread);
 	    }
+
+	    // Now wait for all the threads to complete.
+	    for( Thread currentThread : loadThreads) {
+		
+		try {
+		    currentThread.join();  // Wait for this thread to complete.
+		    
+		} catch( InterruptedException ie) {
+
+		    // Should not happen...
+		}
+	    }
+	    
 	} else {
 
 	    // No module jars found, so there are no supported exchanges...
@@ -210,7 +240,7 @@ public class ModuleLoader {
     public TradeServer getRegisteredTradeServer( String siteName) {
         return _registeredTradeServers.get( siteName);
     }
-    
+
     /**
      * Get all the registered trade servers.
      *
@@ -231,6 +261,29 @@ public class ModuleLoader {
         return _registeredTradeSites.get( siteName);
     }
 
+    /**
+     * Get a registered trade site from it's name ignoring the capitalization.
+     *
+     * @param siteName The name of the trading server.
+     *
+     * @return The trade site, or null, if no such site was registered.
+     */
+    public TradeSite getRegisteredTradeSiteIgnoringCase( String siteName) {
+
+	// Try to find a supported exchange with the given name.
+	// Since the exchange parameter is case insensitive, do a compare
+	// with each name.
+	for( String currentExchangeName : _registeredTradeSites.keySet()) {
+		
+	    if( currentExchangeName.equalsIgnoreCase( siteName)) {  // If this exchange matches the parameter.
+
+		return _registeredTradeSites.get( currentExchangeName);
+	    }
+	}
+
+	return null;  // No matching exchange found.
+    }
+    
     /**
      * Get all the registered trade sites.
      *

@@ -26,7 +26,7 @@
 package de.andreas_rueckert.trade.site.bitparking.client;
 
 import de.andreas_rueckert.NotYetImplementedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.TickerImpl;
 import net.sf.json.JSONObject;

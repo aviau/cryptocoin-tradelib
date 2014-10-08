@@ -28,9 +28,11 @@ package de.andreas_rueckert.trade.site.bittrex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;  // <= to be replaced!
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;  
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -43,6 +45,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -160,7 +163,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 	// I use max 50 orders for now. Should be enough for most trading apps, I guess.
 	// @see 
 	String url = _url + "public/getorderbook?market=" 
-	    + currencyPair.getPaymentCurrency().toString() + "-" + currencyPair.getCurrency().toString()
+	    + currencyPair.getPaymentCurrency().getCode() + "-" + currencyPair.getCurrency().getCode()
 	    + "&type=both&depth=50";
 
 	// Do the actual request.
@@ -238,16 +241,25 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 		// Write the an message to the log. Should help to identify the problem.
 		LogUtils.getInstance().getLogger().error( this._name + ": error while fetching the fee for " 
-							  + order.getCurrencyPair().getCurrency().getName());
+							  + order.getCurrencyPair().getCurrency().getCode());
 
 		throw new CurrencyNotSupportedException( this._name + ": cannot compute fee for this order: " + order.toString());
 	    }
-	    
-	    return fee;
+	    	    // Trade is more complicated, since the currency changes in a sell.
 
-	} else {  // Just the default implementation for the other order forms.
+	    if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
+		
+		return new Price( order.getAmount().multiply( fee), order.getCurrencyPair().getCurrency());
 
-	    return super.getFeeForOrder( order);
+	    } else {  // this is a sell order, so the currency changes!
+
+		return new Price( order.getAmount().multiply( order.getPrice()).multiply( fee)
+				  , order.getCurrencyPair().getPaymentCurrency());
+	    }
+
+	} else {  // Unknown order type.
+
+	    return null;  // Should never happen.
 	}
     }
 
@@ -305,7 +317,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
 	// The URL for the ticker request.
 	String url = _url + "public/getticker?market="
-	    + currencyPair.getPaymentCurrency().getName() + "-" + currencyPair.getCurrency().getName();
+	    + currencyPair.getPaymentCurrency().getCode() + "-" + currencyPair.getCurrency().getCode();
 
 	// Do the actual request.
 	String requestResult = HttpUtils.httpGet( url);
@@ -359,7 +371,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -420,7 +432,7 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 		    JSONObject currentCurrencyJSON = currencyListJSON.getJSONObject( currentCurrencyIndex);
 
 		    // Get the traded currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentCurrencyJSON.getString( "Currency"));
+		    Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currentCurrencyJSON.getString( "Currency"));
 
 		    // Create a price from the tx fee and the parsed currency.
 		    Price fee = new Price( currentCurrencyJSON.getDouble( "TxFee"), currency);
@@ -485,13 +497,13 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
 			if( isActive) {  // If the market is active, add the currency pair.
 
 			    // Get the traded currency from the JSON object.
-			    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "MarketCurrency"));
+			    Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currentPairJSON.getString( "MarketCurrency"));
 			
 			    // Get the payment currency from the JSON object.
-			    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "BaseCurrency"));
+			    Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currentPairJSON.getString( "BaseCurrency"));
 
 			    // Create a pair from the currencies.
-			    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+			    CurrencyPair currentPair = new CurrencyPairImpl( currency, paymentCurrency);
 			
 			    // Add the current pair to the result buffer.
 			    resultBuffer.add( currentPair);

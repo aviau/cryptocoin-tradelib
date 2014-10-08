@@ -26,7 +26,7 @@
 package de.andreas_rueckert.trade.order;
 
 import de.andreas_rueckert.trade.account.Account;
-import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.currency.Currency;
 
 
 /**

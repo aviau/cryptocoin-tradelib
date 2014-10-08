@@ -4,6 +4,7 @@
  * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
+ * @author Roland Schumacher <info@geniali.ch>
  *
  * Permission is hereby granted, free of charge, to any person obtaining 
  * a copy of this software and associated documentation files (the "Software"), 
@@ -26,9 +27,9 @@
 package de.andreas_rueckert.trade.site.cryptsy.client;
 
 import de.andreas_rueckert.trade.Amount;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.DepthImpl;
 import de.andreas_rueckert.trade.order.DepthOrderImpl;
 import de.andreas_rueckert.trade.order.OrderType;
@@ -68,16 +69,18 @@ public class CryptsyDepth extends DepthImpl {
 	super( tradeSite);
 
 	// Get the 2 coin codes from the market, so we don't need the key for this json value.
-	String currencyPairString = jsonMarket.getString( "primarycode").toUpperCase() 
-	    + "<=>" 
-	    + jsonMarket.getString( "secondarycode").toUpperCase();
+	String currencyString = jsonMarket.getString( "primarycode").toUpperCase();
+	String paymentCurrencyString = jsonMarket.getString( "secondarycode").toUpperCase();
 
 	// Try to create a currency pair for this market.
-	CurrencyPair newCurrencyPair = CurrencyPairImpl.findByString( currencyPairString);
+	CurrencyPair newCurrencyPair = new CurrencyPairImpl( currencyString, paymentCurrencyString);
 	
 	if( newCurrencyPair == null) {           // If the new currency pair is not found
 		    
-	    LogUtils.getInstance().getLogger().error( "Cryptsy: cannot create currency pair for string: " + currencyPairString);
+	    LogUtils.getInstance().getLogger().error( "Cryptsy: cannot create currency pair for string: " 
+						      + currencyString 
+						      + "<=>" 
+						      + paymentCurrencyString);
 	    
 	    return;
 	}
@@ -101,7 +104,7 @@ public class CryptsyDepth extends DepthImpl {
 	super( currencyPair, tradeSite);
 	
 	// Parse the nested JSON arrays in the response and convert them to DepthOrder objects.
-	parseOrders( jsonResponse.getJSONObject( "return").getJSONObject( currencyPair.getCurrency().toString()));
+	parseOrders( jsonResponse.getJSONObject( "return").getJSONObject( currencyPair.getCurrency().getCode()));
     }
 
 

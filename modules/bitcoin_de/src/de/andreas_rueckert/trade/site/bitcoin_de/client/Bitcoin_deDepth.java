@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -23,30 +23,43 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade;
+package de.andreas_rueckert.trade.site.bitcoin_de.client;
+
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.DepthImpl;
+import de.andreas_rueckert.trade.site.TradeSite;
+import net.sf.json.JSONObject;
 
 
 /**
- * Throw an exception, if a currency is not supported for this function on this platform.
- * (to be replaced by de.andreas_rueckert.trade.currency.CurrencyNotSupportedException .)
+ * This class implements the depth of the bitcurex.com trading site.
  */
-@Deprecated
-public class CurrencyNotSupportedException extends RuntimeException {
- 
+public class Bitcoin_deDepth extends DepthImpl {
+
+    // Static variables
+
+
     // Instance variables
 
 
     // Constructors
 
     /**
-     * Create a new exception, indicating that this currency is not supported at the moment.
+     * Create a new Bitcoin.de depth object from the JSON response from the server.
      *
-     * @param message The message to send.
+     * @param jsonResponse The jsonResponse from the server.
+     * @param currencyPair The currency pair, that was queried.
+     * @param tradeSite The trade site, that delivered the data.
      */
-    public CurrencyNotSupportedException( String message) {
-	super( "This currency is not supported for this function on this platform: " + message);
+    public Bitcoin_deDepth( JSONObject jsonResponse, CurrencyPair currencyPair, TradeSite tradeSite) {
+
+	super( currencyPair, tradeSite);
+	
+	// Parse the nested JSON arrays in the response and convert them to DepthOrder objects.
+	parseJSONDepthArrays( jsonResponse);
     }
 
 
     // Methods
+
 }

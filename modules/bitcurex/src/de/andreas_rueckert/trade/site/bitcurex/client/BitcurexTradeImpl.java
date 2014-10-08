@@ -27,7 +27,7 @@ package de.andreas_rueckert.trade.site.bitcurex.client;
 
 import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.CryptoCoinTradeImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.TradeType;
@@ -62,7 +62,7 @@ public class BitcurexTradeImpl extends CryptoCoinTradeImpl {
 
 	// Parse the date.
 	try {
-	    // btc-e seems to have only the date as seconds.
+	    // bitcurex seems to have only the date as seconds.
 	    _timestamp = jsonTrade.getLong( "date") * 1000000;
 	} catch( JSONException je) {
 	    throw new NumberFormatException( "Date is not a proper long variable");

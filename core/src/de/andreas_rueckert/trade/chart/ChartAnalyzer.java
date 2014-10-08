@@ -25,7 +25,7 @@
 
 package de.andreas_rueckert.trade.chart;
 
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.NotEnoughTradesException;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 
 /**
@@ -82,7 +83,7 @@ public class ChartAnalyzer {
      * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      * @throws TimeFormatException if the time in the string cannot be parsed.
      */
-    public Price ema( Trade [] trades, String timeInterval) throws NotEnoughTradesException, TimeFormatException {
+    public Price ema( List<Trade> trades, String timeInterval) throws NotEnoughTradesException, TimeFormatException {
 
 	// Analyze the time period string to figure the unit of the time period.
 	long timeIntervalMicros = TimeUtils.microsFromString( timeInterval); 
@@ -136,7 +137,7 @@ public class ChartAnalyzer {
      *
      * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      */
-    public Price ema( Trade [] trades, long timeInterval, long timePeriod) throws NotEnoughTradesException {
+    public Price ema( List<Trade> trades, long timeInterval, long timePeriod) throws NotEnoughTradesException {
 
 	// Get the current time.
 	long currentTime = TimeUtils.getInstance().getCurrentGMTTimeMicros();
@@ -160,7 +161,7 @@ public class ChartAnalyzer {
      *
      * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      */
-    public Price ema( Trade [] trades, long startTime, long endTime, long timePeriod) throws NotEnoughTradesException {
+    public Price ema( List<Trade> trades, long startTime, long endTime, long timePeriod) throws NotEnoughTradesException {
 
 	// The interval to check.
 	long timeInterval = endTime - startTime;
@@ -194,9 +195,8 @@ public class ChartAnalyzer {
 	double totalWeight = 0.0d;  
 
 	// Now loop over the trades.
-	for( int index = 0; index < trades.length; ++index) {
+	for( Trade currentTrade : trades) {
 	    
-	    Trade currentTrade = trades[ index];
 	    long currentTimestamp = currentTrade.getTimestamp();
 
 	    // Check, if this trade is in the target timespan.
@@ -255,7 +255,7 @@ public class ChartAnalyzer {
 	long sinceMicros = TimeUtils.getPastGMTTimeFromString( timeInterval);
 
 	// Get the trades for the given timespan to calculate the ema.
-	Trade [] trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
+	List<Trade> trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
 
 	return ema( trades, timeInterval);
     }
@@ -361,7 +361,7 @@ public class ChartAnalyzer {
      * @throws NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      * @throws TimeFormatException if the time in the string cannot be parsed.
      */
-    public Price sma( Trade [] trades, String timespan) throws NotEnoughTradesException, TimeFormatException {
+    public Price sma( List<Trade> trades, String timespan) throws NotEnoughTradesException, TimeFormatException {
 
 	// Conver the timespan to microseconds.
 	long timespanMicros = TimeUtils.microsFromString( timespan);
@@ -385,18 +385,17 @@ public class ChartAnalyzer {
      *
      * @throws a NotEnoughTradesException if there are not enough trades in the array to perform the computation.
      */
-    public Price sma( Trade [] trades, long startTime, long endTime) throws NotEnoughTradesException {
+    public Price sma( List<Trade> trades, long startTime, long endTime) throws NotEnoughTradesException {
 
 	long nTrades = 0;
 	Price currentSum = new Price( "0");
 
-	if( ( trades == null) || ( trades.length == 0)) {
+	if( ( trades == null) || trades.isEmpty()) {
 	    throw new NotEnoughTradesException( "There are not enough trades to compute the sma");
 	}
 
-	for( int index = 0; index < trades.length; ++index) {
+	for( Trade currentTrade : trades) {
 	    
-	    Trade currentTrade = trades[ index];
 	    long currentTimestamp = currentTrade.getTimestamp();
 
 	    if( ( startTime == -1L) || ( currentTimestamp >= startTime)) {  // <= the -1L check is an ugly hack. Better do different loops for different parameters?
@@ -424,7 +423,7 @@ public class ChartAnalyzer {
     public Price getSMA( TradeSite tradeSite, CurrencyPair currencyPair, long sinceMicros) {
 
 	// Get the trades for the given timespan.
-	Trade [] trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
+	List<Trade> trades = ChartProvider.getInstance().getTrades( tradeSite, currencyPair, sinceMicros);
 
 	// Since the trades are already filtered, just pass -1L as the interval limits and 
 	// consider all trades for the sma.
@@ -457,7 +456,7 @@ public class ChartAnalyzer {
 	CurrencyPair currencyPair = null;  // The default value of the requested currency pair is null (which indicates a not matching name).
 	
 	for( int index = 0; index < supportedCurrencyPairs.length; ++index) {
-	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getName())) {
+	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getCode())) {
 		currencyPair = supportedCurrencyPairs[ index];  // We've found the requested currency pair!
 		break;                                          // No further searching required...
 	    }

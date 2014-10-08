@@ -30,11 +30,12 @@ import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.Amount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
 import de.andreas_rueckert.trade.currency.CurrencySymbolMapper;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -47,6 +48,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -454,6 +456,8 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      * @param order The order to use for the fee computation.
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     *
+     * @see https://www.kraken.com/help/new-fees-info
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -468,21 +472,21 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
 	    
 	    // Now switch the fees according to the currency.
-	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)) {
+	    if( withdrawnCurrency.hasCode( "BTC")) {
 
-		return new Price( "0.0005", CurrencyImpl.BTC);
+		return new Price( "0.0005", withdrawnCurrency);
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.LTC)) {
+	    } else if( withdrawnCurrency.hasCode( "LTC")) {
 
-		return new Price( "0.02", CurrencyImpl.LTC);
+		return new Price( "0.02", withdrawnCurrency);
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.DOGE)) {
+	    } else if( withdrawnCurrency.hasCode( "DOGE")) {
 
-		return new Price( "2", CurrencyImpl.DOGE);
+		return new Price( "2", withdrawnCurrency);
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.NMC)) {
+	    } else if( withdrawnCurrency.hasCode( "NMC")) {
 
-		return new Price( "0.005", CurrencyImpl.NMC);
+		return new Price( "0.005", withdrawnCurrency);
 
 	    } else {
 
@@ -509,7 +513,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
     
@@ -724,7 +728,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -795,12 +799,12 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
 		    // Get the next currency pair as a JSON object.
 		    JSONObject currentCurrencyPairJSON = pairListJSON.getJSONObject( krakenPairName);
 
-		    de.andreas_rueckert.trade.Currency currency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "base"));
+		    Currency currency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "base"));
 
-		    de.andreas_rueckert.trade.Currency paymentCurrency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "quote"));
+		    Currency paymentCurrency = CurrencySymbolMapper.getCurrencyForIso4217Name( currentCurrencyPairJSON.getString( "quote"));
 
 		    // Create a pair from the currencies.
-		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		    CurrencyPair currentPair = new CurrencyPairImpl( currency, paymentCurrency);
 
 		    // Add the pair with it's kraken name to the map of pair names.
 		    addCurrencyPairName( currentPair, krakenPairName);

@@ -25,7 +25,7 @@
 
 package de.andreas_rueckert.trade.site.mtgox.client;
 
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.TickerImpl;

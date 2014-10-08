@@ -26,7 +26,8 @@
 package de.andreas_rueckert.trade;
 
 import de.andreas_rueckert.NotYetImplementedException;
-import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.order.DepthOrder;
 import de.andreas_rueckert.trade.order.DepthOrderImpl;
 import de.andreas_rueckert.trade.order.OrderType;

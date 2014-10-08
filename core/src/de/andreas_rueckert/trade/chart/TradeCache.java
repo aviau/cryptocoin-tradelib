@@ -25,12 +25,13 @@
 
 package de.andreas_rueckert.trade.chart;
 
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -101,7 +102,7 @@ class TradeCache {
 	    while( _updateCacheThread != null) {
 
 		// Check for new trades since the last poll.
-		Trade [] newTrades = _tradeSite.getTrades( _lastCheckTimestamp, _currencyPair);
+		List<Trade> newTrades = _tradeSite.getTrades( _lastCheckTimestamp, _currencyPair);
 
 		// Set the timestamp to the request init - 3s (for the tcp/ip connection establishment).
 		_lastCheckTimestamp = TimeUtils.getInstance().getCurrentGMTTimeMicros() - 3000000L;
@@ -220,9 +221,9 @@ class TradeCache {
      *
      * @param startTime The time to compare with the trades.
      *
-     * @return An array of trades.
+     * @return A list of trades.
      */
-    public Trade [] getTrades( long startTime) {
+    public List<Trade> getTrades( long startTime) {
 
 	// Buffer for the result.
 	ArrayList<Trade> resultBuffer = new ArrayList<Trade>();
@@ -245,8 +246,8 @@ class TradeCache {
 	    resultBuffer.add( _cache.get( currentTradeIndex));
 	}
 
-	// Now convert the buffer to an array and return it.
-	return resultBuffer.toArray( new Trade[ resultBuffer.size()]);
+	// Now return the buffer.
+	return resultBuffer;
     }
 
     /**
@@ -282,7 +283,7 @@ class TradeCache {
      *
      * @param trades The trades to merge.
      */
-    public void merge( Trade [] trades) {
+    public void merge( List<Trade> trades) {
 
 	// Get the timestamp of the last trade in the cache or Long.MIN_VALUE in case the 
 	// cache is currently emtpy.
@@ -292,12 +293,12 @@ class TradeCache {
 	// Since we assume, the trades in the array are sorted, we can just add the rest.
 	int firstNewTrade = 0;
 
-	while( trades[ firstNewTrade].getTimestamp() <= lastTimestamp) {  // Skip all the trades, that are older than the ones in
+	while( trades.get( firstNewTrade).getTimestamp() <= lastTimestamp) {  // Skip all the trades, that are older than the ones in
 	    ++firstNewTrade;                                             // the cache.
 	}
 	 
-	for( int index = firstNewTrade; index < trades.length; ++index) {  // Then just add the rest.
-	    _cache.add( trades[ index]);
+	for( int index = firstNewTrade; index < trades.size(); ++index) {  // Then just add the rest.
+	    _cache.add( trades.get( index));
 	}
     }
 

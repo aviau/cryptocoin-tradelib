@@ -28,11 +28,12 @@ package de.andreas_rueckert.trade.site.atomic_trade.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -45,6 +46,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -103,18 +105,18 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Set the buy fees, that differ from the default 0.25%.
-	_buyFees.put( CurrencyImpl.BEL, new BigDecimal( "0.001"));    // BellsCoin has 0.1%
-	_buyFees.put( CurrencyImpl.CCS, new BigDecimal( "0"));        // CCS has 0%
-	_buyFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.005"));  // CinniCoin has 0.5%
-	_buyFees.put( CurrencyImpl.SVC, new BigDecimal( "0.0015"));   // Sovereigncoin has 0.15%
-	_buyFees.put( CurrencyImpl.USD, new BigDecimal( "0.0075"));   // US Dollar has 0.75%
-	_buyFees.put( CurrencyImpl.XDQ, new BigDecimal( "0.003"));    // Dirac has 0.3%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "BEL"), new BigDecimal( "0.001"));    // BellsCoin has 0.1%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CCS"), new BigDecimal( "0"));        // CCS has 0%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CINNI"), new BigDecimal( "0.005"));  // CinniCoin has 0.5%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "SVC"), new BigDecimal( "0.0015"));   // Sovereigncoin has 0.15%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "USD"), new BigDecimal( "0.0075"));   // US Dollar has 0.75%
+	_buyFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XDQ"), new BigDecimal( "0.003"));    // Dirac has 0.3%
 
 	// Set the sell fees, that differ from the default 0.25%.
-	_sellFees.put( CurrencyImpl.CCS, new BigDecimal( "0.001"));   // CCS has 1%
-	_sellFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.005")); // Cinnicoin has 0.5%
-	_sellFees.put( CurrencyImpl.USD, new BigDecimal( "0.0075"));  // US Dollar has 0.75%
-	_sellFees.put( CurrencyImpl.XDQ, new BigDecimal( "0.003"));   // Dirac has 0.3%
+	_sellFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CCS"), new BigDecimal( "0.001"));   // CCS has 1%
+	_sellFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CINNI"), new BigDecimal( "0.005")); // Cinnicoin has 0.5%
+	_sellFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "USD"), new BigDecimal( "0.0075"));  // US Dollar has 0.75%
+	_sellFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XDQ"), new BigDecimal( "0.003"));   // Dirac has 0.3%
     }
 
 
@@ -257,7 +259,7 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -322,7 +324,7 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -382,10 +384,10 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 		String [] currencyCodes = currentPairString.split( "/");
 
 		// Create a currency object for the currency.
-		Currency currency = CurrencyImpl.findByString( currencyCodes[0]);
+		Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currencyCodes[0]);
 
 		// Create a currency object for the payment currency.
-		Currency paymentCurrency = CurrencyImpl.findByString( currencyCodes[1]);
+		Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currencyCodes[1]);
 
 		// Create a currency pair from the 2 currencies.
 		CurrencyPair newCurrencyPair = new CurrencyPairImpl( currency, paymentCurrency);

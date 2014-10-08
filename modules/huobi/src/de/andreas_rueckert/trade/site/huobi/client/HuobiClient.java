@@ -28,11 +28,11 @@ package de.andreas_rueckert.trade.site.huobi.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -45,10 +45,12 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import java.util.Collection;
+import java.util.List;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
@@ -83,8 +85,8 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
 
 	// Set the available currency pairs (only 2 at the time of writing 2014/13/6).
 	_supportedCurrencyPairs = new CurrencyPair[2];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "CNY");
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( "LTC", "CNY");
     }
 
 
@@ -141,7 +143,7 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Create the URL to fetch the depth.
-	String url = _url +  "depth_" + currencyPair.getCurrency().toString().toLowerCase() + "_json.js";
+	String url = _url +  "depth_" + currencyPair.getCurrency().getCode().toLowerCase() + "_json.js";
 
 	// Do the actual request.
 	String requestResult = HttpUtils.httpGet( url);
@@ -182,12 +184,27 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
 	if( order instanceof WithdrawOrder) {   // If this is a withdraw order
+	    
+	    // Get the withdrawn currency.
+	    Currency currency = order.getCurrencyPair().getCurrency();
+	    
+	    if( currency.hasCode( "BTC")) {
 
-	    throw new NotYetImplementedException( "Getting the withdraw fee is not yet implemented for " + _name);
+		return new Price( "0.0001", currency);
+
+	    } else if( currency.hasCode( "LTC")) {
+
+		return new Price( "0.001", currency);
+ 
+	    } else {
+		
+		throw new NotYetImplementedException( "Getting the withdraw fee is not yet implemented for this currency " + _name);
+	    }
 
 	} else if( order instanceof DepositOrder) {   // If this is a deposit order
 
-	    throw new NotYetImplementedException( "Getting the deposit fee is not yet implemented for " + _name);
+	    // According to the fee schedule (see method header)m the fee is always 0?
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
 
 	} else if( order.getOrderType() == OrderType.BUY) {  // Is this a buy trade order?
 
@@ -202,7 +219,7 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -267,7 +284,7 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }

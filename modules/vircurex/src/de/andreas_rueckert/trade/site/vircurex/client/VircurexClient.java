@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -30,11 +30,12 @@ import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -53,6 +54,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.HttpUtilsProxy;
@@ -132,8 +134,6 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	_name = "Vircurex";
 	_url = "https://api.vircurex.com/";
 
-	_feeForTrade = new BigDecimal( "0.002");  // The current trade fee.
-
 	// Define the supported currency pairs for this trading site.
 	// This list is actually not complete, since Vircurex supports lots of pairs, but
 	// it should be sufficient for most apps, I guess.
@@ -141,23 +141,23 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 
 	// Set the known withdrawal fees.
 	// Available at: https://vircurex.com/welcome/help?locale=en
-	_withdrawal_fees.put( CurrencyImpl.ANC, new BigDecimal( "0.1"));
-	_withdrawal_fees.put( CurrencyImpl.BTC, new BigDecimal( "0.002"));
-	_withdrawal_fees.put( CurrencyImpl.DGC, new BigDecimal( "0.2"));
-	_withdrawal_fees.put( CurrencyImpl.DOGE, new BigDecimal( "5.0"));
-	_withdrawal_fees.put( CurrencyImpl.DVC, new BigDecimal( "100.0"));
-	_withdrawal_fees.put( CurrencyImpl.FRC, new BigDecimal( "10.0"));
-	_withdrawal_fees.put( CurrencyImpl.FTC, new BigDecimal( "0.01"));
-	_withdrawal_fees.put( CurrencyImpl.I0C, new BigDecimal( "0.01"));
-	_withdrawal_fees.put( CurrencyImpl.IXC, new BigDecimal( "8.0"));
-	_withdrawal_fees.put( CurrencyImpl.LTC, new BigDecimal( "0.1"));
-	_withdrawal_fees.put( CurrencyImpl.NMC, new BigDecimal( "0.1"));
-	_withdrawal_fees.put( CurrencyImpl.NVC, new BigDecimal( "0.1"));
-	_withdrawal_fees.put( CurrencyImpl.PPC, new BigDecimal( "0.002"));
-	_withdrawal_fees.put( CurrencyImpl.QRK, new BigDecimal( "0.5"));
-	_withdrawal_fees.put( CurrencyImpl.TRC, new BigDecimal( "0.01"));
-	_withdrawal_fees.put( CurrencyImpl.WDC, new BigDecimal( "0.1"));
-	_withdrawal_fees.put( CurrencyImpl.XPM, new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "ANC"), new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "BTC"), new BigDecimal( "0.002"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DGC"), new BigDecimal( "0.2"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DOGE"), new BigDecimal( "5.0"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DVC"), new BigDecimal( "100.0"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "FRC"), new BigDecimal( "10.0"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "FTC"), new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "I0C"), new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "IXC"), new BigDecimal( "8.0"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "LTC"), new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "NMC"), new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "NVC"), new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "PPC"), new BigDecimal( "0.002"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "QRK"), new BigDecimal( "0.5"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "TRC"), new BigDecimal( "0.01"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "WDC"), new BigDecimal( "0.1"));
+	_withdrawal_fees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XPM"), new BigDecimal( "0.01"));
 
 	// Set some proxy info for faster requests.
 	//_proxyInfo = new TradeSiteProxyInfo( this, true, 10);
@@ -219,7 +219,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 
 	    String url = "https://" 
 		+ DOMAIN + "/api/orderbook.json?alt=" 
-		+ currencyPair.getPaymentCurrency().getName() + "&base=" + currencyPair.getCurrency().getName();
+		+ currencyPair.getPaymentCurrency().getCode() + "&base=" + currencyPair.getCurrency().getCode();
 	    
 	    String requestResult = HttpUtils.httpGet( url);
 
@@ -253,10 +253,10 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if many of the depths are not available. A few missing depths are just set to null.
      */
-    public Depth [] getDepthsForPaymentCurrency( Currency paymentCurrency) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsForPaymentCurrency( Currency paymentCurrency) throws TradeDataNotAvailableException {
 
 	// Compute the url for the request.
-	String url = "https://" + DOMAIN + "/api/orderbook_alt.json?alt=" + paymentCurrency.getName();
+	String url = "https://" + DOMAIN + "/api/orderbook_alt.json?alt=" + paymentCurrency.getCode();
 	
 	// Do the actual request on vircurex.
 	String requestResult = HttpUtils.httpGet( url);
@@ -302,7 +302,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 		}
 
 		// Convert the key string to a currency object.
-		Currency currentCurrency = CurrencyImpl.findByString( currentKey.toUpperCase());
+		Currency currentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currentKey.toUpperCase());
 
 		// Since this key is a currency, get the depth for this currency.
 		// The JSON for each currency is the same format as in the orderbook method.
@@ -312,8 +312,8 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 		resultBuffer.add( depth);
 	    }
 
-	    // Convert the result buffer to an array and return it.
-	    return resultBuffer.toArray( new Depth[ resultBuffer.size()]);
+	    // Return the result.
+	    return resultBuffer;
 	}
 
 	// Since fetching the depths failed, just throw an exception, that the trade data are not available.
@@ -329,7 +329,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// Define a map to resort all the currency pairs according to their payment currencies.
 	Map< Currency, ArrayList< Currency>> _resortedCurrencyPairs = new HashMap< Currency, ArrayList< Currency>>();
@@ -370,7 +370,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Create a result buffer for the depths.
-	Map< Currency, Depth []> resultBuffer = new HashMap< Currency, Depth []>();
+	Map< Currency, List<Depth>> resultBuffer = new HashMap< Currency, List<Depth>>();
 
 	// Precalculate the sleeping time.
 	// sleep() works with miliseconds. The method returns microseconds,
@@ -386,7 +386,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	    // ToDo: check if there is only 1 currency in the list and do a regular getDepth() then?
 
 	    // Fetch all the depths for this payment currency.
-	    Depth [] currentDepths = getDepthsForPaymentCurrency( currentPaymentCurrency);
+	    List<Depth> currentDepths = getDepthsForPaymentCurrency( currentPaymentCurrency);
 
 	    // Write the result in the buffer.
 	    resultBuffer.put( currentPaymentCurrency, currentDepths);
@@ -403,7 +403,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Now resort those lists according to the currency pair parameter back again.
-	Depth [] result = new Depth[ currencyPairs.length];
+	List<Depth> result = new ArrayList<Depth>();
 	int currentIndex = 0;
 
 	// Loop over the pair parameter.
@@ -417,7 +417,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 		if( currentResult.getCurrencyPair().equals( currentPair)) {
 
 		    // Store the depth in the result array.
-		    result[ currentIndex++] = currentResult;
+		    result.add( currentIndex++, currentResult);
 
 		    // And continue with the next currency pair.
 		    continue pairLoop;
@@ -425,8 +425,9 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	    }
 
 	    // We have found no matching result, so just set this depth to null;
-	    result[ currentIndex++] = null;
-	    System.out.println( "Setting depth to null");
+	    result.add( currentIndex++, null);
+
+	    // System.out.println( "Setting depth to null");
 	}
 	
 
@@ -443,10 +444,10 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public Depth [] getDepthsViaProxies( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsViaProxies( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// Create an array for the result.
-	Depth [] result = new Depth[ currencyPairs.length];
+	List<Depth> result = new ArrayList<Depth>();
 
 	// Check, if all the currency pairs are actually supported here, so we
 	// don't have to interrupt the requests later.
@@ -487,7 +488,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 			// Compute the url of the next currency pair.
 			String url = "https://" 
 			+ DOMAIN + "/api/orderbook.json?alt=" 
-			+ currentPairCopy.getPaymentCurrency().getName() + "&base=" + currentPairCopy.getCurrency().getName();
+			+ currentPairCopy.getPaymentCurrency().getCode() + "&base=" + currentPairCopy.getCurrency().getCode();
 
 			// Now do the actual request.
 			ProxyRequestResult requestResult = HttpUtilsProxy.getInstance().httpGet( url, null, VircurexClient.this);
@@ -525,15 +526,15 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 
 		try {
 
-		    result[ currentDepthIndex] = currentFuture.get();
+		    result.add( currentDepthIndex, currentFuture.get());
 
 		} catch( ExecutionException ee) {  // If we cannot execute the callable,
 
-		    result[ currentDepthIndex] = null;  // Just skip it.
+		    result.add( currentDepthIndex, null);  // Just skip it.
 		
 		} catch( InterruptedException ie) {   // If we cannot get the result from the callable,
 
-		    result[ currentDepthIndex] = null;  // Just skip it. 
+		    result.add( currentDepthIndex, null);  // Just skip it. 
 
 		}
 
@@ -545,7 +546,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	// , since all the results are (hopefully) returned.
 	pool.shutdown();
 
-	return result;  // Return the array with the results.
+	return result;  // Return the list with the results.
     }
 
     /**
@@ -636,12 +637,12 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	    if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
 
 		// Just multiply the bought amount with the percentage to get the fee.
-		return new Price( order.getAmount().multiply( getFeeForTrade()), order.getCurrencyPair().getCurrency());
+		return new Price( order.getAmount().multiply( new BigDecimal( "0.002")), order.getCurrencyPair().getCurrency());
 
 	    } else {  // this is a sell order, so the currency changes!
 
 		// Compute the amount of the received payment currency and then multiply with the fee percentage.
-		return new Price( order.getAmount().multiply( order.getPrice()).multiply( getFeeForTrade())
+		return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.002"))
 				  , order.getCurrencyPair().getPaymentCurrency());
 	    }
 	}
@@ -694,9 +695,6 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	// Get the settings from the base class.
 	PersistentPropertyList result = new PersistentPropertyList();
 
-	// The withdrawal fees depend on the coin type, so we would need a better structure for it?
-	result.add( new PersistentProperty( "Fee for trades", null, "" + getFeeForTrade(), 2));
-
 	return result;
     }
 
@@ -720,7 +718,7 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      *
      * @return  The trades as an array of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros,  CurrencyPair currencyPair) {
+    public List<Trade> getTrades( long since_micros,  CurrencyPair currencyPair) {
 
 	// If a request for trades is allowed
 	if( isRequestAllowed( TradeSiteRequestType.Trades)) {
@@ -733,9 +731,9 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 	    // so we have to filter the trade manually after the fetch.
 	    String url = "https://" 
 		+ DOMAIN + "/api/trades.json?alt=" 
-		+ currencyPair.getPaymentCurrency().getName() + "&base=" + currencyPair.getCurrency().getName();
+		+ currencyPair.getPaymentCurrency().getCode() + "&base=" + currencyPair.getCurrency().getCode();
 
-	    ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+	    List<Trade> trades = new ArrayList<Trade>();
 	    
 	    String requestResult = HttpUtils.httpGet( url);
 	    
@@ -756,11 +754,9 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 			}
 		    }
 		    
-		    CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array
-		    
 		    updateLastRequest();  // Update the timestamp of the last request.
 
-		    return tradeArray;
+		    return trades;  // Return the list.
 
 		} catch( JSONException je) {
 		    System.err.println( "Cannot parse trade object in vircurex client: " + je.toString());
@@ -847,20 +843,17 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
 			    String paymentCurrency = (String)iter2.next();
 			    
 			    // Now create a currency pair.
-			    CurrencyPair newPair = new CurrencyPairImpl( CurrencyImpl.findByString( currency.toUpperCase())
-									 , CurrencyImpl.findByString( paymentCurrency.toUpperCase()));
+			    CurrencyPair newPair = new CurrencyPairImpl( currency.toUpperCase(), paymentCurrency.toUpperCase());
 			    
 			    // Create the same pair also inverted.
-			    CurrencyPair newPairInverted = new CurrencyPairImpl( CurrencyImpl.findByString( paymentCurrency.toUpperCase())
-										 , CurrencyImpl.findByString( currency.toUpperCase()));
+			    CurrencyPair newPairInverted = new CurrencyPairImpl( paymentCurrency.toUpperCase(), currency.toUpperCase());
 
 			    // Add the new pair only, if it's not already either exactly or inverted in the buffer.
 			    // This is just to minimize the number of pairs, since a huge number slows the arb bot
 			    // down.
 			    if( ! resultBuffer.contains( newPair) && ! resultBuffer.contains( newPairInverted)) {
 				
-				resultBuffer.add( new CurrencyPairImpl( CurrencyImpl.findByString( currency.toUpperCase())
-									, CurrencyImpl.findByString( paymentCurrency.toUpperCase())));
+				resultBuffer.add( new CurrencyPairImpl( currency.toUpperCase(), paymentCurrency.toUpperCase()));
 			    }
 			}
 		    }
@@ -890,8 +883,6 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      */
     public void setSettings( PersistentPropertyList settings) {
 
-	String currentFee = settings.getStringProperty( "Fee for trades");
-	setFeeForTrade( currentFee != null ? new BigDecimal( currentFee) : BigDecimal.ZERO);
     }
 
     /**

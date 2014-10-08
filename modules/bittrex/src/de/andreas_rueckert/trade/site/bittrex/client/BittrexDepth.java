@@ -26,7 +26,7 @@
 package de.andreas_rueckert.trade.site.bittrex.client;
 
 import de.andreas_rueckert.trade.Amount;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.DepthImpl;
 import de.andreas_rueckert.trade.order.DepthOrderImpl;
 import de.andreas_rueckert.trade.order.OrderType;

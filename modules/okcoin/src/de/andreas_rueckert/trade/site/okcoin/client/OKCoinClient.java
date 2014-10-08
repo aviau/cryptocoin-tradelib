@@ -28,11 +28,11 @@ package de.andreas_rueckert.trade.site.okcoin.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -45,6 +45,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -85,8 +86,8 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 
 	// Set the supported currency pairs.
 	_supportedCurrencyPairs = new CurrencyPair[2];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "CNY");
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( "LTC", "CNY");
     }
 
 
@@ -207,7 +208,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -287,7 +288,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
@@ -311,7 +312,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 		JSONArray jsonResult = JSONArray.fromObject( requestResult);
 
 		// Create a buffer for the result.
-		List<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+		List<Trade> trades = new ArrayList<Trade>();
 
 		// Iterate over the json array and convert each trade from json to a Trade object.
 		for( int i = 0; i < jsonResult.size(); ++i) {
@@ -333,11 +334,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 		    }
 		}
 
-		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-		    
-		// updateLastRequest( TradeSiteRequestType.Trades);  // Update the timestamp of the last request.
-
-		return tradeArray;  // And return the array.
+		return trades;  // And return the list.
 
 	    } catch( JSONException je) {
 

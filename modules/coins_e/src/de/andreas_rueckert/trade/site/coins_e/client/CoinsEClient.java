@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -29,11 +29,12 @@ import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -46,6 +47,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -119,9 +121,6 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	// Null might break some bots.
 	_supportedCurrencyPairs = new CurrencyPair[ 0];
 
-	// Set the deposit fee (always 0 % as it seems).
-	_feeForDeposit = new BigDecimal( "0");
-
 	// I cannot set the other fees here, because they depend on the coin type!
 	// They are parsed in the requestSupportedCurrencies() call!
     }
@@ -182,7 +181,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	String url = "https://www." 
 	    + this.DOMAIN 
 	    + "/api/v2/market/" 
-	    + currencyPair.getCurrency().getName().toUpperCase() + "_" + currencyPair.getPaymentCurrency().getName().toUpperCase()
+	    + currencyPair.getCurrency().getCode().toUpperCase() + "_" + currencyPair.getPaymentCurrency().getCode().toUpperCase()
 	    + "/depth/";
 
 	// Fetch the depth.
@@ -218,9 +217,9 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
      * Get the depths for all currency pairs. They are fetched via a single market data request, so
      * only 1 request is done to the coins-e exchange.
      *
-     * @return All the depths as an array.
+     * @return All the depths as a list.
      */
-    public Depth [] getDepths() {
+    public List<Depth> getDepths() {
 
 	// The URL to fetch the complete market data.
 	String url = "https://www." + this.DOMAIN + "/api/v2/markets/data/";
@@ -246,20 +245,20 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 		JSONObject jsonMarkets = jsonAllMarkets.getJSONObject( "markets");
 
 		// Create a buffer for the results.
-		ArrayList< Depth> resultBuffer = new ArrayList< Depth>();
+		List< Depth> resultBuffer = new ArrayList< Depth>();
 
 		// Loop over the entries of this object.
 		for( JSONObject jsonCurrentMarket : ( ( Map< String, JSONObject>)jsonMarkets).values()) {
 
-		    // Get the 2 coin codes from the market, so we don't need the key for this json value.
-		    String currencyPairString = jsonCurrentMarket.getString( "c1") + "<=>" + jsonCurrentMarket.getString( "c2");
-		    
 		    // Try to create a currency pair for this market.
-		    CurrencyPair newCurrencyPair = CurrencyPairImpl.findByString( currencyPairString);
+		    CurrencyPair newCurrencyPair = new CurrencyPairImpl( jsonCurrentMarket.getString( "c1"), jsonCurrentMarket.getString( "c2"));
 
 		    if( newCurrencyPair == null) {           // If the new currency pair is not found
 
-			LogUtils.getInstance().getLogger().error( _name + ": cannot create currency pair for string: " + currencyPairString);
+			LogUtils.getInstance().getLogger().error( _name + ": cannot create currency pair for string: " 
+								  + jsonCurrentMarket.getString( "c1") 
+								  + "<=>" 
+								  + jsonCurrentMarket.getString( "c2"));
 
 			continue;  // Contiue with the next market.
 		    }
@@ -271,8 +270,8 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 		    resultBuffer.add( currentDepth);
 		}
 
-		// Convert the buffer to an array and return it.
-		return resultBuffer.toArray( new Depth[ resultBuffer.size()]);
+		// Return the buffer.
+		return resultBuffer;
 
 	    } catch( JSONException je) {
 
@@ -295,20 +294,20 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// Just get all the depths and then extract the requested depths from there. Since
 	// we will usually request many depths, this should be a fastest solution.
 
-	Depth [] fetchedDepths = getDepths();
+	List<Depth> fetchedDepths = getDepths();
 
 	// Now we have to resort those depths according to the order of the requested currency pairs.
 	// To do so, I convert the depth array to a linked list, and remove any found depth from there,
 	// so the list should get shorter with any found depth.
-	LinkedList< Depth> fetchedDepthList = new LinkedList< Depth>( Arrays.asList( fetchedDepths));
+	List< Depth> fetchedDepthList = fetchedDepths;
 
 	// Now create an array for the result, that will be sorted according to the passed currency pair array.
-	Depth [] result = new Depth[ currencyPairs.length];
+	List<Depth> result = new ArrayList<Depth>();
 	int currentIndex = 0;
 
 	// Loop over the currecy pairs parameter and add the returned depths to the result array.
@@ -329,7 +328,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 		} else if( fetchedDepth.getCurrencyPair().equals( currentCurrencyPair)) {
 		    
 		    // Add this depth to the result.
-		    result[ currentIndex++] = fetchedDepth;
+		    result.add( currentIndex++, fetchedDepth);
 		    
 		    // And remove this depth from the list of searched depths, to make the searching
 		    // a bit quicker in the next loop iteration. Currency pairs should never be requested
@@ -348,7 +347,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 	    // If the requested currency pair was not in  the list of returned depths, just set it to null 
 	    // in the result for now. ToDo: throw a TradeDataNotAvailableException if more than x depths
 	    // are not available?
-	    result[ currentIndex++] = null;
+	    result.add( currentIndex++, null);
 	}
 
 	// Return the array with the result.
@@ -521,7 +520,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The trades as a list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for coins-e");
     }
@@ -599,7 +598,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 			    // System.out.print( coinCode + ", ");
 			    //System.out.flush();
 
-			    Currency newCurrency = CurrencyImpl.findByString( coinCode);
+			    Currency newCurrency = CurrencyProvider.getInstance().getCurrencyForCode( coinCode);
 
 			    // Get the trading fee for this coin type.
 			    BigDecimal trade_fee = new BigDecimal( currentCoin.getString( "trade_fee"));
@@ -677,9 +676,7 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
 			    String [] currencyName = currentMarket.getString( "pair").split( "_");
 			    
-			    CurrencyPair newCurrencyPair = CurrencyPairImpl.findByString( currencyName[ 0] 
-											  + "<=>" 
-											  + currencyName[ 1]);
+			    CurrencyPair newCurrencyPair = new CurrencyPairImpl( currencyName[ 0], currencyName[ 1]);
 
 			    if( newCurrencyPair != null) {           // If the new currency pair is found
 				resultBuffer.add( newCurrencyPair);  // Add it to the result buffer.

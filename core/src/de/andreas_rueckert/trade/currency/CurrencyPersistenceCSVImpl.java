@@ -40,7 +40,7 @@ import java.net.URLEncoder;
 /**
  * This class uses a CSV file to store the known currencies.
  */
-public class CurrencyPersistenceCSV implements CurrencyPersistence {
+public class CurrencyPersistenceCSVImpl implements CurrencyPersistence {
 
     // Inner classes
 
@@ -73,7 +73,7 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
      *
      * @param datadir The data directory for the users app.
      */
-    public CurrencyPersistenceCSV( File datadir) {
+    public CurrencyPersistenceCSVImpl( File datadir) {
 
 	_datadir = datadir;
     }
@@ -99,10 +99,8 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 
     /**
      * Load the known currencies.
-     *
-     * @return true, if loading the currencies worked. False otherwise.
      */
-    public boolean load() {
+    public void loadAll() throws IOException {
 
 	// Access the file for the currency info.
 	File persistenceFile = new File( _datadir, getFilename());
@@ -172,23 +170,19 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 		}
 	    }
 
-	    return true;  // Loading of the currencies worked.
-
 	} catch( IOException ioe) {  // Error while reading the currency file.
 	    
 	    LogUtils.getInstance().getLogger().error( "Cannot read currencies from file. Error: " 
 						      + ioe.toString());
 
-	    return false;  // Indicate the error to the caller.
+	    throw ioe;  // Indicate the error to the caller.
 	}
     }
 
     /**
      * Save the known currencies.
-     *
-     * @return true, if the currencies were successfully saved. False otherwise.
      */
-    public boolean save() {
+    public void saveAll() throws IOException {
 
 	// Create the file for the currency info.
 	File persistenceFile = new File( _datadir, getFilename());
@@ -212,14 +206,12 @@ public class CurrencyPersistenceCSV implements CurrencyPersistence {
 
             writer.close();
 
-	    return true;  // Saving worked.
-
         } catch( IOException ioe) {  // If the saving did not work.
 
 	    // Log the exception.
 	    LogUtils.getInstance().getLogger().error( "Cannot open file to store currencies: " + ioe);
 
-	    return false;  // Saving failed.
+	    throw ioe;  // Saving failed.
 	}
     }
 }

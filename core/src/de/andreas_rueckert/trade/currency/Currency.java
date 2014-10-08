@@ -25,6 +25,8 @@
 
 package de.andreas_rueckert.trade.currency;
 
+import java.util.Date;
+
 
 /**
  * Interface for a trading currency.
@@ -61,11 +63,36 @@ public interface Currency {
     public String getName();
     
     /**
+     * Get the date, when this currency was created.
+     *
+     * @return The date, when this currency was created.
+     */
+    public Date getCreated();
+
+    /**
      * Get the currency type of this currency.
      *
      * @return The type of this currency.
      */
     public CurrencyType getCurrencyType();
+
+    /**
+     * Check, if this currency has a given currency code.
+     *
+     * @param currencyCode The currency code to check for.
+     *
+     * @return true, if the code of this currency equals the given code.
+     */
+    public boolean hasCode( String currencyCode);
+    
+    /**
+     * Check, if this currency has one of the given currency codes.
+     *
+     * @param currencyCodes The currency codes to check for as an array.
+     *
+     * @return true, if the code of this currency equals pne of the given codes.
+     */
+    public boolean hasCode( String [] currencyCodes);
 
     /**
      * Check, if this currency is a crypto currency.
@@ -75,9 +102,52 @@ public interface Currency {
     public boolean isCrypto();
 
     /**
+     * Check if this currency is currently activated.
+     *
+     * @return true, if this currency is currently activated. False otherwise.
+     */
+    public boolean isActivated();
+
+    /**
      * Check, if this currency is a FIAT currency.
      *
      * @return true, if this currency is a FIAT currency.
      */
     public boolean isFIAT();
+
+
+    /**
+     * Set the activated flag of this currency.
+     *
+     * @param activated The new activated flag of this currency.
+     */
+    public void setActivated( boolean activated);
+
+    /**
+     * Set a new date, when this currency was created.
+     *
+     * @param created The new date, when this currency was created.
+     */
+    public void setCreated( Date created);
+
+    /**
+     * Set a new type for this currency.
+     *
+     * @param currencyType The new type to set for this currency.
+     */
+    public void setCurrencyType( CurrencyType currencyType);
+
+    /**
+     * Set a new description for this currency.
+     *
+     * @param description The new description of this currency.
+     */
+    public void setDescription( String description);
+
+    /**
+     * Set a new name for this currency.
+     *
+     * @param name The new name of this currency.
+     */
+    public void setName( String name);
 }

@@ -28,24 +28,31 @@ package de.andreas_rueckert.trade.site.btc_china.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
+import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.order.WithdrawOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -82,9 +89,9 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[3];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "CNY");
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( "LTC", "CNY");
+	_supportedCurrencyPairs[2] = new CurrencyPairImpl( "LTC", "BTC");
     }
 
 
@@ -171,8 +178,8 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      */
     private final String getBtcChinaCurrencyPairName( CurrencyPair currencyPair) {
 
-	return currencyPair.getCurrency().toString().toLowerCase() 
-	    + currencyPair.getPaymentCurrency().toString().toLowerCase();
+	return currencyPair.getCurrency().getCode().toLowerCase() 
+	    + currencyPair.getPaymentCurrency().getCode().toLowerCase();
     }
 
     /**
@@ -209,6 +216,70 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 	}
 	
 	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+    }
+
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	if( order instanceof WithdrawOrder) {
+
+	    // Get the withdrawn currency.
+	    Currency currency = order.getCurrencyPair().getCurrency();
+
+	    if( currency.hasCode( "CNY")) {
+		
+		// CNY: 0.38%,withdrawal amount less than 200 CNY cost 2 CNY fee.
+		if( order.getAmount().compareTo( new BigDecimal( "200")) < 0) {
+
+		    return new Price( "2", currency);
+
+		} else {
+
+		    return new Price( order.getAmount().multiply( new BigDecimal( "0.0038")), currency);
+
+		}
+
+		    
+	    } else if( currency.hasCode( "BTC")) {
+
+		// BTC Withdrawal: 0.0001 BTC for each withdrawal.
+		return new Price( "0.0001", currency);
+
+	    } else if( currency.hasCode( "LTC")) {
+
+		// LTC Withdrawal: 0.001 LTC for each withdrawal.
+		return new Price( "0.001", order.getCurrencyPair().getCurrency());
+
+	    } else {  // This is a unknow currency.
+		
+		throw new CurrencyNotSupportedException( this._name + ": cannot compute withdraw fee for currency: " + currency.getCode());
+	    }
+
+	} else if( order instanceof DepositOrder) {
+
+	    // Btc-China doesn't charge for deposit orders.
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
+		
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+	    
+	} else if( order.getOrderType() == OrderType.SELL) {  // this is a sell order, so the currency changes!
+
+	    return new Price( "0", order.getCurrencyPair().getPaymentCurrency());
+
+	} else {  // Unknown order type.
+
+	    return null;  // Should never happen.
+	}
     }
 
     /**
@@ -291,7 +362,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the trades are not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);

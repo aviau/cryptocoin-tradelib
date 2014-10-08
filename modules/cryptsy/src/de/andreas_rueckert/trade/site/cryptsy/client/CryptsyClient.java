@@ -2,8 +2,9 @@
  * Java implementation for cryptocoin trading.
  *
  * Copyright (c) 2014 the authors:
- * 
+ *
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
+ * @author Roland Schumacher <info@geniali.ch>
  *
  * Permission is hereby granted, free of charge, to any person obtaining 
  * a copy of this software and associated documentation files (the "Software"), 
@@ -31,11 +32,13 @@ import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -48,10 +51,12 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
@@ -62,10 +67,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.commons.codec.binary.Hex;
 import net.sf.json.JSON;
 import net.sf.json.JSONArray;
@@ -99,7 +106,7 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
     /**
      * A mapping for currency pairs and ID's.
      */
-    private Map< CurrencyPair, String> _marketIDs = null;
+    private Map<CurrencyPair, String> _marketIDs = null;
 
     /**
      * I'll just use the same code for the nonce as in the btc-e implementation.
@@ -119,22 +126,25 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      */
     public CryptsyClient() {
 
-	super();
+        super();
 
-	_name = "Cryptsy";  // The name of the trade site.
+        _name = "Cryptsy";  // The name of the trade site.
 
-	_url = "https://api.cryptsy.com/api";  // The URL for authenticated API calls.
+        _url = "https://api.cryptsy.com/api";  // The URL for authenticated API calls.
 
-	_public_url = "http://pubapi.cryptsy.com/";  // The URL for public API calls.
+        _public_url = "http://pubapi2.cryptsy.com/";  // The URL for public API calls.
 
-	// Create a unixtime nonce for the new API.
-	_nonce = ( TimeUtils.getInstance().getCurrentGMTTimeMicros() / 1000000);
+        // Create a unixtime nonce for the new API.
+        _nonce = (TimeUtils.getInstance().getCurrentGMTTimeMicros() / 1000000);
 
-	// We would normally set the supported currency pairs here,
-	// but to request them from the cryptsy exchange (there are too
-	// many to set them manually), we'd need a user account.
-	// So we have to delay this setting a bit and do the actual
-	// request when the pairs are requested from the user.
+        // We would normally set the supported currency pairs here,
+        // but to request them from the cryptsy exchange (there are too
+        // many to set them manually), we'd need a user account.
+        // So we have to delay this setting a bit and do the actual
+        // request when the pairs are requested from the user.
+
+        // Update: wrote a version to fetch the currency pairs via public API.
+        //_supportedCurrencyPairs = getSupportedCurrencyPairs();
     }
 
 
@@ -143,381 +153,396 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
     /**
      * Execute a authenticated query on cryptsy.
      *
-     * @param method The method to execute.
-     * @param arguments The arguments to pass to the server.
+     * @param method      The method to execute.
+     * @param arguments   The arguments to pass to the server.
      * @param userAccount The user account on the exchange, or null if the default account should be used.
-     *
      * @return The returned data as JSON or null, if the request failed.
      */
-    private final JSON authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
+    private final JSON authenticatedHTTPRequest(String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
 
-	HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
-	Mac mac;
-	SecretKeySpec key = null;
-	String accountKey = null;     // The used key of the account.
-	String accountSecret = null;  // The used secret of the account.
+        HashMap<String, String> headerLines = new HashMap<String, String>();  // Create a new map for the header lines.
+        Mac mac;
+        SecretKeySpec key = null;
+        String accountKey = null;     // The used key of the account.
+        String accountSecret = null;  // The used secret of the account.
 
-	// Try to get an account key and secret for the request.
-	if( userAccount != null) {
+        // Try to get an account key and secret for the request.
+        if (userAccount != null) {
 
-	    accountKey = userAccount.getAPIkey();
-	    accountSecret = userAccount.getSecret();
+            accountKey = userAccount.getAPIkey();
+            accountSecret = userAccount.getSecret();
 
-	}  else if( _defaultUserAccount != null) {  // Use the default values from the API implementation.
+        } else if (_defaultUserAccount != null) {  // Use the default values from the API implementation.
 
-	    accountKey = _defaultUserAccount.getAPIkey();
-	    accountSecret = _defaultUserAccount.getSecret();
-	} 
+            accountKey = _defaultUserAccount.getAPIkey();
+            accountSecret = _defaultUserAccount.getSecret();
+        }
 
-	// Check, if account key and account secret are available for the request.
-	if( accountKey == null) {
-	    throw new MissingAccountDataException( "Public key not available for authenticated request to " + _name);
-	}
-	if( accountSecret == null) {
-	    throw new MissingAccountDataException( "Private key not available for authenticated request to " + _name);
-	}
+        // Check, if account key and account secret are available for the request.
+        if (accountKey == null) {
+            throw new MissingAccountDataException("Public key not available for authenticated request to " + _name);
+        }
+        if (accountSecret == null) {
+            throw new MissingAccountDataException("Private key not available for authenticated request to " + _name);
+        }
 
-	if( arguments == null) {  // If the user provided no arguments, just create an empty argument array.
-	    arguments = new HashMap<String, String>();
-	}
-	
-	arguments.put( "method", method);  // Add the method to the post data.
-	arguments.put( "nonce",  "" + ++_nonce);  // Add the dummy nonce.
+        if (arguments == null) {  // If the user provided no arguments, just create an empty argument array.
+            arguments = new HashMap<String, String>();
+        }
 
-	// Convert the arguments into a string to post them.
-	String postData = "";
+        arguments.put("method", method);  // Add the method to the post data.
+        arguments.put("nonce", "" + ++_nonce);  // Add the dummy nonce.
 
-	for( Iterator argumentIterator = arguments.entrySet().iterator(); argumentIterator.hasNext(); ) {
-	    Map.Entry argument = (Map.Entry)argumentIterator.next();
-	    
-	    if( postData.length() > 0) {
-		postData += "&";
-	    }
-	    postData += argument.getKey() + "=" + argument.getValue();
-	}
+        // Convert the arguments into a string to post them.
+        String postData = "";
 
-	// Create a new secret key
-	try {
+        for (Iterator argumentIterator = arguments.entrySet().iterator(); argumentIterator.hasNext(); ) {
+            Map.Entry argument = (Map.Entry) argumentIterator.next();
 
-	    key = new SecretKeySpec( accountSecret.getBytes( "UTF-8"), "HmacSHA512" ); 
+            if (postData.length() > 0) {
+                postData += "&";
+            }
+            postData += argument.getKey() + "=" + argument.getValue();
+        }
 
-	} catch( UnsupportedEncodingException uee) {
+        // Create a new secret key
+        try {
 
-	    System.err.println( "Unsupported encoding exception: " + uee.toString());
-	    return null;
-	} 
+            key = new SecretKeySpec(accountSecret.getBytes("UTF-8"), "HmacSHA512");
 
-	// Create a new mac
-	try {
+        } catch (UnsupportedEncodingException uee) {
 
-	    mac = Mac.getInstance( "HmacSHA512" );
+            System.err.println("Unsupported encoding exception: " + uee.toString());
+            return null;
+        }
 
-	} catch( NoSuchAlgorithmException nsae) {
+        // Create a new mac
+        try {
 
-	    System.err.println( "No such algorithm exception: " + nsae.toString());
-	    return null;
-	}
+            mac = Mac.getInstance("HmacSHA512");
 
-	// Init mac with key.
-	try {
-	    mac.init( key);
-	} catch( InvalidKeyException ike) {
-	    System.err.println( "Invalid key exception: " + ike.toString());
-	    return null;
-	}
+        } catch (NoSuchAlgorithmException nsae) {
 
-	// Add the key to the header lines.
-	headerLines.put( "Key", accountKey);
+            System.err.println("No such algorithm exception: " + nsae.toString());
+            return null;
+        }
 
-	// Encode the post data by the secret and encode the result as base64.
-	try {
+        // Init mac with key.
+        try {
+            mac.init(key);
+        } catch (InvalidKeyException ike) {
+            System.err.println("Invalid key exception: " + ike.toString());
+            return null;
+        }
 
-	    headerLines.put( "Sign", Hex.encodeHexString( mac.doFinal( postData.getBytes( "UTF-8"))));
-	} catch( UnsupportedEncodingException uee) {
+        // Add the key to the header lines.
+        headerLines.put("Key", accountKey);
 
-	    System.err.println( "Unsupported encoding exception: " + uee.toString());
-	    return null;
-	} 
-	
-	// Now do the actual request
-	String requestResult = HttpUtils.httpPost( _url, headerLines, postData);
+        // Encode the post data by the secret and encode the result as base64.
+        try {
 
-	if( requestResult != null) {   // The request worked
+            headerLines.put("Sign", Hex.encodeHexString(mac.doFinal(postData.getBytes("UTF-8"))));
+        } catch (UnsupportedEncodingException uee) {
 
-	    try {
-		// Convert the HTTP request return value to JSON to parse further.
-		JSONObject jsonResult = JSONObject.fromObject( requestResult);
+            System.err.println("Unsupported encoding exception: " + uee.toString());
+            return null;
+        }
 
-		// Check, if the request was successful
-		int success = jsonResult.getInt( "success");
+        // Now do the actual request
+        String requestResult = HttpUtils.httpPost(_url, headerLines, postData);
 
-		if( success == 0) {  // The request failed.
-		    String errorMessage = jsonResult.getString( "error");
+        if (requestResult != null) {   // The request worked
 
-		    LogUtils.getInstance().getLogger().error( _name + " trade API request failed: " + errorMessage);
+            try {
+                // Convert the HTTP request return value to JSON to parse further.
+                JSONObject jsonResult = JSONObject.fromObject(requestResult);
 
-		    return null;
+                // Check, if the request was successful
+                int success = jsonResult.getInt("success");
 
-		} else {  // Request succeeded!
+                if (success == 0) {  // The request failed.
+                    String errorMessage = jsonResult.getString("error");
 
-		    // Try to figure, what the return actually is: json object or json array?
+                    LogUtils.getInstance().getLogger().error(_name + " trade API request failed: " + errorMessage);
 
-		    // Test, if the return value is an JSONArray.
-		    JSONArray arrayReturn = jsonResult.optJSONArray( "return");
+                    return null;
 
-		    if( arrayReturn != null) {  // Converting the result into a JSON array worked, so return it.
-			
-			return arrayReturn;
-		    }
+                } else {  // Request succeeded!
 
-		    // Now test, if the return value is a JSONObject.
-		    JSONObject objectReturn = jsonResult.optJSONObject( "return");
+                    // Try to figure, what the return actually is: json object or json array?
 
-		    if( objectReturn != null) {  // Converting the result into a JSON object worked, so return it.
+                    // Test, if the return value is an JSONArray.
+                    JSONArray arrayReturn = jsonResult.optJSONArray("return");
 
-			return objectReturn;
-		    }
+                    if (arrayReturn != null) {  // Converting the result into a JSON array worked, so return it.
 
-		    if( ! jsonResult.has( "return")) {  // Has this object no return value?
+                        return arrayReturn;
+                    }
 
-			LogUtils.getInstance().getLogger().error( _name + " trade API request '" + method + "' has no return value.");
+                    // Now test, if the return value is a JSONObject.
+                    JSONObject objectReturn = jsonResult.optJSONObject("return");
 
-			return null;  // No reasonable return value possible.
+                    if (objectReturn != null) {  // Converting the result into a JSON object worked, so return it.
 
-		    } else {  // There is a return value, but it's neither an array or a object, so we cannot convert it.
+                        return objectReturn;
+                    }
 
-			LogUtils.getInstance().getLogger().error( _name 
-								  + " trade API request '" 
-								  + method 
-								  + "' has a return value, that is neither a JSONObject or a JSONArray. Don't know, what to do with it.");
+                    if (!jsonResult.has("return")) {  // Has this object no return value?
 
-			return null;  // Not much we can do here...
-		    }
-		}
+                        LogUtils.getInstance().getLogger().error(_name + " trade API request '" + method + "' has no return value.");
 
-	    } catch( JSONException je) {
-		System.err.println( "Cannot parse json request result: " + je.toString());
+                        return null;  // No reasonable return value possible.
 
-		return null;  // An error occured...
-	    }
-	} 
+                    } else {  // There is a return value, but it's neither an array or a object, so we cannot convert it.
 
-	return null;  // The request failed.
+                        LogUtils.getInstance().getLogger().error(_name
+                                + " trade API request '"
+                                + method
+                                + "' has a return value, that is neither a JSONObject or a JSONArray. Don't know, what to do with it.");
+
+                        return null;  // Not much we can do here...
+                    }
+                }
+
+            } catch (JSONException je) {
+                System.err.println("Cannot parse json request result: " + je.toString());
+
+                return null;  // An error occured...
+            }
+        }
+
+        return null;  // The request failed.
     }
 
     /**
      * Cancel an order on the trade site.
      *
      * @param order The order to cancel.
-     *
      * @return true, if the order was canceled. False otherwise.
      */
-    public boolean cancelOrder( SiteOrder order) {
+    public boolean cancelOrder(SiteOrder order) {
 
-	throw new NotYetImplementedException( "Cancelling an order is not yet implemented for " + this._name);
+        throw new NotYetImplementedException("Cancelling an order is not yet implemented for " + this._name);
     }
 
     /**
      * Execute an order on the trade site.
      *
      * @param order The order to execute.
-     *
      * @return The new status of the order.
      */
-    public synchronized OrderStatus executeOrder( SiteOrder order) {
+    public synchronized OrderStatus executeOrder(SiteOrder order) {
 
-	throw new NotYetImplementedException( "Executing an order is not yet implemented for cryptsy");	
+        throw new NotYetImplementedException("Executing an order is not yet implemented for cryptsy");
     }
 
     /**
      * Get the current funds of a user.
      *
-     * @param userAccount The account of the user on the exchange. Null, if the default account should be used. 
-     *
+     * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
      * @return The accounts with the current balance as a collection of Account objects, or null if the request failed.
      */
-    public Collection<TradeSiteAccount> getAccounts( TradeSiteUserAccount userAccount) {
+    public Collection<TradeSiteAccount> getAccounts(TradeSiteUserAccount userAccount) {
+        // Try to get some info on the user (including the current funds).
+        JSONObject jsonResponse = (JSONObject)authenticatedHTTPRequest("getinfo", null, userAccount);
 
-	throw new NotYetImplementedException( "Getting the accounts is not yet implemented for cryptsy");	
+        if (jsonResponse != null) {
+
+            JSONObject jsonFunds = jsonResponse.getJSONObject("balances_available_btc");
+
+            // An array for the parsed funds.
+            ArrayList<TradeSiteAccount> result = new ArrayList<TradeSiteAccount>();
+
+            // Now iterate over all the currencies in the funds.
+            for (Iterator currencyIterator = jsonFunds.keys(); currencyIterator.hasNext(); ) {
+
+                String currentCurrency = (String) currencyIterator.next();  // Get the next currency.
+
+                BigDecimal balance = new BigDecimal(jsonFunds.getString(currentCurrency));  // Get the balance for this currency.
+
+                result.add(new TradeSiteAccountImpl(balance, CurrencyProvider.getInstance().getCurrencyForCode(currentCurrency.toUpperCase()), this));
+            }
+            return result; // Return the array with the accounts.
+        }
+        return null;  // The request failed.
     }
 
     /**
      * Get the market depth as a Depth object.
      *
      * @param currencyPair The queried currency pair.
-     *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public Depth getDepth(CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	// If the request for the depth is allowed at the moment
-	if( isRequestAllowed( TradeSiteRequestType.Depth)) { 
-	    
-	    if( ! isSupportedCurrencyPair( currencyPair)) {
-		throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
-	    }
-	}	    
-	    
-	// Compute the URL for the orderbook request.
-	// I use the public methods for now, since I hope, that they scale better
-	// than the authenticated methods.
-	String url = _public_url + "api.php?method=singleorderdata&marketid=" + getMarketIdForCurrencyPair( currencyPair);
+        getSupportedCurrencyPairs();
 
-	String requestResult = HttpUtils.httpGet( url);  // Do the actual request.
+        // If the request for the depth is allowed at the moment
+        if (isRequestAllowed(TradeSiteRequestType.Depth)) {
 
-	if( requestResult != null) {  // Request sucessful?
-	    try {
+            if (!isSupportedCurrencyPair(currencyPair)) {
+                throw new CurrencyNotSupportedException("Currency pair: " + currencyPair.toString() + " is currently not supported on " + this._name);
+            }
+        }
 
-		// Convert the HTTP request return value to JSON to parse further.
-		return new CryptsyDepth( JSONObject.fromObject( requestResult), currencyPair, this);
-	
-	    } catch( JSONException je) {
+        // Compute the URL for the orderbook request.
+        // I use the public methods for now, since I hope, that they scale better
+        // than the authenticated methods.
+        String url = _public_url + "api.php?method=singleorderdata&marketid=" + getMarketIdForCurrencyPair(currencyPair);
 
-		System.err.println( "Cannot parse " + this._name + " depth return: " + je.toString());
+        String requestResult = HttpUtils.httpGet(url);  // Do the actual request.
 
-		throw new TradeDataNotAvailableException( "cannot parse data from " + this._name);
-	    }
-	}
+        if (requestResult != null) {  // Request sucessful?
+            try {
 
-	throw new TradeDataNotAvailableException( this._name + " server did not respond to depth request");
+                // Convert the HTTP request return value to JSON to parse further.
+                return new CryptsyDepth(JSONObject.fromObject(requestResult), currencyPair, this);
+
+            } catch (JSONException je) {
+
+                System.err.println("Cannot parse " + this._name + " depth return: " + je.toString());
+
+                throw new TradeDataNotAvailableException("cannot parse data from " + this._name);
+            }
+        }
+
+        throw new TradeDataNotAvailableException(this._name + " server did not respond to depth request");
     }
 
     /**
      * Get the depths for all the currency pairs. They are fetched with a single orderbook request,
      * so only 1 request is done to the cryptsy exchange.
      *
-     * @return All the depths as an array.
+     * @return All the depths as a list.
      */
-    public Depth [] getDepths() {
+    public List<Depth> getDepths() {
 
-	// The URL to fetch all the orderbooks.
-	String url = _public_url + "api.php?method=orderdatav2";
+        // The URL to fetch all the orderbooks.
+        String url = _public_url + "api.php?method=orderdatav2";
 
-	// Do the actual request on vircurex.
-	String requestResult = HttpUtils.httpGet( url);
+        // Do the actual request on vircurex.
+        String requestResult = HttpUtils.httpGet(url);
 
-	if( requestResult != null) {  // Request sucessful?
+        if (requestResult != null) {  // Request sucessful?
 
-	    try {
+            try {
 
-		// Convert the result to a JSON object.
-		JSONObject resultJSON = JSONObject.fromObject( requestResult);
+                // Convert the result to a JSON object.
+                JSONObject resultJSON = JSONObject.fromObject(requestResult);
 
-		// Check the status value for errors.
-		int successStatus = resultJSON.getInt( "success");
-		
-		if( successStatus != 1) {  // If the request was not successful
-		    
-		    throw new TradeDataNotAvailableException( _name + " returned an error");
-		}
-		
-		// Get the actual market data.
-		JSONObject marketDataJSON = resultJSON.getJSONObject( "return");
-		
-		// Create a buffer for the results.
-		ArrayList< Depth> resultBuffer = new ArrayList< Depth>();
-	    
-		// Loop over the entries of this object.
-		for( JSONObject currentMarketJSON : ( ( Map< String, JSONObject>)marketDataJSON).values()) {
+                // Check the status value for errors.
+                int successStatus = resultJSON.getInt("success");
 
-		    try {
-			
-			// Parse the market data including the currency pair.
-			Depth currentDepth = new CryptsyDepth( currentMarketJSON, this);
-			
-			// Add the depth to the buffer.
-			resultBuffer.add( currentDepth);
-			
-		    } catch( CurrencyNotSupportedException cnse) {
-			
-			// The depth already logs the error, so just continue here.
-			
-			continue;  // Contiue with the next market.
-		    }
-		    
-		}
+                if (successStatus != 1) {  // If the request was not successful
 
-			// Convert the buffer to an array and return it.
-		return resultBuffer.toArray( new Depth[ resultBuffer.size()]);
+                    throw new TradeDataNotAvailableException(_name + " returned an error");
+                }
 
-	    } catch( JSONException je) {
+                // Get the actual market data.
+                JSONObject marketDataJSON = resultJSON.getJSONObject("return");
 
-		LogUtils.getInstance().getLogger().error( "Cannot parse " + _name + " depths return: " + je.toString());
-	    }
-	}
+                // Create a buffer for the results.
+                List<Depth> resultBuffer = new ArrayList<Depth>();
 
-	// Since fetching the depths failed, just throw an exception, that the trade data are not available.
-	throw new TradeDataNotAvailableException( "Fetching the depths from " + this._name + " returned null");
+                // Loop over the entries of this object.
+                for (JSONObject currentMarketJSON : ((Map<String, JSONObject>) marketDataJSON).values()) {
+
+                    try {
+
+                        // Parse the market data including the currency pair.
+                        Depth currentDepth = new CryptsyDepth(currentMarketJSON, this);
+
+                        // Add the depth to the buffer.
+                        resultBuffer.add(currentDepth);
+
+                    } catch (CurrencyNotSupportedException cnse) {
+
+                        // The depth already logs the error, so just continue here.
+
+                        continue;  // Contiue with the next market.
+                    }
+
+                }
+
+                // Return the buffer.
+                return resultBuffer;
+
+            } catch (JSONException je) {
+
+                LogUtils.getInstance().getLogger().error("Cannot parse " + _name + " depths return: " + je.toString());
+            }
+        }
+
+        // Since fetching the depths failed, just throw an exception, that the trade data are not available.
+        throw new TradeDataNotAvailableException("Fetching the depths from " + this._name + " returned null");
     }
 
     /**
-     * Get the current market depths sequentially via 1 market call. So the sequence is just 1 call long... :-) 
+     * Get the current market depths sequentially via 1 market call. So the sequence is just 1 call long... :-)
      * This method is identical to the coins-e method with the same name.
      *
      * @param currencyPairs The currency pairs to query.
-     *
      * @return The current market depths for the given currency pairs.
-     *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsSequentially(CurrencyPair[] currencyPairs) throws TradeDataNotAvailableException {
 
-	// Just get all the depths and then extract the requested depths from there. Since
-	// we will usually request many depths, this should be a fastest solution.
+        // Just get all the depths and then extract the requested depths from there. Since
+        // we will usually request many depths, this should be a fastest solution.
 
-	Depth [] fetchedDepths = getDepths();
+        List<Depth> fetchedDepths = getDepths();
 
-	// Now we have to resort those depths according to the order of the requested currency pairs.
-	// To do so, I convert the depth array to a linked list, and remove any found depth from there,
-	// so the list should get shorter with any found depth.
-	LinkedList< Depth> fetchedDepthList = new LinkedList< Depth>( Arrays.asList( fetchedDepths));
+        // Now we have to resort those depths according to the order of the requested currency pairs.
+        // To do so, I convert the depth array to a linked list, and remove any found depth from there,
+        // so the list should get shorter with any found depth.
+        List<Depth> fetchedDepthList = fetchedDepths;
 
-	// Now create an array for the result, that will be sorted according to the passed currency pair array.
-	Depth [] result = new Depth[ currencyPairs.length];
-	int currentIndex = 0;
+        // Now create an array for the result, that will be sorted according to the passed currency pair array.
+        List<Depth> result = new ArrayList<Depth>();
+        int currentIndex = 0;
 
-	// Loop over the currecy pairs parameter and add the returned depths to the result array.
-	currency_pair_loop:
-	for( CurrencyPair currentCurrencyPair : currencyPairs) {
+        // Loop over the currecy pairs parameter and add the returned depths to the result array.
+        currency_pair_loop:
+        for (CurrencyPair currentCurrencyPair : currencyPairs) {
 
-	    // Search this depth in the list of fetched depths.
-	    for( int currentListIndex = 0; currentListIndex < fetchedDepthList.size(); ) {
+            // Search this depth in the list of fetched depths.
+            for (int currentListIndex = 0; currentListIndex < fetchedDepthList.size(); ) {
 
-		Depth fetchedDepth = fetchedDepthList.get( currentListIndex);
+                Depth fetchedDepth = fetchedDepthList.get(currentListIndex);
 
-		if( fetchedDepth == null) {  // If there was no depth returned, remove this entry from the search list.
+                if (fetchedDepth == null) {  // If there was no depth returned, remove this entry from the search list.
 
-		    fetchedDepthList.remove( currentListIndex);
-		    
-		// If there was actually a depth returned and it's for the currency pair , we are
-	        // currently processing..
-		} else if( fetchedDepth.getCurrencyPair().equals( currentCurrencyPair)) {
-		    
-		    // Add this depth to the result.
-		    result[ currentIndex++] = fetchedDepth;
-		    
-		    // And remove this depth from the list of searched depths, to make the searching
-		    // a bit quicker in the next loop iteration. Currency pairs should never be requested
-		    // twice, so this should work.
-		    fetchedDepthList.remove( currentListIndex);
+                    fetchedDepthList.remove(currentListIndex);
 
-		    // Now continue with the next currency pair.
-		    continue currency_pair_loop;
+                    // If there was actually a depth returned and it's for the currency pair , we are
+                    // currently processing..
+                } else if (fetchedDepth.getCurrencyPair().equals(currentCurrencyPair)) {
 
-		} else {   // Just continue search the list of depth returns.
+                    // Add this depth to the result.
+                    result.add(currentIndex++, fetchedDepth);
 
-		    ++currentListIndex;
-		}
-	    }
+                    // And remove this depth from the list of searched depths, to make the searching
+                    // a bit quicker in the next loop iteration. Currency pairs should never be requested
+                    // twice, so this should work.
+                    fetchedDepthList.remove(currentListIndex);
 
-	    // If the requested currency pair was not in  the list of returned depths, just set it to null 
-	    // in the result for now. ToDo: throw a TradeDataNotAvailableException if more than x depths
-	    // are not available?
-	    result[ currentIndex++] = null;
-	}
+                    // Now continue with the next currency pair.
+                    continue currency_pair_loop;
 
-	// Return the array with the result.
-	return result;
+                } else {   // Just continue search the list of depth returns.
+
+                    ++currentListIndex;
+                }
+            }
+
+            // If the requested currency pair was not in  the list of returned depths, just set it to null
+            // in the result for now. ToDo: throw a TradeDataNotAvailableException if more than x depths
+            // are not available?
+            result.add(currentIndex++, null);
+        }
+
+        // Return the array with the result.
+        return result;
     }
 
     /**
@@ -526,83 +551,79 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      * accounts and therefore different fees via a single API implementation instance.
      *
      * @param order The order to use for the fee computation.
-     *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      */
-    public synchronized Price getFeeForOrder( SiteOrder order) {
-	
-	if( order instanceof WithdrawOrder) {
+    public synchronized Price getFeeForOrder(SiteOrder order) {
 
-	    if( order.getCurrencyPair().getCurrency().equals( CurrencyImpl.BTC)) {
-		return new Price( "0.0");  // No clue what cryptsy charges for withdrawals?
-	    } else {
-		// System.out.println( "Compute withdaw fees for currencies other than btc");
+        if (order instanceof WithdrawOrder) {
 
-		throw new CurrencyNotSupportedException( "Cannot compute fee for this order: " + order.toString());
-	    }
-	} else if( order instanceof DepositOrder) {
+            if (order.getCurrencyPair().getCurrency().hasCode("BTC")) {
+                return new Price("0.0");  // No clue what cryptsy charges for withdrawals?
+            } else {
+                // System.out.println( "Compute withdaw fees for currencies other than btc");
 
-	    Currency depositedCurrency = ((DepositOrder)order).getCurrency();
+                throw new CurrencyNotSupportedException("Cannot compute fee for this order: " + order.toString());
+            }
+        } else if (order instanceof DepositOrder) {
 
-	    // Most cryptocoin deposits are free, it seems?
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)
-		|| depositedCurrency.equals( CurrencyImpl.LTC)) {
-		
-		return new Price( "0.0", depositedCurrency);
-	    
-	    } else {
-		
-		throw new NotYetImplementedException( "Deposit fees are not implemented for trade site " 
-						      + getName() 
-						      + " and currency " 
-						      + depositedCurrency.getName());
-	    }
-    
-	} else if( order.getOrderType() == OrderType.BUY) { // This seems to be a trade order
-	    
-	    // Since buy and sell have different fees, I split the trade orders here
-	    // in 2 conditions.
-	    
-	    // According to
-	    // @see https://cryptsy.freshdesk.com/support/articles/173970-what-are-cryptsy-s
-	    // Cryptsy charges 0.2% for buys and 0.3% for sales.
+            Currency depositedCurrency = ((DepositOrder) order).getCurrency();
 
-	    return new Price( order.getAmount().multiply( new BigDecimal( "0.002")), order.getCurrencyPair().getCurrency());
-		  
-	} else if ( order.getOrderType() == OrderType.SELL) {  // Also a trade order.
+            // Most cryptocoin deposits are free, it seems?
+            if (depositedCurrency.hasCode(new String[]{"BTC", "LTC"})) {
 
-	    return new Price( order.getAmount().multiply( new BigDecimal( "0.003")), order.getCurrencyPair().getCurrency());
-	}
+                return new Price("0.0", depositedCurrency);
 
-	return null;  // Should never be reached.
+            } else {
+
+                throw new NotYetImplementedException("Deposit fees are not implemented for trade site "
+                        + getName()
+                        + " and currency "
+                        + depositedCurrency.getCode());
+            }
+
+        } else if (order.getOrderType() == OrderType.BUY) { // This seems to be a trade order
+
+            // Since buy and sell have different fees, I split the trade orders here
+            // in 2 conditions.
+
+            // According to
+            // @see https://cryptsy.freshdesk.com/support/articles/173970-what-are-cryptsy-s
+            // Cryptsy charges 0.2% for buys and 0.3% for sales.
+
+            return new Price(order.getAmount().multiply(new BigDecimal("0.002")), order.getCurrencyPair().getCurrency());
+
+        } else if (order.getOrderType() == OrderType.SELL) {  // Also a trade order.
+
+            return new Price(order.getAmount().multiply(new BigDecimal("0.003")), order.getCurrencyPair().getCurrency());
+        }
+
+        return null;  // Should never be reached.
     }
- 
+
 
     /**
      * Get the market ID for a given currency pair.
      *
      * @param currencyPair The traded currency pair.
-     *
      * @return The market ID as a string.
-     *
      * @throws CurrencyNotSupportedException if there is no ID for this market (= currency pair).
      */
-    private final String getMarketIdForCurrencyPair( CurrencyPair currencyPair) throws CurrencyNotSupportedException {
+    private final String getMarketIdForCurrencyPair(CurrencyPair currencyPair) throws CurrencyNotSupportedException {
 
-	// Try to get the market ID from the local map.
-	String marketID = _marketIDs.get( currencyPair);
+        // Try to get the market ID from the local map.
+        String marketID = _marketIDs.get(currencyPair);
 
-	// If this pair is not in the map, throw an exception.
-	if( marketID == null) {
+        // If this pair is not in the map, throw an exception.
+        if (marketID == null) {
 
-	    throw new CurrencyNotSupportedException( "The currency pair " 
-						     + currencyPair.toString() 
-						     + " is not supported at " 
-						     + this._name);
-	}
+            throw new CurrencyNotSupportedException("The currency pair "
+                    + currencyPair.toString()
+                    + " is not supported at "
+                    + this._name);
+        }
 
-	// If the market ID from the map is not null, return it.
-	return marketID;
+        // If the market ID from the map is not null, return it.
+        return marketID;
     }
 
     /**
@@ -611,28 +632,27 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      * @return The shortest allowed request interval in microseconds.
      */
     public long getMinimumRequestInterval() {
-	return getUpdateInterval();
+        return getUpdateInterval();
     }
 
     /**
      * Get the section name in the global property file.
-     *
+     * <p>
      * The name of the property section as a String.
      */
     public String getPropertySectionName() {
-	return "Cryptsy";
+        return "Cryptsy";
     }
 
     /**
      * Get the open orders on this trade site.
      *
      * @param userAccount The account of the user on the exchange. Null, if the default account should be used.
-     *
      * @return The open orders as a collection, or null if the request failed.
      */
-    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount) {
+    public Collection<SiteOrder> getOpenOrders(TradeSiteUserAccount userAccount) {
 
-	throw new NotYetImplementedException( "Getting the open orders is not yet implemented for cryptsy");	
+        throw new NotYetImplementedException("Getting the open orders is not yet implemented for cryptsy");
     }
 
     /**
@@ -642,16 +662,16 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      */
     public PersistentPropertyList getSettings() {
 
-	// Get the settings from the base class.
-	PersistentPropertyList result = super.getSettings();
+        // Get the settings from the base class.
+        PersistentPropertyList result = super.getSettings();
 
-	// If there is a default user account yet, get the public API key from it (might be null, though).
-	result.add( new PersistentProperty( "Public key", null, _defaultUserAccount != null ? _defaultUserAccount.getAPIkey() : null, 6)); 
+        // If there is a default user account yet, get the public API key from it (might be null, though).
+        result.add(new PersistentProperty("Public key", null, _defaultUserAccount != null ? _defaultUserAccount.getAPIkey() : null, 6));
 
-	// Add the private key (I use the secret field from the account class to store it).
-	result.add( new PersistentProperty( "Private key", null, _defaultUserAccount != null ? _defaultUserAccount.getSecret() : null, 5)); 
-	
-	return result;
+        // Add the private key (I use the secret field from the account class to store it).
+        result.add(new PersistentProperty("Private key", null, _defaultUserAccount != null ? _defaultUserAccount.getSecret() : null, 5));
+
+        return result;
     }
 
     /**
@@ -659,39 +679,40 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The supported currency pairs of this trading site.
      */
-    public CurrencyPair [] getSupportedCurrencyPairs() {
+    public CurrencyPair[] getSupportedCurrencyPairs() {
 
-	// Check, if the available markets were already requested from the cryptsy exchange.
-	if( _marketIDs == null) {
+        // Check, if the available markets were already requested from the cryptsy exchange.
+        if (_marketIDs == null) {
 
-	    // If not, request them from the cryptsy exchange.
-	    _marketIDs = requestMarketIDs();
+            // If not, request them from the cryptsy exchange.
+            _marketIDs = requestMarketIDs();
 
-	    // Get a set with the keys (= the currency pairs).
-	    Set< CurrencyPair> currencyPairs = _marketIDs.keySet();
-	    
-	    // Convert the set to an array, so we can access the pairs quicker in future requests.
-	    _supportedCurrencyPairs = currencyPairs.toArray( new CurrencyPair[ currencyPairs.size()]);
-	}
-	
-	// Return the array with the currency pairs.
-	return _supportedCurrencyPairs;
+            if (_marketIDs != null) {
+
+                // Get a set with the keys (= the currency pairs).
+                Set<CurrencyPair> currencyPairs = _marketIDs.keySet();
+
+                // Convert the set to an array, so we can access the pairs quicker in future requests.
+                _supportedCurrencyPairs = currencyPairs.toArray(new CurrencyPair[currencyPairs.size()]);
+            }
+        }
+
+        // Return the array with the pairs.
+        return _supportedCurrencyPairs;
     }
 
 
     /**
      * Get the current ticker from the cryptsy API.
      *
-     * @param currencyPair The currency pair to query.
+     * @param currencyPair    The currency pair to query.
      * @param paymentCurrency The currency for the payments.
-     *
      * @return The current cryptsy ticker.
-     *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public Ticker getTicker( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public Ticker getTicker(CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	throw new NotYetImplementedException( "Getting the ticker is not yet implemented for cryptsy");
+        throw new NotYetImplementedException("Getting the ticker is not yet implemented for cryptsy");
     }
 
     /**
@@ -699,22 +720,21 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      *
      * @param since_micros The GMT-relative epoch in microseconds.
      * @param currencyPair The currency pair to query.
-     *
      * @return The trades as a list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades(long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
-	throw new NotYetImplementedException( "Getting the trades is not yet implemented for cryptsy");
+        throw new NotYetImplementedException("Getting the trades is not yet implemented for cryptsy");
     }
 
     /**
-     * Get the interval, in which the trade site updates it's depth, ticker etc. 
+     * Get the interval, in which the trade site updates it's depth, ticker etc.
      * in microseconds.
      *
      * @return The update interval in microseconds.
      */
     public long getUpdateInterval() {
-	return 15L * 1000000L;  // Just a default value for low volume.
+        return 15L * 1000000L;  // Just a default value for low volume.
     }
 
     /**
@@ -722,47 +742,117 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      * trade site have limits on the number of request per time interval.
      *
      * @param requestType The type of request (trades, depth, ticker, order etc).
-     *
      * @return true, if the given type of request is possible at the moment.
      */
-    public boolean isRequestAllowed( TradeSiteRequestType requestType) {
+    public boolean isRequestAllowed(TradeSiteRequestType requestType) {
 
-	return true;  // Just a dummy for now...
+        return true;  // Just a dummy for now...
     }
 
     /**
      * Request the markets from the website.
+     *
+     * @return A map of currency pairs with their associated market IDs.
      */
-    private final Map< CurrencyPair, String> requestMarketIDs() {
+    private final Map<CurrencyPair, String> requestMarketIDs() {
 
-	// Create a new buffer for the result.
-	Map< CurrencyPair, String> resultBuffer = new HashMap< CurrencyPair, String>();
+        // Create a new buffer for the result.
+        Map<CurrencyPair, String> resultBuffer = new HashMap<CurrencyPair, String>();
 
-	// Request the markets from the website. 
-	// The result should automagically be converted to a JSONArray.
-	// ToDo: use the account from the actual current user?
-	JSONArray JSONresult = (JSONArray)authenticatedHTTPRequest( "getmarkets", null, null);
+        // Request the markets from the website.
+        // The result should automagically be converted to a JSONArray.
+        // ToDo: use the account from the actual current user?
+        JSONArray JSONresult = (JSONArray) authenticatedHTTPRequest("getmarkets", null, null);
 
-	// Iterate over the array and convert each trade from json to a Trade object.
-	for( int i = 0; i < JSONresult.size(); i++) {
+        // Iterate over the array and convert each market from json to a currency pair.
+        for (int i = 0; i < JSONresult.size(); i++) {
 
-	    // Get the current market as a JSON object.
-	    JSONObject currentMarket = JSONresult.getJSONObject(i);
+            // Get the current market as a JSON object.
+            JSONObject currentMarket = JSONresult.getJSONObject(i);
 
-	    // Get the market ID for this market.
-	    String marketID = "" + currentMarket.getInt( "marketid");
+            // Get the market ID for this market.
+            String marketID = "" + currentMarket.getInt("marketid");
 
-	    // Get the currency of this market.
-	    Currency currency = CurrencyImpl.findByString( currentMarket.getString( "primary_currency_code").toUpperCase());
+            // Get the currency of this market.
+            Currency currency = CurrencyProvider.getInstance().getCurrencyForCode(currentMarket.getString("primary_currency_code").toUpperCase());
 
-	    // Get the payment currency of this market.
-	    Currency paymentCurrency = CurrencyImpl.findByString( currentMarket.getString( "secondary_currency_code").toUpperCase());
+            // Get the payment currency of this market.
+            Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode(currentMarket.getString("secondary_currency_code").toUpperCase());
 
-	    // Add the currency pair with the ID to the result buffer.
-	    resultBuffer.put( new CurrencyPairImpl( currency, paymentCurrency), marketID);
-	}
+            // Add the currency pair with the ID to the result buffer.
+            resultBuffer.put(new CurrencyPairImpl(currency, paymentCurrency), marketID);
+        }
 
-	return resultBuffer;  // Return the buffer with the result.
+        return resultBuffer;  // Return the buffer with the result.
+    }
+
+    /**
+     * Request the markets from the website via the public API.
+     *
+     * @return A map of currency pairs with their associated market IDs.
+     */
+    private final Map<CurrencyPair, String> requestMarketIDsPublic_() {
+
+        // Create a new buffer for the result.
+        Map<CurrencyPair, String> resultBuffer = new HashMap<CurrencyPair, String>();
+
+        // Create the URL to request some market data.
+        String url = _public_url + "api.php?method=marketdatav2";
+
+        String requestResult = HttpUtils.httpGet(url);  // Do the actual request.
+
+        if (requestResult != null) {  // Request sucessful?
+            try {
+
+                // Convert the data to JSON.
+                JSONObject resultJSON = JSONObject.fromObject(requestResult);
+
+                // Check the status value for errors.
+                int successStatus = resultJSON.getInt("success");
+
+                if (successStatus != 1) {  // If the request was not successful
+
+                    throw new TradeDataNotAvailableException(_name + " returned an error while requesting the market IDs via public API");
+                }
+
+                // Get the actual market data.
+                JSONObject marketDataJSON = resultJSON.getJSONObject("return").getJSONObject("markets");
+
+                // Iterate over the keys and convert each market.
+                for (Iterator<String> keys = marketDataJSON.keys(); keys.hasNext(); ) {
+
+                    // Get the name of the next market as the key.
+                    String marketKey = (String) keys.next();
+
+                    // Get the current market as a JSON object.
+                    JSONObject currentMarket = marketDataJSON.getJSONObject(marketKey);
+
+                    // Get the market ID for this market.
+                    String marketID = "" + currentMarket.getInt("marketid");
+
+                    // Get the currency of this market.
+                    Currency currency = CurrencyProvider.getInstance().getCurrencyForCode(currentMarket.getString("primarycode").toUpperCase());
+
+                    // Get the payment currency of this market.
+                    Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode(currentMarket.getString("secondarycode").toUpperCase());
+
+                    // Add the currency pair with the ID to the result buffer.
+                    resultBuffer.put(new CurrencyPairImpl(currency, paymentCurrency), marketID);
+                }
+
+                return resultBuffer;  // Return the buffer with the result.
+
+            } catch (JSONException je) {  // Parse error while parsing the markets.
+
+                LogUtils.getInstance().getLogger().error("Cannot parse " + _name + " market ID return: " + je.toString());
+
+                return null;  // Markets not found.
+            }
+        }
+
+        LogUtils.getInstance().getLogger().error("Cannot fetch " + _name + " market IDs");
+
+        return null;  // Nothing to return.
     }
 
     /**
@@ -770,10 +860,10 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      *
      * @param defaultUserAccount The new default user account.
      */
-    public void setDefaultUserAccount( TradeSiteUserAccount defaultUserAccount) {
+    public void setDefaultUserAccount(TradeSiteUserAccount defaultUserAccount) {
 
-	// Store the user account in the instance.
-	_defaultUserAccount = defaultUserAccount;
+        // Store the user account in the instance.
+        _defaultUserAccount = defaultUserAccount;
     }
 
     /**
@@ -781,36 +871,36 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      *
      * @param settings The new settings for the cryptsy client.
      */
-    public void setSettings( PersistentPropertyList settings) {
-	
-	super.setSettings( settings);
-	
-	String key = settings.getStringProperty( "Public key");
-	if( key != null) {
+    public void setSettings(PersistentPropertyList settings) {
 
-	    // Get the public API key from the settings and store it in the default user account.
-	    
-	    if( _defaultUserAccount == null) {  // If there is no default user account yet,
+        super.setSettings(settings);
 
-		_defaultUserAccount = new TradeSiteUserAccount();  // create one.
-	    }
+        String key = settings.getStringProperty("Public key");
+        if (key != null) {
 
-	    // Store the public API key in the settings.
-	    _defaultUserAccount.setAPIkey( key);
-	}
+            // Get the public API key from the settings and store it in the default user account.
 
-	String secret = settings.getStringProperty( "Private key");
-	if( secret != null) {
+            if (_defaultUserAccount == null) {  // If there is no default user account yet,
 
-	    // Get the private API key from the settings and store it in the default user account.
-	    
-	    if( _defaultUserAccount == null) {  // If there is no default user account yet,
+                _defaultUserAccount = new TradeSiteUserAccount();  // create one.
+            }
 
-		_defaultUserAccount = new TradeSiteUserAccount();  // create one.
-	    }
+            // Store the public API key in the settings.
+            _defaultUserAccount.setAPIkey(key);
+        }
 
-	    // Store the public API key in the settings.
-	    _defaultUserAccount.setSecret( secret);
-	}
+        String secret = settings.getStringProperty("Private key");
+        if (secret != null) {
+
+            // Get the private API key from the settings and store it in the default user account.
+
+            if (_defaultUserAccount == null) {  // If there is no default user account yet,
+
+                _defaultUserAccount = new TradeSiteUserAccount();  // create one.
+            }
+
+            // Store the public API key in the settings.
+            _defaultUserAccount.setSecret(secret);
+        }
     }
 }

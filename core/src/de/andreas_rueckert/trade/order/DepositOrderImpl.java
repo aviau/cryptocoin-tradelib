@@ -27,8 +27,8 @@ package de.andreas_rueckert.trade.order;
 
 import de.andreas_rueckert.trade.account.Account;
 import de.andreas_rueckert.trade.Amount;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;

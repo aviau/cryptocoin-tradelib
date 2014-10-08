@@ -25,6 +25,8 @@
 
 package de.andreas_rueckert.trade.currency;
 
+import java.io.IOException;
+
 
 /**
  * This interface defines the methods for currency persistence handlers.
@@ -38,15 +40,11 @@ public interface CurrencyPersistence {
 
     /**
      * Load the known currencies.
-     *
-     * @return true, if loading the currencies worked. False otherwise.
      */
-    public boolean load();
+    public void loadAll() throws IOException;
 
     /**
      * Save the known currencies.
-     *
-     * @return true, if the currencies were successfully saved. False otherwise.
      */
-    public boolean save();
+    public void saveAll() throws IOException;
 }

@@ -28,8 +28,11 @@ package de.andreas_rueckert.trade.site.poloniex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -42,6 +45,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -203,9 +207,9 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 	    return new Price( order.getAmount().multiply( order.getPrice()).multiply( new BigDecimal( "0.002"))
 			      , order.getCurrencyPair().getPaymentCurrency());
 
-	} else {  // Just the default implementation for the other order forms.
+	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);
+	    return null;  // Should never happen.
 	}
     }
 
@@ -232,9 +236,9 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
     final String getPoloniexCurrencyPairName( CurrencyPair currencyPair) {
 
 	// The Poloniex names look like 'BTC_NXT'
-	return currencyPair.getCurrency().getName().toUpperCase() 
+	return currencyPair.getCurrency().getCode().toUpperCase() 
 	    + "_" 
-	    + currencyPair.getPaymentCurrency().getName();
+	    + currencyPair.getPaymentCurrency().getCode();
     }
 
     /**
@@ -304,7 +308,7 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -363,21 +367,24 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 		    // The name of the pair is the next key.
 		    String currencyPairName = (String)keys.next();
 
-		    // The Poloniex currency pair names have the form 'BTC_NXT'.
-		    
-		    String [] currencyNames = currencyPairName.split( "_");
+		    // Ignore the total* entries for now...
+		    if( currencyPairName.indexOf( "_") != -1) {
 
-		     // Get the traded currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currencyNames[0].toUpperCase());
-		    
-		    // Get the payment currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currencyNames[1].toUpperCase());
+			// The Poloniex currency pair names have the form 'BTC_NXT'.
+			String [] currencyNames = currencyPairName.split( "_");
 
-		    // Create a pair from the currencies.
-		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+			// Get the traded currency from the JSON object.
+			Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currencyNames[0].toUpperCase());
+		    
+			// Get the payment currency from the JSON object.
+			Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currencyNames[1].toUpperCase());
+			
+			// Create a pair from the currencies.
+			CurrencyPair currentPair = new CurrencyPairImpl( currency, paymentCurrency);
 		
-		    // Add the current pair to the result buffer.
-		    resultBuffer.add( currentPair);
+			// Add the current pair to the result buffer.
+			resultBuffer.add( currentPair);
+		    }
 		}
 
 		// Convert the buffer to an array and store the currency pairs into the default client array.

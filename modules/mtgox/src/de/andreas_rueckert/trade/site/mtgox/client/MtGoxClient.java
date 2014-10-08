@@ -33,11 +33,12 @@ import de.andreas_rueckert.trade.account.CryptoCoinAccountImpl;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
 import de.andreas_rueckert.trade.order.DepositOrder;
@@ -101,7 +102,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     /**
      * The currently used currency.
      */
-    private Currency _currentCurrency = CurrencyImpl.USD;
+    private Currency _currentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( "USD");
 
     /**
      * The MtGox provided key.
@@ -146,7 +147,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[1];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "USD");
 
 	// Higher the log level.
 	this._logLevel = LOGLEVEL_ERROR;
@@ -216,8 +217,8 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
     public boolean cancelOrder( SiteOrder order) {
 
 	String url = "https://" + DOMAIN + "/api/1/" 
-	    + order.getCurrencyPair().getCurrency().getName().toUpperCase() 
-	    + order.getCurrencyPair().getPaymentCurrency().getName().toUpperCase()
+	    + order.getCurrencyPair().getCurrency().getCode().toUpperCase() 
+	    + order.getCurrencyPair().getPaymentCurrency().getCode().toUpperCase()
 	    + "/private/order/cancel";
 
 	// The parameters for the HTTP post call.
@@ -297,7 +298,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
 		BigDecimal balance = new BigDecimal( jsonBalance.getJSONObject( "Balance").getString( "value"));  // Get the balance for this currency.
 
-		result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currentCurrencyName.toUpperCase()), this));
+		result.add( new TradeSiteAccountImpl( balance, CurrencyProvider.getInstance().getCurrencyForCode( currentCurrencyName.toUpperCase()), this));
 	    }
 
 	    return result; // Return the array with the accounts.
@@ -332,8 +333,8 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 		}
 
 	    String url = "https://" + DOMAIN + "/api/1/" 
-		+ order.getCurrencyPair().getCurrency().getName().toUpperCase() 
-		+ order.getCurrencyPair().getPaymentCurrency().getName().toUpperCase()
+		+ order.getCurrencyPair().getCurrency().getCode().toUpperCase() 
+		+ order.getCurrencyPair().getPaymentCurrency().getCode().toUpperCase()
 		+ "/private/order/add";
 		
 	    // The parameters for the HTTP post call.
@@ -370,7 +371,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	    Currency depositedCurrency = depositOrder.getCurrency();
 
 	    // Check, if this currency is supported yet in this implementation.
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
+	    if( depositedCurrency.hasCode( "BTC")) {
 		
 		// Get the address for a deposit from the trade site.
 		String depositAddress = getDepositAddress( depositedCurrency, order.getTradeSiteUserAccount());
@@ -490,7 +491,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 
 	// Query the MtGox server and fetch the result as a json object.
 	JSONObject jsonResult = authenticatedQuery( "https://" + DOMAIN + "/api/1/"
-						    + currencyPair.getCurrency().getName() + currencyPair.getPaymentCurrency().getName() 
+						    + currencyPair.getCurrency().getCode() + currencyPair.getPaymentCurrency().getCode() 
 						    + "/public/cancelledtrades"
 						    , null
 						    , userAccount);
@@ -545,7 +546,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	String url = null;
 
 	// Check, if the currency is supported
-	if( currency.equals( CurrencyImpl.BTC)) {
+	if( currency.hasCode( "BTC")) {
 
 	    // Set the url to fetch the deposit address.
 	    url = "https://data.mtgox.com/api/1/generic/bitcoin/address";
@@ -576,7 +577,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      */
     public Depth getDepth( CurrencyPair currencyPair) {
 
-	// System.out.println( "Fetching depth from MtGox for " + currencyPair.getName());
+	// System.out.println( "Fetching depth from MtGox for " + currencyPair.getCode());
 
 	// If the user wants intense logging, add some info.
 	if( getLogLevel() > LOGLEVEL_WARNING) {
@@ -591,7 +592,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	    
 	    String requestUrl = "https://" 
 		+ DOMAIN + "/api/1/" 
-		+ currencyPair.getCurrency().getName() + currencyPair.getPaymentCurrency().getName() 
+		+ currencyPair.getCurrency().getCode() + currencyPair.getPaymentCurrency().getCode() 
 		+ "/public/depth?raw";
 
 	    // System.out.println( "Fetching mtgox depth from: " + requestUrl);
@@ -629,23 +630,18 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
-	// For withdrawals and deposits, just use the default implementation for now..
-	if( ( order instanceof WithdrawOrder) || ( order instanceof DepositOrder)) {
+	// Deposits should be free.
+	if( order instanceof DepositOrder) {
 
-	    return super.getFeeForOrder( order);
+	    return new Price( "0", order.getCurrencyPair().getCurrency());
+
+	} else if( order instanceof WithdrawOrder) {
+	
+	    throw new NotYetImplementedException( "Withdraw fees are not implemented at the moment for " + _name);
 
 	} else {  // This is a trade order.
 
-	    if( ( order.getOrderType() == OrderType.SELL)  // If this is a sell order for US dollar
-		&& ( order.getCurrencyPair().getPaymentCurrency().equals( CurrencyImpl.USD)))  {
-
-		// There's no fee for btc sales at the moment, it seems.
-		return new Price( "0", order.getCurrencyPair().getPaymentCurrency());
-
-	    } else {  // Let the default implementation handle the fees.
-		
-		return super.getFeeForOrder( order);	
-	    }
+	    throw new NotYetImplementedException( "Trade fees are not implemented at the moment for " + _name);
 	}
     }
 
@@ -755,7 +751,7 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 	if( isRequestAllowed( TradeSiteRequestType.Ticker)) {
 
 	    String url = "https://" + DOMAIN  + "/api/1/" 
-		+ currencyPair.getCurrency().getName() + currencyPair.getPaymentCurrency().getName() + "/public/ticker";
+		+ currencyPair.getCurrency().getCode() + currencyPair.getPaymentCurrency().getCode() + "/public/ticker";
 
 	    String requestResult = HttpUtils.httpGet( url);
 
@@ -793,16 +789,16 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      * microsecond timestamp of the trade, so the tid is used as a timespan filter, too!
      * @param currencyPair The currency pair to query.
      *
-     * @return The trades as an array of CryptoCoinTrade objects.
+     * @return The trades as an list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long tid, CurrencyPair currencyPair) {
+    public List<Trade> getTrades( long tid, CurrencyPair currencyPair) {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on MtGox");
 	}
 
 	String requestUrl = "https://" + DOMAIN + "/api/1/" 
-	    +  currencyPair.getCurrency().getName() + currencyPair.getPaymentCurrency().getName()  
+	    +  currencyPair.getCurrency().getCode() + currencyPair.getPaymentCurrency().getCode()  
 	    + "/public/trades?since=" + tid;
 
 	return getTradesFromURL( requestUrl, currencyPair);
@@ -814,13 +810,13 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
      * @param url The URL to fetch the trades from.
      * @param currencyPair The requested currency pair.
      *
-     * @return The trades as an array of Trade objects or null if an error occured.
+     * @return The trades as a list of Trade objects or null if an error occured.
      */
-    private CryptoCoinTrade [] getTradesFromURL( String url, CurrencyPair currencyPair) {
+    private List<Trade> getTradesFromURL( String url, CurrencyPair currencyPair) {
 
 	if( isRequestAllowed( TradeSiteRequestType.Trades)) {
 
-	    ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+	    List<Trade> trades = new ArrayList<Trade>();
 
 	    // System.out.println( "Fetching trades from url: " + url);
 
@@ -852,11 +848,9 @@ public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 			}
 		    }
 
-		    CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-		    
 		    updateLastRequest( TradeSiteRequestType.Trades);  // Update the timestamp of the last request.
 
-		    return tradeArray;  // And return the array.
+		    return trades;  // And return the list.
 
 		} catch( JSONException je) {
 		    System.err.println( "Cannot parse trade object: " + je.toString());

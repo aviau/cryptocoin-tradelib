@@ -30,12 +30,12 @@ import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
 import de.andreas_rueckert.trade.order.DepositOrder;
@@ -50,6 +50,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -111,62 +112,62 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 
 	// Set the supported currency pairs manualls, since it seems there's no API method to fetch them?
 	List<CurrencyPair> supportedCurrencyPairs = new ArrayList<CurrencyPair>();
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.HKD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CAD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.AUD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.SGD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.JPY));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CHF));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.GBP));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.NZD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.HKD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CAD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.AUD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.SGD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.JPY));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CHF));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.GBP));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.NZD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.LTC));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.HKD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.EUR));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.CAD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.AUD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.SGD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.JPY));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.CHF));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.GBP));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.NZD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.LTC));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.HKD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.EUR));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.CAD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.AUD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.SGD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.JPY));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.CHF));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.GBP));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.NZD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.BTC)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.USD)); 
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.HKD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.EUR));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.CAD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.AUD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.SGD));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.JPY));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.CHF));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.GBP));
-	supportedCurrencyPairs.add( new CurrencyPairImpl( CurrencyImpl.DOGE, CurrencyImpl.NZD));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "USD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "HKD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "EUR"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "CAD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "AUD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "SGD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "JPY"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "CHF"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "GBP"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "BTC", "NZD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "BTC")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "USD")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "HKD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "EUR"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "CAD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "AUD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "SGD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "JPY"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "CHF"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "GBP"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "LTC", "NZD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "BTC")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "LTC"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "USD")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "HKD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "EUR"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "CAD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "AUD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "SGD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "JPY"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "CHF"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "GBP"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "PPC", "NZD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "BTC")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "LTC"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "USD")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "HKD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "EUR"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "CAD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "AUD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "SGD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "JPY"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "CHF"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "GBP"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "NMC", "NZD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "BTC")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "USD")); 
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "HKD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "EUR"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "CAD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "AUD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "SGD"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "JPY"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "CHF"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "GBP"));
+	supportedCurrencyPairs.add( new CurrencyPairImpl( "DOGE", "NZD"));
 
 	// Copy the list to the instance array (defined in super class).
 	_supportedCurrencyPairs = supportedCurrencyPairs.toArray( new CurrencyPair[ supportedCurrencyPairs.size()]);
@@ -325,8 +326,10 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 	    parameters.put( "amount_int", "" + order.getAmount().multiply( new BigDecimal( "100000000")).longValue());
 	    
 	    // The price is multiplied with 10000 if the currency is BTC or LTC. 100000000 otherwise.
-	    BigDecimal multiplier = tradedPair.getCurrency().equals( CurrencyImpl.BTC)
-		|| ( tradedPair.getCurrency().equals( CurrencyImpl.BTC)) ? new BigDecimal( "10000") : new BigDecimal( "100000000");
+	    BigDecimal multiplier = tradedPair.getCurrency().hasCode( new String [] { "BTC", "LTC"}) 
+		? new BigDecimal( "10000") 
+		: new BigDecimal( "100000000");
+
 	    parameters.put( "price_int", "" + order.getPrice().multiply( multiplier).longValue());
 	    
 	    // If this is a simulation, don't execute the query
@@ -412,7 +415,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 		    BigDecimal balance = new BigDecimal( jsonWallet.getJSONObject( currentCurrency).getJSONObject( "Balance").getString( "value"));
 
 		    // Create an account and add it to the result.
-		    result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currentCurrency.toUpperCase()), this));
+		    result.add( new TradeSiteAccountImpl( balance, CurrencyProvider.getInstance().getCurrencyForCode( currentCurrency.toUpperCase()), this));
 		}
 		
 		return result; // Return the list with the accounts.
@@ -440,7 +443,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      */
     private final String getANXCurrencyPairString( CurrencyPair currencyPair) {
 
-	return currencyPair.getCurrency().toString() + currencyPair.getPaymentCurrency().toString();
+	return currencyPair.getCurrency().getCode() + currencyPair.getPaymentCurrency().getCode();
     }
 
     /**
@@ -617,7 +620,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// ANX has an optional argument for extra currency pairs, that could be used to fetch
 	// many depths at once.
@@ -678,8 +681,8 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 			}
 		    }
 
-		    // Convert the result buffer to an array and return it.
-		    return resultBuffer.toArray( new Depth[ resultBuffer.size()]);
+		    // Return the result buffer.
+		    return resultBuffer;
 
 		} else {
 		    
@@ -723,11 +726,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 	    // Get the withdrawn currency.
 	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
 
-	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)
-		|| withdrawnCurrency.equals( CurrencyImpl.LTC)
-		|| withdrawnCurrency.equals( CurrencyImpl.NMC)
-		|| withdrawnCurrency.equals( CurrencyImpl.PPC)
-		|| withdrawnCurrency.equals( CurrencyImpl.DOGE)) {
+	    if( withdrawnCurrency.hasCode( new String [] { "BTC", "LTC", "NMC", "PPC", "DOGE"})) {
 
 		// Withdrawing cryptocoins is free.
 		return new Price( "0", withdrawnCurrency);
@@ -743,11 +742,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 	     // Get the deposited currency.
 	    Currency depositedCurrency = order.getCurrencyPair().getCurrency();
 
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)
-		|| depositedCurrency.equals( CurrencyImpl.LTC)
-		|| depositedCurrency.equals( CurrencyImpl.NMC)
-		|| depositedCurrency.equals( CurrencyImpl.PPC)
-		|| depositedCurrency.equals( CurrencyImpl.DOGE)) {
+	    if( depositedCurrency.hasCode( new String [] { "BTC", "LTC", "NMC", "PPC", "DOGE" })) {
 
 		// Depositing cryptocoins is free.
 		return new Price( "0", depositedCurrency);
@@ -772,7 +767,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -918,7 +913,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on " + _name);
@@ -941,7 +936,7 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 		JSONObject jsonResult = JSONObject.fromObject( requestResult);
 
 		// Create a buffer for the result.
-		List<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+		List<Trade> trades = new ArrayList<Trade>();
 
 		// Get the result value to check for success
 		if( ! "success".equals( jsonResult.getString( "result"))) {
@@ -977,11 +972,9 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
 		    }
 		}
 
-		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-		    
 		// updateLastRequest( TradeSiteRequestType.Trades);  // Update the timestamp of the last request.
 
-		return tradeArray;  // And return the array.
+		return trades;  // And return the list of trades.
 
 	    } catch( JSONException je) {
 

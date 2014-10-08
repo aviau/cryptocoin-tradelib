@@ -28,11 +28,11 @@ package de.andreas_rueckert.trade.site.bitcurex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -44,10 +44,12 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
@@ -95,7 +97,7 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[1];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "EUR");
 
     }
 
@@ -183,13 +185,16 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 
 	if( order instanceof WithdrawOrder) {
 		    
-	    if( order.getCurrencyPair().getCurrency().equals( CurrencyImpl.BTC)) {
+	    // Get the ordered currency.
+	    Currency orderedCurrency = order.getCurrencyPair().getCurrency();
 
-		return new Price( "0.005", CurrencyImpl.BTC);  // Current Bitcurex withdraw fee...
+	    if( orderedCurrency.hasCode( "BTC")) {
 
-	    } else if( order.getCurrencyPair().getCurrency().equals( CurrencyImpl.EUR)) {
+		return new Price( "0.005", orderedCurrency);  // Current Bitcurex withdraw fee...
 
-		return new Price( "1.23", CurrencyImpl.EUR);  // Current Bitcurex withdraw fee..
+	    } else if( orderedCurrency.hasCode( "EUR")) {
+
+		return new Price( "1.23", orderedCurrency);  // Current Bitcurex withdraw fee..
 
 	    } else {
 
@@ -201,17 +206,17 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 
 	    Currency depositedCurrency = ((DepositOrder)order).getCurrency();
 	    
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
+	    if( depositedCurrency.hasCode( "BTC")) {
 		
 		// BTC deposits are free as far as I know.
-		return new Price( "0.0", CurrencyImpl.BTC);
+		return new Price( "0.0", depositedCurrency);
 	    
 	} else {
 
 		throw new NotYetImplementedException( "Deposit fees are not implemented for trade site " 
 						      + getName() 
 						      + " and currency " 
-						      + depositedCurrency.getName());
+						      + depositedCurrency.getCode());
 	    }
 
 	} else {  // Bitcurex seems to have no trade fees?
@@ -295,7 +300,7 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The trades as a list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Bitcurex");
@@ -307,7 +312,7 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 
 	if( requestResult != null) {  // If the HTTP request worked ok.
 
-	    ArrayList<CryptoCoinTrade> resultBuffer = new ArrayList<CryptoCoinTrade>();
+	    ArrayList<Trade> resultBuffer = new ArrayList<Trade>();
 
 	    try {
 		// Convert the result to an JSON array.
@@ -328,8 +333,8 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 		    }
 		}
 		
-		// Convert the list to an array and return it.
-		return resultBuffer.toArray( new CryptoCoinTrade[ resultBuffer.size()]); 
+		// Return the list.
+		return resultBuffer;
 
 	    } catch( JSONException je) {
 		System.err.println( "Cannot parse trade object: " + je.toString());

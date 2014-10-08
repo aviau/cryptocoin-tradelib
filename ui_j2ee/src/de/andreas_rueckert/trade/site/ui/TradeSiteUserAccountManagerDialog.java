@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site.ui;
 
+import de.andreas_rueckert.util.ModuleLoader;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -37,6 +38,7 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -109,7 +111,8 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
 	JTable accountTable = new JTable( new TradeSiteUserAccountTableModel());
 	accountTable.setFillsViewportHeight(true);
 	accountTable.setGridColor( Color.BLUE);
-	accountTable.setMinimumSize( new Dimension( 700, 300));
+	accountTable.setMinimumSize( new Dimension( 900, 300));
+	accountTable.setPreferredSize( accountTable.getMinimumSize());
 
 	// Set the widths of the table columns.
 	accountTable.getColumnModel().getColumn( 0).setPreferredWidth( 50);  // ID is small.
@@ -144,11 +147,11 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
 	newAccountFormPanel.setLayout( new GridLayout( 0, 2, 4, 8));
 
 	// A non-editable text field for the id of the new account.
-	newAccountFormPanel.add( new JLabel( "ID"));
+	/* newAccountFormPanel.add( new JLabel( "ID"));
 	JTextField newAccountId = new JTextField( 4);
 	newAccountId.setEditable( false);
 	_newAccountMap.put( "id", newAccountId);
-	newAccountFormPanel.add( newAccountId);
+	newAccountFormPanel.add( newAccountId); */
 
 	// Create a text field for the name.
 	newAccountFormPanel.add( new JLabel( "Name"));
@@ -156,9 +159,12 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
 	_newAccountMap.put( "name", newAccountName);
 	newAccountFormPanel.add( newAccountName);
 
+	// Get the names of the trade sites.
+	Set<String> tradeSiteNames = ModuleLoader.getInstance().getRegisteredTradeSites().keySet();
+
 	// Add a combobox to select the tradesite.
 	newAccountFormPanel.add( new JLabel( "Exchange"));
-	JComboBox newAccountTradeSite = new JComboBox();
+	JComboBox newAccountTradeSite = new JComboBox( tradeSiteNames.toArray( new String[ tradeSiteNames.size()]));
 	_newAccountMap.put( "tradeSite", newAccountTradeSite);
 	newAccountFormPanel.add( newAccountTradeSite);
 
@@ -230,11 +236,34 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
      */
     public void actionPerformed( ActionEvent event) {
 
-	if( event.getSource() == _closeButton) {  // If the user clicken the close button.
+	if( event.getSource() == _closeButton) {  // If the user clicked the close button.
 
 	    setVisible( false);  // Hide the dialog.
 
 	    // dispose();  // Remove the dialog.
+
+	} else if( event.getSource() == _addButton) {  // If the user clicked the add button.
+	    
+	    // Create a new tradesite user account object from the form data.
+
+	    // Get the name of the trade site from the combo box.
+	    JComboBox tradeSiteBox = (JComboBox)_newAccountMap.get( "tradeSite");
+
+	    // Get the selected trade site name and then
+	    // try to get this exchange object from the module loader.
+	    TradeSite tradeSite = ModuleLoader.getInstance().getRegisteredTradeSite(  tradeSiteBox.getSelectedItem().toString());
+
+	    if( tradeSite == null) {
+
+		LogUtils.getInstance().getLogger().error( "Cannot find selected trade site: " + tradeSiteBox.getSelectedItem().toString());
+
+	    } else {
+
+		// Now create the actual account object.
+		TradeSiteUserAccount newAccount = new TradeSiteUserAccount( tradeSite);
+		
+		... ToDo: add the other form data to the object.
+	    }
 	}
     }
 

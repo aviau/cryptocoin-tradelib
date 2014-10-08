@@ -48,7 +48,7 @@ public class CurrencySymbolMapper {
     // Methods
 
     /**
-     * Get a (deprecated) currency object for a ISO 4217 currency name.
+     * Get a currency object for a ISO 4217 currency name.
      *
      * @see https://tools.ietf.org/html/draft-stanish-x-iso4217-a3-01
      *
@@ -57,10 +57,8 @@ public class CurrencySymbolMapper {
      * @return A currency object for this name.
      *
      * @throws CurrencyNotSupportedException if this currency is not supported currently.
-     *
-     * @deprecated use the de.andreas_rueckert.trade.currency.Currency instead.  
      */
-    @Deprecated public static final de.andreas_rueckert.trade.Currency getCurrencyForIso4217Name( String iso4217name) {
+    public static final Currency getCurrencyForIso4217Name( String iso4217name) {
 
 	String currencyName = iso4217name;  // Just use the full name as the default value.
 
@@ -85,7 +83,7 @@ public class CurrencySymbolMapper {
 	    }
 	}
 
-	de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currencyName);
+	Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currencyName);
 
 	if( currency == null) {
 

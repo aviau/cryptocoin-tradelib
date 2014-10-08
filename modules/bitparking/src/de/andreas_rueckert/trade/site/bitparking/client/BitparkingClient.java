@@ -28,23 +28,26 @@ package de.andreas_rueckert.trade.site.bitparking.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import net.sf.json.JSONException;
@@ -91,7 +94,7 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[1];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "LTC", "BTC");
     }
 
 
@@ -173,6 +176,20 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
     }
 
     /**
+     * Get the fee for an order.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	throw new NotYetImplementedException( "Getting the fees is not yet implemented for " + _name);
+    }
+
+    /**
      * Get the shortest allowed requet interval in microseconds.
      *
      * @return The shortest allowed request interval in microseconds.
@@ -219,7 +236,7 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The trades as a list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long id, CurrencyPair currencyPair) {
+    public List<Trade> getTrades( long id, CurrencyPair currencyPair) {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Bitparking");
@@ -236,14 +253,14 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
      * @param url The url to use for fetching the trades.
      * @param currencyPair The requested currency pair.
      *
-     * @return The trades as an array of Trade objects.
+     * @return The trades as a list.
      */
-    private CryptoCoinTrade [] getTradesFromURL( String url, CurrencyPair currencyPair) {
+    private List<Trade> getTradesFromURL( String url, CurrencyPair currencyPair) {
 
 	// If a request for trades is allowed
 	if( isRequestAllowed( TradeSiteRequestType.Trades)) {
 
-	    ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+	    List<Trade> trades = new ArrayList<Trade>();
 	    
 	    String requestResult = HttpUtils.httpGet( url);
 	
@@ -261,11 +278,9 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
 			trades.add( new BitparkingTradeImpl( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
 		    }
 
-		    CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-
 		    updateLastRequest();  // Update the timestamp of the last request.
 
-		    return tradeArray;  // And return the array.
+		    return trades;  // And return the list.
 		    
 		} catch( JSONException je) {
 		    System.err.println( "Cannot convert HTTP response to JSON array: " + je.toString());

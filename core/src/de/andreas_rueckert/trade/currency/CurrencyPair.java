@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade;
+package de.andreas_rueckert.trade.currency;
 
 
 /**
@@ -50,23 +50,37 @@ public interface CurrencyPair extends Comparable<CurrencyPair> {
     public Currency getCurrency();
 
     /**
-     * Get the name of this currency pair.
+     * Get the code of this currency pair.
      *
-     * @return The name of this currency pair.
+     * @return The code of this currency pair.
      */
+     public String getCode();
+
+     /**
+      * Get the name of this currency pair.
+      *
+      * @return The name of this currency pair.
+      */
      public String getName();
 
-    /**
-     * Get the currency, that is used for payments.
-     *
-     * @return The currency, that is used for payments.
-     */
-    public Currency getPaymentCurrency();
+     /**
+      * Get the currency, that is used for payments.
+      *
+      * @return The currency, that is used for payments.
+      */
+     public Currency getPaymentCurrency();
+     
+     /**
+      * Get the hashcode for a currency pair.
+      *
+      * @return The hash code for this currency pair.
+      */
+     public int hashCode();
 
-    /**
-     * Get the hashcode for a currency pair.
-     *
-     * @return The hash code for this currency pair.
-     */
-    public int hashCode();
+     /**
+      * Invert this pair (make the currency the payment currency and vice versa).
+      *
+      * @return The inverted currency pair.
+      */
+     public CurrencyPair invert();
 }

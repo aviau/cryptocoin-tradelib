@@ -28,7 +28,7 @@ package de.andreas_rueckert.trade.site;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderType;
@@ -71,17 +71,17 @@ public class TradeSiteImpl {
     /**
      * The fee for deposits.
      */
-    protected BigDecimal _feeForDeposit = BigDecimal.ZERO;  // Set a default value;
+    //protected BigDecimal _feeForDeposit = BigDecimal.ZERO;  // Set a default value;
 
     /**
      * The fee for trades.
      */
-    protected BigDecimal _feeForTrade = BigDecimal.ZERO;  // Set a default value.
+    //protected BigDecimal _feeForTrade = BigDecimal.ZERO;  // Set a default value.
 
     /**
      * The fee for withdrawals.
      */
-    protected BigDecimal _feeForWithdrawal = BigDecimal.ZERO;  // Set a default value.
+    //protected BigDecimal _feeForWithdrawal = BigDecimal.ZERO;  // Set a default value.
 
     /**
      * The current log level.
@@ -137,7 +137,7 @@ public class TradeSiteImpl {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public Depth [] getDepths() throws TradeDataNotAvailableException {
+    public List<Depth> getDepths() throws TradeDataNotAvailableException {
 
 	// This is just a default implementation, that should be overwritten with
 	// an optimized version for a specific trade site, if possible.
@@ -159,7 +159,7 @@ public class TradeSiteImpl {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// If no proxies are allowed, do the requests sequentially.
 	// Otherwise do parallel requests via proxies.
@@ -178,7 +178,7 @@ public class TradeSiteImpl {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsSequentially( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 
 	// Precalculate the sleeping time.
 	// sleep() works with miliseconds. The method returns microseconds,
@@ -186,7 +186,7 @@ public class TradeSiteImpl {
 	long sleepInterval = getMinimumRequestInterval() / 1000 + 100;
 	
 	// Create an array for the result.
-	Depth [] result = new Depth[ currencyPairs.length];
+	List<Depth> result = new ArrayList<Depth>();
 	int currentIndex = 0;
 	
 	// The number of requests, that failed in a row.
@@ -198,7 +198,7 @@ public class TradeSiteImpl {
 	    try {
 		
 		// Try to get the depth for this pair.
-		result[ currentIndex] = getDepth( currentPair);
+		result.add( currentIndex, getDepth( currentPair));
 		
 		// Reset the fails to 0.
 		failsInRow = 0;
@@ -206,7 +206,7 @@ public class TradeSiteImpl {
 	    } catch( TradeDataNotAvailableException tdnae) {
 
 		// Fetching this pair did not work, so just set this depth to null.
-		result[ currentIndex] = null;
+		result.add( currentIndex, null);
 		
 		if( ++failsInRow >= MAX_FAILS_IN_ROW) {  // After 5 fails in a row, we give up
 		                                         // , because the server is most likely down?
@@ -245,7 +245,7 @@ public class TradeSiteImpl {
      *
      * @throws TradeDataNotAvailableException if to many depths are not available.
      */
-    public Depth [] getDepthsViaProxies( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
+    public List<Depth> getDepthsViaProxies( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException {
 	
 	// The actual API must implement this method, since we don't know the URL etc.
 	throw new NotYetImplementedException( "The API client " 
@@ -258,9 +258,9 @@ public class TradeSiteImpl {
      *
      * @return The fee for deposits in percent.
      */
-    public BigDecimal getFeeForDeposit() {
+    /* public BigDecimal getFeeForDeposit() {
 	return _feeForDeposit;
-    }
+	} */
 
     /**
      * Get the fee for an order in the resulting currency. This is just a default implementation, that
@@ -272,7 +272,7 @@ public class TradeSiteImpl {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      */
-    public synchronized Price getFeeForOrder( SiteOrder order) {
+    /*    public synchronized Price getFeeForOrder( SiteOrder order) {
 	
 	if( order instanceof WithdrawOrder) {  // If this is a withdrawal...
 
@@ -301,25 +301,25 @@ public class TradeSiteImpl {
 				  , order.getCurrencyPair().getPaymentCurrency());
 	    }
 	}
-    }
+	} */
 
     /**
      * Get the fee for trades in percent.
      *
      * @return The fee for trades in percent.
      */
-    public BigDecimal getFeeForTrade() {
+    /* public BigDecimal getFeeForTrade() {
 	return _feeForTrade;
-    }
+	} */
 
     /**
      * Get the fee for a withdrawal in percent.
      *
      * @return The fee for a withdrawal in percent.
      */
-    public BigDecimal getFeeForWithdrawal() {
+    /* public BigDecimal getFeeForWithdrawal() {
 	return _feeForWithdrawal;
-    }
+	} */
 
     /**
      * Get the current log level.
@@ -373,9 +373,9 @@ public class TradeSiteImpl {
 	// Create a new list for the settings.
 	PersistentPropertyList result = new PersistentPropertyList();
 
-	result.add( new PersistentProperty( "Fee for deposit", null, "" + getFeeForDeposit(), 1));
-	result.add( new PersistentProperty( "Fee for trades", null, "" + getFeeForTrade(), 2));
-	result.add( new PersistentProperty( "Fee for withdrawal", null, "" + getFeeForWithdrawal(), 0));
+	//result.add( new PersistentProperty( "Fee for deposit", null, "" + getFeeForDeposit(), 1));
+	//result.add( new PersistentProperty( "Fee for trades", null, "" + getFeeForTrade(), 2));
+	//result.add( new PersistentProperty( "Fee for withdrawal", null, "" + getFeeForWithdrawal(), 0));
 
 	return result;
     }
@@ -432,27 +432,27 @@ public class TradeSiteImpl {
      *
      * @param fee The fee for deposits in percent.
      */
-    public void setFeeForDeposit( BigDecimal fee) {
+    /*public void setFeeForDeposit( BigDecimal fee) {
 	_feeForDeposit = fee;
-    }
+	}*/
 
     /**
      * Get the fee for trades in percent.
      *
      * @param fee The fee for trades in percent.
      */
-    public void setFeeForTrade( BigDecimal fee) {
+    /*public void setFeeForTrade( BigDecimal fee) {
 	_feeForTrade = fee;
-    }
+	}*/
 
     /**
      * Get the fee for a withdrawal in percent.
      *
      * @param fee The fee for a withdrawal in percent.
      */
-    public void setFeeForWithdrawal( BigDecimal fee) {
+    /*public void setFeeForWithdrawal( BigDecimal fee) {
 	_feeForWithdrawal = fee;
-    }
+	}*/
 
     /**
      * Set new settings for the trading site client.
@@ -463,11 +463,11 @@ public class TradeSiteImpl {
 	
 	// Use 0 as the fee, if no fee was stored in the settings.
 
-	String currentFee = settings.getStringProperty( "Fee for deposit");
+	/*String currentFee = settings.getStringProperty( "Fee for deposit");
 	setFeeForDeposit( currentFee != null ?  new BigDecimal( currentFee) : BigDecimal.ZERO);
 	currentFee = settings.getStringProperty( "Fee for trades");
 	setFeeForTrade( currentFee != null ? new BigDecimal( currentFee) : BigDecimal.ZERO);
 	currentFee = settings.getStringProperty( "Fee for withdrawal");
-	setFeeForWithdrawal( currentFee != null ? new BigDecimal( currentFee) : BigDecimal.ZERO);
+	setFeeForWithdrawal( currentFee != null ? new BigDecimal( currentFee) : BigDecimal.ZERO); */
     }
 }

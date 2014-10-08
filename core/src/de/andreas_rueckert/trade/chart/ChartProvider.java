@@ -27,10 +27,11 @@ package de.andreas_rueckert.trade.chart;
 
 //import de.andreas_rueckert.trade.chart.persistence.CachePersistence;
 //import de.andreas_rueckert.trade.chart.persistence.CachePersistenceMySQL;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.Ticker;
@@ -411,8 +412,8 @@ public class ChartProvider {
 	_timestampOffset = Calendar.getInstance( TimeZone.getTimeZone("GMT")).getTimeInMillis() - System.currentTimeMillis();
 
 	// Set the default currencies.
-	_currentCurrency = CurrencyImpl.BTC;     // Query the btc reates.
-	_currentPaymentCurrency = CurrencyImpl.USD;  // In usd.
+	_currentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( "BTC");         // Query the BTC rates.
+	_currentPaymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( "USD");  // In USD.
     }
 
 
@@ -509,7 +510,7 @@ public class ChartProvider {
 	CurrencyPair currencyPair = null;  // The default value of the requested currency pair is null (which indicates a not matching name).
 	
 	for( int index = 0; index < supportedCurrencyPairs.length; ++index) {
-	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getName())) {
+	    if( currencyPairName.equals( supportedCurrencyPairs[ index].getCode())) {
 		currencyPair = supportedCurrencyPairs[ index];  // We've found the requested currency pair!
 		break;                                          // No further searching required...
 	    }
@@ -540,7 +541,7 @@ public class ChartProvider {
 	    LogUtils.getInstance().getLogger().info( "Requesting depth from ChartProvider for tradesite " 
 						     + t.getName() 
 						     + " and currency pair "
-						     + currencyPair.getName());
+						     + currencyPair.getCode());
 	}
 
 	// Create a new TradeSiteCall object for the cache.
@@ -653,7 +654,7 @@ public class ChartProvider {
 	throw new TradeDataNotAvailableException( "No get and buy orders in the current spread of trade site " 
 						  + tradeSite.getName() 
 						  + " with currency pair "
-						  + currencyPair.getName());
+						  + currencyPair.getCode());
     } 
 
     /**
@@ -702,21 +703,21 @@ public class ChartProvider {
      *
      * @throws TradeDataNotAvailableException if the sma could not be computed with the given parameters.
      */
-    public final synchronized Trade [] getTrades( TradeSite t, CurrencyPair currencyPair, long sinceMicros) throws TradeDataNotAvailableException {
+    public final synchronized List<Trade> getTrades( TradeSite t, CurrencyPair currencyPair, long sinceMicros) throws TradeDataNotAvailableException {
 
 	// Create a new TradeSiteCall object for the cache.
 	TradeSiteCall tradeSiteCall = new TradeSiteCall( t, "trades", new Long( sinceMicros), currencyPair);
 
 	Object cachedResult = _tradeSiteCache.getValidCacheResult( tradeSiteCall);
 
-	if( cachedResult != null) {       // If there is a valid cached result,
-	    return (Trade [])cachedResult;  // return it.
+	if( cachedResult != null) {  // If there is a valid cached result,
+	    return (List<Trade>)cachedResult;     // return it.
 	}
 
 	// There is no cached result, so we have to call the trade site directly.
 
 	// There is no cached result, so we have to call the trade site directly.
-	Trade [] callResult = t.getTrades( sinceMicros, currencyPair);
+	List<Trade> callResult = t.getTrades( sinceMicros, currencyPair);
 
 	// If this is a valid result, add it to the cache.
 	if( callResult != null) {

@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade;
 
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.site.TradeSite;
 
 

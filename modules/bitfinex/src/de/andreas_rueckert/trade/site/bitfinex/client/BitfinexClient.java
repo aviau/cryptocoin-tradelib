@@ -28,10 +28,12 @@ package de.andreas_rueckert.trade.site.bitfinex.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -44,6 +46,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -140,8 +143,8 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
     private final String getBitfinexCurrencyPairSymbol( CurrencyPair currencyPair) {
 
 	// The Bitfinex symbol is just a concat of the 2 codes as lowercase (i.e. 'ltcusd').
-	return currencyPair.getCurrency().getName().toLowerCase() 
-	    + currencyPair.getPaymentCurrency().getName().toLowerCase();
+	return currencyPair.getCurrency().getCode().toLowerCase() 
+	    + currencyPair.getPaymentCurrency().getCode().toLowerCase();
     }
 
    /**
@@ -214,8 +217,7 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	    // Get the withdrawn currency.
 	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
 
-	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)
-		|| withdrawnCurrency.equals( CurrencyImpl.LTC)) {
+	    if( withdrawnCurrency.hasCode( new String [] { "BTC", "LTC"})) {
 
 		// Withdrawing LTC and BTC is free.
 		return new Price( "0", withdrawnCurrency);
@@ -231,8 +233,7 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	     // Get the deposited currency.
 	    Currency depositedCurrency = order.getCurrencyPair().getCurrency();
 
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)
-		|| depositedCurrency.equals( CurrencyImpl.LTC)) {
+	    if( depositedCurrency.hasCode( new String [] { "BTC", "LTC" })) {
 
 		// Depositing LTC and BTC is free.
 		return new Price( "0", depositedCurrency);
@@ -261,7 +262,7 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -363,7 +364,7 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -424,13 +425,13 @@ public class BitfinexClient extends TradeSiteImpl implements TradeSite {
 		    // It might fail, once Bitfinex adds new coin types, but then the whole concept is suboptimal anyway.
 
 		    // Get the traded currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currencyPairName.substring( 0, 3).toUpperCase());
+		    Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currencyPairName.substring( 0, 3).toUpperCase());
 		    
 		    // Get the payment currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currencyPairName.substring( 3).toUpperCase());
+		    Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currencyPairName.substring( 3).toUpperCase());
 
 		    // Create a pair from the currencies.
-		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		    CurrencyPair currentPair = new CurrencyPairImpl( currency, paymentCurrency);
 		
 		    // Add the current pair to the result buffer.
 		    resultBuffer.add( currentPair);

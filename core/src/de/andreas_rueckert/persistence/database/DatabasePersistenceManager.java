@@ -181,6 +181,73 @@ public class DatabasePersistenceManager {
     }
 
     /**
+     * Execute a command.
+     *
+     * @param command The command.
+     *
+     * @return true, if the statement was successfully executed. False otherwise.
+     */
+    public boolean executeStatement( String command) {
+
+	Connection connection = null;
+	Statement statement = null;
+
+	try {
+	    
+	    if( getDatabaseConnection() == null) {
+
+		LogUtils.getInstance().getLogger().error( "Database connection is null in DatabasePersistenceImpl, so I cannot execute '" + command + "'");
+
+	    } else {
+
+		// Create a SQL for this connection via the JDBC connection.
+		statement = getDatabaseConnection().getConnection().createStatement();
+		
+		// Execute the current SQL command against this statement.
+		statement.executeUpdate( command);
+
+	    }
+	} catch( SQLException se){
+		
+	    // Errors for the JDBC execution.
+	    LogUtils.getInstance().getLogger().error( "Error in JDBC execution: " + se);
+	    
+	    return false;
+
+	} catch( Exception e){
+		
+	    // Errors for the JDBC connection.
+	    LogUtils.getInstance().getLogger().error( "Error in JDBC connecting: " + e);
+	    
+	    return false;
+	    
+	} finally {
+	    
+	    try {
+		if( statement != null) {  // Try to close the statement.
+			
+		    statement.close();
+		    statement = null;
+		}
+	    } catch( SQLException se){
+	    }
+
+	    try{
+		if( connection != null) {  // Try to close the connection.
+
+		    connection.close();
+		    connection = null;
+		}
+	    } catch( SQLException se){
+
+		LogUtils.getInstance().getLogger().error( "Cannot close JDBC connection: " + se);
+	    }
+	}
+
+	return true;  // Statement successfully executed.
+    }
+
+    /**
      * Execute a list of commands.
      *
      * @param commands The list of commands.
@@ -195,58 +262,9 @@ public class DatabasePersistenceManager {
 	// Loop over the statements.
 	for( String currentStatement : statements) {
 
-	    // System.out.println( "DEBUG: executing SQL statement: " + currentStatement);
-
-	    try {
-
-		if( getDatabaseConnection() == null) {
-
-		    LogUtils.getInstance().getLogger().error( "Database connection is null in DatabasePersistenceImpl, so I cannot execute '" + currentStatement + "'");
-
-		} else {
-
-		    // Create a SQL for this connection via the JDBC connection.
-		    statement = getDatabaseConnection().getConnection().createStatement();
-		
-		    // Execute the current SQL command against this statement.
-		    statement.executeUpdate( currentStatement);
-
-		}
-	    } catch( SQLException se){
-		
-		// Errors for the JDBC execution.
-		LogUtils.getInstance().getLogger().error( "Error in JDBC execution: " + se);
-		
-		return false;
-
-	    } catch( Exception e){
-		
-		// Errors for the JDBC connection.
-		LogUtils.getInstance().getLogger().error( "Error in JDBC connecting: " + e);
+	    if( ! executeStatement( currentStatement)) {
 
 		return false;
-		
-	    } finally {
-
-		try {
-		    if( statement != null) {  // Try to close the statement.
-
-			statement.close();
-			statement = null;
-		    }
-		} catch( SQLException se){
-		}
-
-		try{
-		    if( connection != null) {  // Try to close the connection.
-
-			connection.close();
-			connection = null;
-		    }
-		} catch( SQLException se){
-
-		    LogUtils.getInstance().getLogger().error( "Cannot close JDBC connection: " + se);
-		}
 	    }
 	}
 

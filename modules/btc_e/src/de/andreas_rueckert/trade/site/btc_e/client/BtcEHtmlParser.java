@@ -25,13 +25,12 @@
 
 package de.andreas_rueckert.trade.site.btc_e.client;
 
-//import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.Account;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
-//import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -102,7 +101,7 @@ class BtcEHtmlParser {
 	    String currency = matcher.group( 2);
 	    BigDecimal balance = new BigDecimal( matcher.group( 1));
 
-	    result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currency), _btcEClient));
+	    result.add( new TradeSiteAccountImpl( balance, CurrencyProvider.getInstance().getCurrencyForCode( currency), _btcEClient));
 	}
 
 	return result;  // Return the funds.

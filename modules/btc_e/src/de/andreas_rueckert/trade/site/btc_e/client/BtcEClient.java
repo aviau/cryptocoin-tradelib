@@ -59,11 +59,12 @@ import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
@@ -82,6 +83,7 @@ import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
@@ -204,7 +206,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		// A. Rueckert: just removed the output at app start. Hope it's ok.
 		//System.out.println(currencyPairFeeTrade);
 
-		setCurrentCurrency( CurrencyImpl.USD);
+		setCurrentCurrency( CurrencyProvider.getInstance().getCurrencyForCode( "USD"));
 
 		// Create a new parser for the btc-e.com website.
 		_htmlParser = new BtcEHtmlParser( this);
@@ -243,8 +245,6 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 			String paymentCurrency;
 			String[] currencyDetail = new String[2];
 			String pairFee;
-			CurrencyImpl currencyObject;
-			CurrencyImpl paymentCurrencyObject;
 			CurrencyPairImpl currencyPair;
 			while(itPairs.hasNext()){
 				Object current = itPairs.next();
@@ -253,9 +253,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 				currencyDetail = pair.split("_");
 				currency = currencyDetail[0].toUpperCase();
 				paymentCurrency = currencyDetail[1].toUpperCase();
-				currencyObject = CurrencyImpl.findByString(currency);
-				paymentCurrencyObject = CurrencyImpl.findByString(paymentCurrency);
-				currencyPair = new CurrencyPairImpl(currencyObject, paymentCurrencyObject);
+				currencyPair = new CurrencyPairImpl( currency, paymentCurrency);
 				currencyPairs.add(currencyPair);
 				
 				//update the fees for currency pairs trades
@@ -273,38 +271,37 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	 */
 	private void initDefaultSupportedCurrencyPairs() {
 		_supportedCurrencyPairs = new CurrencyPair[25];
-		_supportedCurrencyPairs[ 0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[ 1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[ 2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
-		_supportedCurrencyPairs[ 3] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNH);
-		_supportedCurrencyPairs[ 4] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.GBP);
-		_supportedCurrencyPairs[ 5] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[ 6] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[ 7] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[ 8] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.EUR);
-		_supportedCurrencyPairs[ 9] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.CNH);
-		_supportedCurrencyPairs[10] = new CurrencyPairImpl( CurrencyImpl.LTC, CurrencyImpl.GBP);
-		_supportedCurrencyPairs[11] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[12] = new CurrencyPairImpl( CurrencyImpl.NMC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[13] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[14] = new CurrencyPairImpl( CurrencyImpl.NVC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[15] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[16] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.USD);
-		_supportedCurrencyPairs[17] = new CurrencyPairImpl( CurrencyImpl.EUR, CurrencyImpl.RUR);
-		_supportedCurrencyPairs[18] = new CurrencyPairImpl( CurrencyImpl.USD, CurrencyImpl.CNH);
-		_supportedCurrencyPairs[19] = new CurrencyPairImpl( CurrencyImpl.GBP, CurrencyImpl.USD);
-		_supportedCurrencyPairs[20] = new CurrencyPairImpl( CurrencyImpl.TRC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[21] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[22] = new CurrencyPairImpl( CurrencyImpl.PPC, CurrencyImpl.USD);
-		_supportedCurrencyPairs[23] = new CurrencyPairImpl( CurrencyImpl.FTC, CurrencyImpl.BTC);
-		_supportedCurrencyPairs[24] = new CurrencyPairImpl( CurrencyImpl.XPM, CurrencyImpl.BTC);
+		_supportedCurrencyPairs[ 0] = new CurrencyPairImpl( "BTC", "USD");
+		_supportedCurrencyPairs[ 1] = new CurrencyPairImpl( "BTC", "RUR");
+		_supportedCurrencyPairs[ 2] = new CurrencyPairImpl( "BTC", "EUR");
+		_supportedCurrencyPairs[ 3] = new CurrencyPairImpl( "BTC", "CNH");
+		_supportedCurrencyPairs[ 4] = new CurrencyPairImpl( "BTC", "GBP");
+		_supportedCurrencyPairs[ 5] = new CurrencyPairImpl( "LTC", "BTC");
+		_supportedCurrencyPairs[ 6] = new CurrencyPairImpl( "LTC", "USD");
+		_supportedCurrencyPairs[ 7] = new CurrencyPairImpl( "LTC", "RUR");
+		_supportedCurrencyPairs[ 8] = new CurrencyPairImpl( "LTC", "EUR");
+		_supportedCurrencyPairs[ 9] = new CurrencyPairImpl( "LTC", "CNH");
+		_supportedCurrencyPairs[10] = new CurrencyPairImpl( "LTC", "GBP");
+		_supportedCurrencyPairs[11] = new CurrencyPairImpl( "NMC", "BTC");
+		_supportedCurrencyPairs[12] = new CurrencyPairImpl( "NMC", "USD");
+		_supportedCurrencyPairs[13] = new CurrencyPairImpl( "NVC", "BTC");
+		_supportedCurrencyPairs[14] = new CurrencyPairImpl( "NVC", "USD");
+		_supportedCurrencyPairs[15] = new CurrencyPairImpl( "USD", "RUR");
+		_supportedCurrencyPairs[16] = new CurrencyPairImpl( "EUR", "USD");
+		_supportedCurrencyPairs[17] = new CurrencyPairImpl( "EUR", "RUR");
+		_supportedCurrencyPairs[18] = new CurrencyPairImpl( "USD", "CNH");
+		_supportedCurrencyPairs[19] = new CurrencyPairImpl( "GBP", "USD");
+		_supportedCurrencyPairs[20] = new CurrencyPairImpl( "TRC", "BTC");
+		_supportedCurrencyPairs[21] = new CurrencyPairImpl( "PPC", "BTC");
+		_supportedCurrencyPairs[22] = new CurrencyPairImpl( "PPC", "USD");
+		_supportedCurrencyPairs[23] = new CurrencyPairImpl( "FTC", "BTC");
+		_supportedCurrencyPairs[24] = new CurrencyPairImpl( "XPM", "BTC");
 		
 		//fees for trades
 		String fee;
 		for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
 			fee = "0.2";
-			if (currencyPair.getCurrency().equals(CurrencyImpl.USD)
-					&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.RUR)) {
+			if (currencyPair.getCurrency().hasCode( "USD") && currencyPair.getPaymentCurrency().hasCode( "RUR")) {
 				fee = "0.5";
 			}
 			currencyPairFeeTrade.put(currencyPair, new BigDecimal(fee));
@@ -505,19 +502,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    parameter.put( "type", order.getOrderType() == OrderType.BUY ? "buy" : "sell");  // Indicate buy or sell.
 	    parameter.put( "amount", formatAmount( order.getAmount()));
 	    parameter.put( "rate", formatPrice( order.getPrice(), order.getCurrencyPair()));
-	   
-	    /*
-	    int currencyPairId = getIdForCurrencies( order.getCurrencyPair());
-	    
-	    if( currencyPairId == -1) {
-		throw new CurrencyNotSupportedException( "This currency pair is not supported in btc-e orders: " 
-							 + order.getCurrencyPair().getCurrency().toString() 
-							 + " and payment in "
-							 + order.getCurrencyPair().getPaymentCurrency());
-							 } 
-	    */
-	    
-	    parameter.put( "pair", order.getCurrencyPair().getCurrency().getName().toLowerCase() + "_" + order.getCurrencyPair().getPaymentCurrency().getName().toLowerCase());  
+	    parameter.put( "pair", order.getCurrencyPair().getCurrency().getCode().toLowerCase() + "_" + order.getCurrencyPair().getPaymentCurrency().getCode().toLowerCase());  
 
 	    JSONObject jsonResponse = authenticatedHTTPRequest( "Trade", parameter, order.getTradeSiteUserAccount());
 
@@ -544,8 +529,8 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	    Currency depositedCurrency = depositOrder.getCurrency();
 
 	    // Check, if this currency is supported yet in this implementation.
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)
-		|| depositedCurrency.equals( CurrencyImpl.LTC)) {
+	    if( depositedCurrency.hasCode( "BTC")
+		|| depositedCurrency.hasCode( "LTC")) {
 
 		// Get the address for a deposit from the trade site.
 		String depositAddress = getDepositAddress( depositedCurrency);
@@ -658,128 +643,128 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	 */
 	private final String formatPrice( BigDecimal price, CurrencyPair currencyPair) {
 
-		if( currencyPair.getCurrency().equals( CurrencyImpl.BTC) 
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
+		if( currencyPair.getCurrency().hasCode( "BTC") 
+				&& currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			// btc has only 3 fraction digits for usd.
 			DecimalFormat btcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return btcDecimalFormat.format( price);
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.BTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.RUR)) {
+		} else if( currencyPair.getCurrency().hasCode( "BTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "RUR")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.BTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.EUR)) {
+		} else if( currencyPair.getCurrency().hasCode( "BTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "EUR")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "LTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.USD)) {
+		} else if( currencyPair.getCurrency().hasCode( "LTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.RUR)) {
+		} else if( currencyPair.getCurrency().hasCode( "LTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "RUR")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.LTC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.EUR)) {
+		} else if( currencyPair.getCurrency().hasCode( "LTC")
+				&& currencyPair.getPaymentCurrency().hasCode( "EUR")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
-				&& currencyPair.getPaymentCurrency().equals( CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "NMC")
+			   && currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NMC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+		} else if( currencyPair.getCurrency().hasCode( "NMC")
+				&& currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NVC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "NVC")
+				&& currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.NVC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+		} else if( currencyPair.getCurrency().hasCode( "NVC")
+				&& currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.USD)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.RUR)) {
+		} else if( currencyPair.getCurrency().hasCode( "USD")
+				&& currencyPair.getPaymentCurrency().hasCode( "RUR")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.EUR)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+		} else if( currencyPair.getCurrency().hasCode( "EUR")
+				&& currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.TRC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "TRC")
+				&& currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "PPC")
+				&& currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.PPC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.USD)) {
+		} else if( currencyPair.getCurrency().hasCode( "PPC")
+			   && currencyPair.getPaymentCurrency().hasCode( "USD")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.###", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.FTC)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "FTC")
+			   && currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
 			return nmcDecimalFormat.format( price); 
 
-		} else if( currencyPair.getCurrency().equals( CurrencyImpl.XPM)
-				&& currencyPair.getPaymentCurrency().equals(CurrencyImpl.BTC)) {
+		} else if( currencyPair.getCurrency().hasCode( "XPM")
+				&& currencyPair.getPaymentCurrency().hasCode( "BTC")) {
 
 			DecimalFormat nmcDecimalFormat = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance( Locale.ENGLISH));
 
@@ -787,7 +772,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 		}
 		else {
-			throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getName() + " is not supported in formatPrice()");
+			throw new CurrencyNotSupportedException( "The currency pair " + currencyPair.getCode() + " is not supported in formatPrice()");
 		}
 	}
 
@@ -817,7 +802,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		
 		BigDecimal balance = new BigDecimal( jsonFunds.getString( currentCurrency));  // Get the balance for this currency.
 
-		result.add( new TradeSiteAccountImpl( balance, CurrencyImpl.findByString( currentCurrency.toUpperCase()), this));
+		result.add( new TradeSiteAccountImpl( balance, CurrencyProvider.getInstance().getCurrencyForCode( currentCurrency.toUpperCase()), this));
 	    }
 
 	    return result; // Return the array with the accounts.
@@ -904,7 +889,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @return The currency pair as a btc-e string.
      */
     private String getCurrencyPairString( CurrencyPair currencyPair) {
-	return currencyPair.getCurrency().getName().toLowerCase() + "_" + currencyPair.getPaymentCurrency().getName().toLowerCase();
+	return currencyPair.getCurrency().getCode().toLowerCase() + "_" + currencyPair.getPaymentCurrency().getCode().toLowerCase();
     }
 
     /**
@@ -920,12 +905,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	String url = null;
 
 	// Check, if the currency is a FIAT currency.
-	if( currency.equals( CurrencyImpl.RUR)
-	    || currency.equals( CurrencyImpl.EUR)
-	    || currency.equals( CurrencyImpl.USD)) {
+	if( currency.hasCode( new String [] { "RUR", "EUR", "USD"})) {
 
 	    // The FIAT URLs differ from the cryptocoin URLs...
-	    url = "https://btc-e.com/profile#funds/deposit/" + currency.getName().toLowerCase();
+	    url = "https://btc-e.com/profile#funds/deposit/" + currency.getCode().toLowerCase();
 
 	} else {
 
@@ -974,7 +957,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
     public Depth getDepth( Currency currency) throws TradeDataNotAvailableException {
-	return getDepth( new CurrencyPairImpl( currency, CurrencyImpl.BTC));
+	return getDepth( new CurrencyPairImpl( currency, CurrencyProvider.getInstance().getCurrencyForCode( "BTC")));
     }
 
     /**
@@ -1063,7 +1046,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 	
 	if( order instanceof WithdrawOrder) {
 
-	    if( order.getCurrencyPair().getCurrency().equals( CurrencyImpl.BTC)) {
+	    if( order.getCurrencyPair().getCurrency().hasCode( "BTC")) {
 		return new Price( "0.01");  // Withdrawal in btc seem to cost always 0.01 btc ?
 	    } else {
 		// System.out.println( "Compute withdaw fees for currencies other than btc");
@@ -1078,22 +1061,22 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	    Currency depositedCurrency = ((DepositOrder)order).getCurrency();
 	    
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
+	    if( depositedCurrency.hasCode( "BTC")) {
 		
 		// BTC deposits are free as far as I know.
-		return new Price( "0.0", CurrencyImpl.BTC);
+		return new Price( "0.0", depositedCurrency);
 	    
 	} else {
 
 		throw new NotYetImplementedException( "Deposit fees are not implemented for trade site " 
 						      + getName() 
 						      + " and currency " 
-						      + depositedCurrency.getName());
+						      + depositedCurrency.getCode());
 	    }
 
-	} else {  // Just the default implementation for the other order forms.
+	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);
+	    return null;  // Should never happen.
 	}
     }
     
@@ -1161,21 +1144,21 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      */
     private short getIdForCurrencies( CurrencyPair currencyPair) {
 
-	if( (CurrencyImpl)currencyPair.getPaymentCurrency() == CurrencyImpl.BTC) {
-	    switch( (CurrencyImpl)currencyPair.getCurrency()) {
-	    case LTC: return 10;
+	if( currencyPair.getPaymentCurrency().hasCode( "BTC")) {
+	    switch( currencyPair.getCurrency().getCode()) {
+	    case "LTC": return 10;
 	    }
-	} else if( (CurrencyImpl)currencyPair.getPaymentCurrency() == CurrencyImpl.USD) {
-	    switch( (CurrencyImpl)currencyPair.getCurrency()){
-	    case BTC: return 1;
-	    case LTC: return 14;
+	} else if( currencyPair.getPaymentCurrency().hasCode( "USD")) {
+	    switch( currencyPair.getCurrency().getCode()){
+	    case "BTC": return 1;
+	    case "LTC": return 14;
 	    }
 	}
 
 	throw new CurrencyNotSupportedException( "Currency pair: " 
-						 + currencyPair.getCurrency().getName() 
+						 + currencyPair.getCurrency().getCode() 
 						 + " with payment currency: " 
-						 + currencyPair.getPaymentCurrency().getName() 
+						 + currencyPair.getPaymentCurrency().getCode() 
 						 + " not supported in BtcEClient.getIdForCurrencies");
 
 	// return -1;
@@ -1188,16 +1171,16 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      */
     private final short getIdForCurrency( Currency currency) {
 
-	switch( (CurrencyImpl)currency) {
-	case BTC: return 1;
-	case LTC: return 8;
-	case RUC: return 9;
-	case NMC: return 10;
-	case NVC: return 13;
+	switch( currency.getCode()) {
+	case "BTC": return 1;
+	case "LTC": return 8;
+	case "RUC": return 9;
+	case "NMC": return 10;
+	case "NVC": return 13;
 	}
 
 	throw new CurrencyNotSupportedException( "Currency: " 
-						 + currency.getName() 
+						 + currency.getCode() 
 						 + " not supported in BtcEClient.getIdForCurrency");
     }
 
@@ -1340,7 +1323,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Btc-E");
@@ -1352,21 +1335,21 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
 	// System.out.println( "Fetching btc-e trades from: " + url);
 
-	CryptoCoinTrade [] tempResult =  getTradesFromURL( url, currencyPair);
+	List<Trade> tempResult =  getTradesFromURL( url, currencyPair);
 
 	if( tempResult != null) {
 	    // Now filter the trades for the timespan.
         long now = System.currentTimeMillis() * 1000L;
         long threshold = now - since_micros;
-	    ArrayList<CryptoCoinTrade> resultBuffer = new ArrayList<CryptoCoinTrade>();
-	    for( int i = 0; i < tempResult.length; ++i) {
-		if( tempResult[i].getTimestamp() > threshold) {
-		    resultBuffer.add( tempResult[i]);
+	    List<Trade> resultBuffer = new ArrayList<Trade>();
+	    for( Trade currentTrade : tempResult) {
+		if( currentTrade.getTimestamp() > threshold) {
+		    resultBuffer.add( currentTrade);
 		}
 	    }
 	
-	    // Now convert the buffer back to an array and return it.
-	    return resultBuffer.toArray( new CryptoCoinTrade[ resultBuffer.size()]);
+	    // Now return the buffer.
+	    return resultBuffer;
 	}
 
 	throw new TradeDataNotAvailableException( "trades request on btc-e failed");
@@ -1380,8 +1363,9 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      *
      * @return A list of trades or null, if an error occurred.
      */
-    private CryptoCoinTrade [] getTradesFromURL( String url, CurrencyPair currencyPair) {
-	ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+    private List<Trade> getTradesFromURL( String url, CurrencyPair currencyPair) {
+
+	List<Trade> trades = new ArrayList<Trade>();
 
         String requestResult = HttpUtils.httpGet( url);
 
@@ -1397,9 +1381,8 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
 		    trades.add( new BtcETradeImpl( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
 		}
 
-		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-		
-		return tradeArray;  // And return the array.
+		// Return the list of trades.
+		return trades;
 
 	    } catch( JSONException je) {
 		System.err.println( "Cannot parse trade object: " + je.toString());

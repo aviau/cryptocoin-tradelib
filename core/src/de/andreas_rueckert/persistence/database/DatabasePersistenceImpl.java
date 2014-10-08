@@ -29,6 +29,7 @@ import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.util.LogUtils;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -154,5 +155,51 @@ public class DatabasePersistenceImpl implements DatabasePersistence {
     public void setDatabasePersistenceManager( DatabasePersistenceManager dbPersistenceManager) {
 
 	_databasePersistenceManager = dbPersistenceManager;
+    }
+
+    /**
+     * Store an assoc array into the database.
+     *
+     * @param tableName The name of the database table.
+     * @param valueMap The key=>value pairs to store in the database.
+     */
+    public void storeMap( String tableName, Map<String, String> valueMap) {
+
+	// Create a buffer for the column names and the values.
+	StringBuffer columnList = new StringBuffer();
+	StringBuffer valueList = new StringBuffer();
+	
+	// Create a list of columns and a list of values from the map.
+	for( Map.Entry<String, String> currentEntry : valueMap.entrySet()) {
+
+	    // If there are entries in the list already, seperate them with a colon.
+	    if( columnList.length() > 0) {
+
+		columnList.append( ",");
+		valueList.append( ",");  // Same for the values, since the 2 lists should have the same length.
+	    }
+
+	    // Now append the actual name and value to the 2 lists.
+	    columnList.append( " " + currentEntry.getKey());
+	    valueList.append( " " + currentEntry.getValue());
+	}
+
+	// Create a SQL insert statement from the data.
+	String insertCommand = "INSERT INTO " 
+	    + tableName
+	    + " ( "
+	    + columnList.toString()
+	    + " ) VALUES ( " 
+	    + valueList.toString()
+	    + ")";
+	
+	System.out.println( "DEBUG: insert statement is: " + insertCommand);
+
+	// Execute the statement via the persistence manager.
+	if( ! DatabasePersistenceManager.getInstance( null).executeStatement( insertCommand)) {
+
+	    // Log the problem.
+	    LogUtils.getInstance().getLogger().error( "Cannot insert map into database.");
+	}
     }
 }

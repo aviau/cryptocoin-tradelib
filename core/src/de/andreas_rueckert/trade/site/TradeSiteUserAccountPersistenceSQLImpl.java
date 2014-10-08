@@ -25,6 +25,7 @@
 
 package de.andreas_rueckert.trade.site;
 
+import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.persistence.database.DatabasePersistenceImpl;
 import de.andreas_rueckert.persistence.database.DatabasePersistenceManager;
 import de.andreas_rueckert.util.LogUtils;
@@ -67,6 +68,8 @@ public class TradeSiteUserAccountPersistenceSQLImpl extends DatabasePersistenceI
      * Private constructor for singleton pattern.
      */
     private TradeSiteUserAccountPersistenceSQLImpl() {
+
+	super();  // Register this object as SQL persistent.
     }
     
 
@@ -110,11 +113,36 @@ public class TradeSiteUserAccountPersistenceSQLImpl extends DatabasePersistenceI
     }
 
     /**
+     * Get all accounts for a given trade site.
+     *
+     * @param tradeSite The trade site, we need accounts for.
+     *
+     * @return A list of accounts for this trade site.
+     */
+    public List<TradeSiteUserAccount> getAccountsForTradeSite( TradeSite tradeSite) {
+
+	// Create a buffer for the result.
+	List<TradeSiteUserAccount> resultBuffer = new ArrayList<TradeSiteUserAccount>();
+
+	// Loop over all the accounts.
+	for( TradeSiteUserAccount currentAccount : getAllAccounts()) {
+
+	    // If this account is for the target site.
+	    if( currentAccount.getTradeSite().equals( tradeSite)) {
+
+		resultBuffer.add( currentAccount);  // Add it to the result.
+	    }
+	}
+
+	return resultBuffer;  // Return the list of accounts.
+    }
+
+    /**
      * Get all accounts, that are currently stored.
      *
      * @return all accounts, that are currently stored.
      */
-    public List<TradeSiteUserAccount> getAllAccounts() {
+    public final List<TradeSiteUserAccount> getAllAccounts() {
 
 	return _accountList;
     }
@@ -150,14 +178,21 @@ public class TradeSiteUserAccountPersistenceSQLImpl extends DatabasePersistenceI
 				     + ", created TIMESTAMP NOT NULL)"
 				     );
 	    // Add indexes to table
-	    addCreateTableStatement( "CREATE UNIQUE INDEX public.name ON public.tradeSiteUserAccounts (name)");
-	    addCreateTableStatement( "CREATE INDEX public.tradeSite ON public.tradeSiteUserAccounts (tradeSite)");
+	    addCreateTableStatement( "CREATE UNIQUE INDEX public.name ON public.tradeSiteUserAccounts ( name)");
+	    addCreateTableStatement( "CREATE INDEX public.tradeSite ON public.tradeSiteUserAccounts ( tradeSite)");
+	    addCreateTableStatement( "CREATE INDEX public.activated ON public.tradeSiteUserAccounts ( activated)");
+	    addCreateTableStatement( "CREATE INDEX public.created ON public.tradeSiteUserAccounts ( created)");
 	}
 
 	// Return the list of statements.
 	return _createTableStatements;
     }
 
+    /**
+     * Get a list of SQL statements to drop the tables for this persistent object.
+     *
+     * @return A list of SQL statements to drop the tables for this persistent object.
+     */
     public List<String> getDropTableStatements() {
 
 	// Check, if the list of drop table statements was already created.
@@ -189,12 +224,22 @@ public class TradeSiteUserAccountPersistenceSQLImpl extends DatabasePersistenceI
     }
 
     /**
+     * Load all the accounts.
+     */
+    public void loadAll() {
+
+	// Read the accounts from the database.
+	_accountList = readAccountsFromDatabase();
+    }
+
+    /**
      * Load all trade site accounts from the SQL database.
      *
      * @return A list with the user accounts.
      */
     private List<TradeSiteUserAccount> readAccountsFromDatabase() {
 
+	// Statement to read all the user accounts from the database.
 	String selectStatement = "SELECT * FROM tradeSiteUserAccounts";
 
 	try {

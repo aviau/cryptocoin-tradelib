@@ -28,11 +28,11 @@ package de.andreas_rueckert.trade.site.lakebtc.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -45,12 +45,14 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -83,8 +85,8 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[2];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.CNY);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "CNY");
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( "BTC", "USD");
     }
 
 
@@ -142,7 +144,7 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 
 	// Create the URL for the request.
 	String url = _url +  "bcorderbook";
-	if( currencyPair.getPaymentCurrency().equals( CurrencyImpl.CNY)) {
+	if( currencyPair.getPaymentCurrency().hasCode( "CNY")) {
 	    url += "_cny";
 	}
 
@@ -184,19 +186,19 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 	    // Get the withdrawn currency.
 	    Currency withdrawnCurrency = order.getCurrencyPair().getCurrency();
 
-	    if( withdrawnCurrency.equals( CurrencyImpl.BTC)) {
+	    if( withdrawnCurrency.hasCode( "BTC")) {
 
 		// I always use the worst-case fee for now.
 		// That's 0.5% + 0.001 btc
 		// @see https://lakebtc.com/s/fees?locale=en
 		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "0.001")), withdrawnCurrency);
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.CNY)) {
+	    } else if( withdrawnCurrency.hasCode( "CNY")) {
 
 		// Use 0.5% + 10 CNY
 		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "10")), withdrawnCurrency);
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.USD)) {
+	    } else if( withdrawnCurrency.hasCode( "USD")) {
 
 		// Use 0.5% + 5 USD. Bank fees might be added, but are not known to the lib.
 		return new Price( order.getAmount().multiply( new BigDecimal( "0.005")).add( new BigDecimal( "10")), withdrawnCurrency);
@@ -214,9 +216,7 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 
 	    // These currencies are currently mentioned with a 0% fee at the fee page, so I check
 	    // for them in case a new currency is added. Better throw an exception then.
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)
-		|| depositedCurrency.equals( CurrencyImpl.USD)
-		|| depositedCurrency.equals( CurrencyImpl.CNY)) {
+	    if( depositedCurrency.hasCode( new String [] { "BTC", "USD", "CNY" })) {
 
 		// Depositing cryptocoins is free.
 		return new Price( "0", depositedCurrency);
@@ -242,7 +242,7 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 	    
 	} else {  // This is an unknown order type?
 
-	    return super.getFeeForOrder( order);  // Should never happen...
+	    return null;  // Should never happen...
 	}
     }
 
@@ -293,7 +293,7 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the trades are not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not implemented for " + this._name);
     }

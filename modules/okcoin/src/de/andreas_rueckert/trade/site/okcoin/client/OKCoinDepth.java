@@ -25,7 +25,7 @@
 
 package de.andreas_rueckert.trade.site.okcoin.client;
 
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.DepthImpl;
 import de.andreas_rueckert.trade.site.TradeSite;
 import net.sf.json.JSONObject;

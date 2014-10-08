@@ -28,10 +28,12 @@ package de.andreas_rueckert.trade.site.mintpal.client;
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.DepositOrder;
 import de.andreas_rueckert.trade.order.OrderStatus;
@@ -44,6 +46,7 @@ import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
@@ -157,9 +160,9 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	JSONObject buyJSON = null,  sellJSON = null;
 
 	// Create the base URL for the requests (buy and sell have to be requested separately).
-	String url = _url + "market/orders/" + currencyPair.getCurrency().toString() 
+	String url = _url + "market/orders/" + currencyPair.getCurrency().getCode() 
 	    + "/" 
-	    + currencyPair.getPaymentCurrency().toString() + "/";
+	    + currencyPair.getPaymentCurrency().getCode() + "/";
 
 	// Do the first request.
 	String requestResult = HttpUtils.httpGet( url + "BUY");
@@ -292,9 +295,9 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	    // The fee is in percent so divide by 100.
 	    return new Price( order.getAmount().multiply( fee).multiply( new BigDecimal( "0.01")), order.getCurrencyPair().getCurrency());
 
-	} else {  // Unknown order type? Just use the default implementation for it.
+	} else {  // Unknown order type? 
 
-	    return super.getFeeForOrder( order);
+	    return null;  // Should never happen.
 	}
     }
 
@@ -350,7 +353,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	}
 
 	// Create the URL to fetch stats on the given market (there is no real ticker request).
-	String url = _url +"market/stats/" + currencyPair.getCurrency().getName() + "/" + currencyPair.getPaymentCurrency().getName();
+	String url = _url +"market/stats/" + currencyPair.getCurrency().getCode() + "/" + currencyPair.getPaymentCurrency().getCode();
 
 	// Do the actual request.
 	String requestResult = HttpUtils.httpGet( url);
@@ -402,7 +405,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
 	throw new NotYetImplementedException( "Getting the trades is not yet implemented for " + _name);
     }
@@ -432,70 +435,70 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 	    _withdrawFees = new HashMap< Currency, BigDecimal>();
 
 	    // Add the known currencies to the map.
-	    _withdrawFees.put( CurrencyImpl.n365, new BigDecimal( "0.000002"));
-	    _withdrawFees.put( CurrencyImpl.AC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.AUR, new BigDecimal( "0.002000"));
-	    _withdrawFees.put( CurrencyImpl.BC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.BTC, new BigDecimal( "0.000200"));
-	    _withdrawFees.put( CurrencyImpl.BTCS, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.CAIX, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.CINNI, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.COMM, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.CTM, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.DGB, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.DOGE, new BigDecimal( "1.000000"));
-	    _withdrawFees.put( CurrencyImpl.DOPE, new BigDecimal( "2.000000"));
-	    _withdrawFees.put( CurrencyImpl.DRK, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.ECC, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.EMC2, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.EMO, new BigDecimal( "2.000000"));
-	    _withdrawFees.put( CurrencyImpl.FAC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.FLT, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.GRS, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.GRUMP, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.HIRO, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.HVC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.IVC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.KARM, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.KDC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.LTC, new BigDecimal( "0.002000"));
-	    _withdrawFees.put( CurrencyImpl.METH, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.MINT, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.MRC, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.MRS, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.MYR, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.MZC, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.NAUT, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.NC2, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.NOBL, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.OLY, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.PANDA, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.PENG, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.PLC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.PND, new BigDecimal( "2.000000"));
-	    _withdrawFees.put( CurrencyImpl.POT, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.Q2C, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.RBBT, new BigDecimal( "2.000000"));
-	    _withdrawFees.put( CurrencyImpl.RIC, new BigDecimal( "0.002000"));
-	    _withdrawFees.put( CurrencyImpl.SAT, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.SPA, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.SUN, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.SYNC, new BigDecimal( "0.000002"));
-	    _withdrawFees.put( CurrencyImpl.TAK, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.TES, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.TOP, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.UNO, new BigDecimal( "0.001000"));
-	    _withdrawFees.put( CurrencyImpl.USDE, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.UTC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.VTC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.WC, new BigDecimal( "1.000000"));
-	    _withdrawFees.put( CurrencyImpl.XC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.XLB, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.XXL, new BigDecimal( "2.000000"));
-	    _withdrawFees.put( CurrencyImpl.YC, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.ZED, new BigDecimal( "0.020000"));
-	    _withdrawFees.put( CurrencyImpl.ZEIT, new BigDecimal( "0.200000"));
-	    _withdrawFees.put( CurrencyImpl.ZET, new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "365"), new BigDecimal( "0.000002"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "AC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "AUR"), new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "BC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "BTC"), new BigDecimal( "0.000200"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "BTCS"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CAIX"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CINNI"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "COMM"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "CTM"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DGB"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DOGE"), new BigDecimal( "1.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DOPE"), new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "DRK"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "ECC"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "EMC2"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "EMO"), new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "FAC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "FLT"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "GRS"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "GRUMP"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "HIRO"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "HVC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "IVC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "KARM"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "KDC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "LTC"), new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "METH"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "MINT"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "MRC"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "MRS"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "MYR"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "MZC"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "NAUT"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "NC2"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "NOBL"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "OLY"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "PANDA"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "PENG"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "PLC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "PND"), new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "POT"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "Q2C"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "RBBT"), new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "RIC"), new BigDecimal( "0.002000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "SAT"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "SPA"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "SUN"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "SYNC"), new BigDecimal( "0.000002"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "TAK"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "TES"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "TOP"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "UNO"), new BigDecimal( "0.001000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "USDE"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "UTC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "VTC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "WC"), new BigDecimal( "1.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XLB"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "XXL"), new BigDecimal( "2.000000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "YC"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "ZED"), new BigDecimal( "0.020000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "ZEIT"), new BigDecimal( "0.200000"));
+	    _withdrawFees.put( CurrencyProvider.getInstance().getCurrencyForCode( "ZET"), new BigDecimal( "0.020000"));
 	}
 
 	// Now try to fetch the fee from the map.
@@ -546,13 +549,13 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
 		    
 		    // Get the traded currency from the JSON object.
 		    // MintPal added CAIX to their coins, but uses CAIx as the spelling. Therefore the upper case.
-		    de.andreas_rueckert.trade.Currency currency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "code").toUpperCase());
+		    Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currentPairJSON.getString( "code").toUpperCase());
 		    
 		    // Get the payment currency from the JSON object.
-		    de.andreas_rueckert.trade.Currency paymentCurrency = de.andreas_rueckert.trade.CurrencyImpl.findByString( currentPairJSON.getString( "exchange").toUpperCase());
+		    Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currentPairJSON.getString( "exchange").toUpperCase());
 
 		    // Create a pair from the currencies.
-		    de.andreas_rueckert.trade.CurrencyPair currentPair = new de.andreas_rueckert.trade.CurrencyPairImpl( currency, paymentCurrency);
+		    CurrencyPair currentPair = new CurrencyPairImpl( currency, paymentCurrency);
 		
 		    // Add the current pair to the result buffer.
 		    resultBuffer.add( currentPair);

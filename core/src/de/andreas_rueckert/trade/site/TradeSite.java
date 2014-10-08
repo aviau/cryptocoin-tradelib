@@ -28,17 +28,19 @@ package de.andreas_rueckert.trade.site;
 import de.andreas_rueckert.persistence.PersistentProperties;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyPair;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
 import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.request.TradeSiteProxyInfo;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 
@@ -94,7 +96,7 @@ public interface TradeSite extends PersistentProperties {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public Depth [] getDepths() throws TradeDataNotAvailableException;
+    public List<Depth> getDepths() throws TradeDataNotAvailableException;
 
     /**
      * Get the current market depths (minimal data of the orders) for a given list of currency pairs.
@@ -105,14 +107,7 @@ public interface TradeSite extends PersistentProperties {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public Depth [] getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException;
-
-    /**
-     * Get the fee for deposits as percent.
-     *
-     * @return The fee for deposits in percent.
-     */
-    public BigDecimal getFeeForDeposit();
+    public List<Depth> getDepths( CurrencyPair [] currencyPairs) throws TradeDataNotAvailableException;
 
     /**
      * Get the fee for an order in the resulting currency.
@@ -123,20 +118,6 @@ public interface TradeSite extends PersistentProperties {
      */
     public Price getFeeForOrder( SiteOrder order);
 
-    /**
-     * Get the fee for trades in percent.
-     *
-     * @return The fee for trades in percent.
-     */
-    public BigDecimal getFeeForTrade();
-
-    /**
-     * Get the fee for a withdrawal in percent.
-     *
-     * @return The fee for a withdrawal in percent.
-     */
-    public BigDecimal getFeeForWithdrawal();
-    
     /**
      * Get the shortest allowed requet interval in microseconds.
      *
@@ -195,7 +176,7 @@ public interface TradeSite extends PersistentProperties {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException;
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) throws TradeDataNotAvailableException;
 
     /**
      * Get the interval, in which the trade site updates it's depth, ticker etc. 
@@ -237,27 +218,6 @@ public interface TradeSite extends PersistentProperties {
      * @return true, if the currency pair is supported. False otherwise.
      */
     public boolean isSupportedCurrencyPair( CurrencyPair currencyPair);
-
-    /**
-     * Get the fee for deposits as percent.
-     *
-     * @param fee The fee for deposits in percent.
-     */
-    public void setFeeForDeposit( BigDecimal fee);
-
-    /**
-     * Get the fee for trades in percent.
-     *
-     * @param fee The fee for trades in percent.
-     */
-    public void setFeeForTrade( BigDecimal fee);
-
-    /**
-     * Get the fee for a withdrawal in percent.
-     *
-     * @param fee The fee for a withdrawal in percent.
-     */
-    public void setFeeForWithdrawal( BigDecimal fee);
 
     /**
      * Get a string for the trading site. This is just used to display

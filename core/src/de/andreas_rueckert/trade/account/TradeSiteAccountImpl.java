@@ -25,7 +25,7 @@
 
 package de.andreas_rueckert.trade.account;
 
-import de.andreas_rueckert.trade.Currency;
+import de.andreas_rueckert.trade.currency.Currency;
 import de.andreas_rueckert.trade.site.TradeSite;
 import java.math.BigDecimal;
 

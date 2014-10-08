@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -26,8 +26,8 @@
 package de.andreas_rueckert.trade.ui;
 
 import de.andreas_rueckert.trade.Amount;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
 import de.andreas_rueckert.trade.order.OrderFactory;
 import de.andreas_rueckert.trade.order.OrderType;
 import de.andreas_rueckert.trade.order.SiteOrder;
@@ -225,7 +225,7 @@ public class OrderDialog extends JDialog implements ActionListener {
 	// Get the selected currency pair.
 	// As long as the unmodified toString() representation of the currency pairs is used, we should
 	// not need a map to find the correspondig currency pair.
-	CurrencyPair currencyPair = CurrencyPairImpl.findByString( (String)_currencyPairList.getSelectedItem());
+	CurrencyPair currencyPair = CurrencyPairImpl.getCurrencyPairForCode( (String)_currencyPairList.getSelectedItem());
 
 	// Get the price from the text field.
 	// Maybe the buttons should be greyed out, until a reasonable price is entered?

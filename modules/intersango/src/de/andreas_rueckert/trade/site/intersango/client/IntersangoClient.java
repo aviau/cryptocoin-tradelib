@@ -30,20 +30,23 @@ import de.andreas_rueckert.persistence.PersistentProperty;
 import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.OrderStatus;
 import de.andreas_rueckert.trade.order.SiteOrder;
+import de.andreas_rueckert.trade.Price;
 import de.andreas_rueckert.trade.site.TradeDataRequestNotAllowedException;
 import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
 import de.andreas_rueckert.trade.Ticker;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.text.ParseException;
@@ -84,7 +87,7 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
     /**
      * The current default currency.
      */
-    private Currency _currentCurrency = CurrencyImpl.USD;
+    private Currency _currentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( "USD");
 
     /**
      * The timestamp of the last request to the trade site.
@@ -106,10 +109,10 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
 
 	// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[4];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.GBP);
-	_supportedCurrencyPairs[1] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.EUR);
-	_supportedCurrencyPairs[2] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
-	_supportedCurrencyPairs[3] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.PLN);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "GBP");
+	_supportedCurrencyPairs[1] = new CurrencyPairImpl( "BTC", "EUR");
+	_supportedCurrencyPairs[2] = new CurrencyPairImpl( "BTC", "USD");
+	_supportedCurrencyPairs[3] = new CurrencyPairImpl( "BTC", "PLN");
     }
 
 
@@ -166,19 +169,19 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
      */
     private int getCurrencyPairId( CurrencyPair currencyPair) {
 	
-	if( currencyPair.getCurrency() == CurrencyImpl.BTC) {
-	    if( currencyPair.getPaymentCurrency() == CurrencyImpl.GBP) { return 1;
-	    } else if( currencyPair.getPaymentCurrency() ==  CurrencyImpl.EUR) { return 2;
-	    } else if( currencyPair.getPaymentCurrency() ==  CurrencyImpl.USD) { return 3;
-	    } else if( currencyPair.getPaymentCurrency() ==  CurrencyImpl.PLN) { return 4;
+	if( currencyPair.getCurrency().hasCode( "BTC")) {
+	    if( currencyPair.getPaymentCurrency().hasCode( "GBP")) { return 1;
+	    } else if( currencyPair.getPaymentCurrency().hasCode( "EUR")) { return 2;
+	    } else if( currencyPair.getPaymentCurrency().hasCode( "USD")) { return 3;
+	    } else if( currencyPair.getPaymentCurrency().hasCode( "PLN")) { return 4;
 	    }
 	}
 
 	// If this is a unknown currency pair, throw an exception.
 	throw new CurrencyNotSupportedException( "The currency pair: " 
-						 + currencyPair.getCurrency().getName() 
+						 + currencyPair.getCurrency().getCode() 
 						 + " with payment currency: " 
-						 + currencyPair.getPaymentCurrency().getName() 
+						 + currencyPair.getPaymentCurrency().getCode() 
 						 + " is not supported on Intersango");
     }
 
@@ -224,6 +227,20 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
 
 	// The request is not allowed at the moment, so throw an exception.
 	throw new TradeDataRequestNotAllowedException( "Request for depth not allowed at the moment at Intersango site");	
+    }
+ 
+    /**
+     * Get the fee for an order in the resulting currency.
+     * Synchronize this method, since several users might use this method with different
+     * accounts and therefore different fees via a single API implementation instance.
+     *
+     * @param order The order to use for the fee computation.
+     *
+     * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
+     */
+    public synchronized Price getFeeForOrder( SiteOrder order) {
+
+	throw new NotYetImplementedException( "Getting the fees is not yet implemented for " + _name);
     }
 
     /**
@@ -284,7 +301,7 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
 	    int currency_pair_id;  // To select the 2 currencies at Intersango.
 	    
 	    // Determine the id of the currency pair.
-	    if( currencyPair.getPaymentCurrency() != CurrencyImpl.USD) {
+	    if( ! currencyPair.getPaymentCurrency().hasCode( "USD")) {
 		throw new CurrencyNotSupportedException( "We can query the bitcoin rate from Intersango only in USD at the moment");
 	    } else {
 		currency_pair_id = 3;
@@ -325,7 +342,7 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
      *
      * @return  The trades as an array of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros,  CurrencyPair currencyPair) {
+    public List<Trade> getTrades( long since_micros,  CurrencyPair currencyPair) {
 
 	int currency_pair_id;  // To select the 2 currencies at Intersango.
 
@@ -351,12 +368,12 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The trades as an array of Trade objects.
      */
-    private CryptoCoinTrade [] getTradesFromURL( String url, CurrencyPair currencyPair) {
+    private List<Trade> getTradesFromURL( String url, CurrencyPair currencyPair) {
 
 	// If a request for trades is allowed
 	if( isRequestAllowed( TradeSiteRequestType.Trades)) {
 
-	    ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+	    List<Trade> trades = new ArrayList<Trade>();
 	    
 	    String requestResult = HttpUtils.httpGet( url);
 
@@ -372,11 +389,9 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
 			trades.add( new IntersangoTradeImpl( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
 		    }
 
-		    CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-
 		    updateLastRequest();  // Update the timestamp of the last request.
 
-		    return tradeArray;  // And return the array.
+		    return trades;  // And return the list.
 
 		} catch( JSONException je) {
 		    System.err.println( "Cannot convert HTTP response to JSON array: " + je.toString());

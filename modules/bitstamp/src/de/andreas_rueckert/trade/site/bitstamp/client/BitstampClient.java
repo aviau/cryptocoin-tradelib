@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -32,11 +32,12 @@ import de.andreas_rueckert.persistence.PersistentPropertyList;
 import de.andreas_rueckert.trade.account.TradeSiteAccount;
 import de.andreas_rueckert.trade.account.TradeSiteAccountImpl;
 import de.andreas_rueckert.trade.CryptoCoinTrade;
-import de.andreas_rueckert.trade.Currency;
-import de.andreas_rueckert.trade.CurrencyImpl;
-import de.andreas_rueckert.trade.CurrencyNotSupportedException;
-import de.andreas_rueckert.trade.CurrencyPair;
-import de.andreas_rueckert.trade.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.Currency;
+import de.andreas_rueckert.trade.currency.CurrencyImpl;
+import de.andreas_rueckert.trade.currency.CurrencyNotSupportedException;
+import de.andreas_rueckert.trade.currency.CurrencyPair;
+import de.andreas_rueckert.trade.currency.CurrencyPairImpl;
+import de.andreas_rueckert.trade.currency.CurrencyProvider;
 import de.andreas_rueckert.trade.Depth;
 import de.andreas_rueckert.trade.order.CryptoCoinOrderBook;
 import de.andreas_rueckert.trade.order.DepositOrder;
@@ -50,15 +51,18 @@ import de.andreas_rueckert.trade.site.TradeSite;
 import de.andreas_rueckert.trade.site.TradeSiteImpl;
 import de.andreas_rueckert.trade.site.TradeSiteRequestType;
 import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.Trade;
 import de.andreas_rueckert.trade.TradeDataNotAvailableException;
 import de.andreas_rueckert.util.HttpUtils;
 import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.TimeUtils;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONException;
@@ -198,7 +202,7 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
 		// Define the supported currency pairs for this trading site.
 	_supportedCurrencyPairs = new CurrencyPair[1];
-	_supportedCurrencyPairs[0] = new CurrencyPairImpl( CurrencyImpl.BTC, CurrencyImpl.USD);
+	_supportedCurrencyPairs[0] = new CurrencyPairImpl( "BTC", "USD");
     }
     
 
@@ -383,7 +387,7 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 		BigDecimal currentBalance = new BigDecimal( jsonResponse.getString( fetchedCurrencies[ currentCurrencyIndex] + "_available"));
 
 		// Create a new account object and add it to the list of returned accounts.
-		result.add( new TradeSiteAccountImpl( currentBalance, CurrencyImpl.findByString( fetchedCurrencies[ currentCurrencyIndex].toUpperCase()), this));
+		result.add( new TradeSiteAccountImpl( currentBalance, CurrencyProvider.getInstance().getCurrencyForCode( fetchedCurrencies[ currentCurrencyIndex].toUpperCase()), this));
 	    }
 
 	    // Get balance also returns the current fee for the user, so update it, too...
@@ -451,19 +455,19 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
 	    // Although usd is withdrawn (and converted to euros), 
 	    // the fee is in euro...
-	    if( withdrawnCurrency.equals( CurrencyImpl.USD)) {
+	    if( withdrawnCurrency.hasCode( "USD")) {
 
-		return new Price( "0.90", CurrencyImpl.EUR);  // Fee is 90 eurocent at the moment.
+		return new Price( "0.90", CurrencyProvider.getInstance().getCurrencyForCode( "EUR"));  // Fee is 90 eurocent at the moment.
 
-	    } else if( withdrawnCurrency.equals( CurrencyImpl.BTC)) {
+	    } else if( withdrawnCurrency.hasCode( "BTC")) {
 
-		return new Price( "0.0", CurrencyImpl.BTC);  // BTC withdrawals seem to be free?
+		return new Price( "0.0", withdrawnCurrency);  // BTC withdrawals seem to be free?
 
 	    } else {
 
 		// AFAIK, Bitstamp currently supports only USD and BTC withdrawals...
 		throw new CurrencyNotSupportedException( "Withdrawing " 
-							 + withdrawnCurrency.getName() 
+							 + withdrawnCurrency.getCode() 
 							 + " is currently not supported in this implementation");
 	    }
 		
@@ -471,22 +475,33 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
 	    Currency depositedCurrency = ((DepositOrder)order).getCurrency();
 
-	    if( depositedCurrency.equals( CurrencyImpl.BTC)) {
+	    if( depositedCurrency.hasCode( "BTC")) {
 
 		// BTC deposits are free as far as I know.
-		return new Price( "0.0", CurrencyImpl.BTC);
+		return new Price( "0.0", depositedCurrency);
 
 	    } else {
 
 		throw new NotYetImplementedException( "Deposit fees are not implemented for trade site " 
 						      + getName() 
 						      + " and currency " 
-						      + depositedCurrency.getName());
+						      + depositedCurrency.getCode());
 	    }
 
 	} else {  // This is a regular trade.
 
-	    return super.getFeeForOrder( order);
+	    // Trade is more complicated, since the currency changes in a sell.
+
+	    if( order.getOrderType() == OrderType.BUY) {  // If this is a buy order
+		
+		return new Price( order.getAmount().multiply( getFeeForTrade( order.getTradeSiteUserAccount())).divide( new BigDecimal( "100"), MathContext.DECIMAL128)
+				  , order.getCurrencyPair().getCurrency());
+
+	    } else {  // this is a sell order, so the currency changes!
+
+		return new Price( order.getAmount().multiply( order.getPrice()).multiply( getFeeForTrade( order.getTradeSiteUserAccount())).divide( new BigDecimal( "100"), MathContext.DECIMAL128)
+				  , order.getCurrencyPair().getPaymentCurrency());
+	    }
 	}
     }
 
@@ -656,7 +671,7 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The trades as a list of Trade objects.
      */
-    public CryptoCoinTrade [] getTrades( long since_micros, CurrencyPair currencyPair) {
+    public List<Trade> getTrades( long since_micros, CurrencyPair currencyPair) {
 
 	if( ! isSupportedCurrencyPair( currencyPair)) {
 	    throw new CurrencyNotSupportedException( "Currency pair: " + currencyPair.toString() + " is currently not supported on Bitstamp");
@@ -667,20 +682,22 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
 	// System.out.println( "Fetching Bitstamp trades from: " + url);
 
-	CryptoCoinTrade [] tempResult =  getTradesFromURL( url, currencyPair);
+	List<Trade> tempResult =  getTradesFromURL( url, currencyPair);
 
 	if( tempResult != null) {
 
 	    // Now filter the trades for the timespan.
-	    ArrayList<CryptoCoinTrade> resultBuffer = new ArrayList<CryptoCoinTrade>();
-	    for( int i = 0; i < tempResult.length; ++i) {
-		if( tempResult[i].getTimestamp() > since_micros) {
-		    resultBuffer.add( tempResult[i]);
+	    List<Trade> resultBuffer = new ArrayList<Trade>();
+
+	    for( Trade currentTrade : tempResult) {
+
+		if( currentTrade.getTimestamp() > since_micros) {
+		    resultBuffer.add( currentTrade);
 		}
 	    }
 	
-	    // Now convert the buffer back to an array and return it.
-	    return resultBuffer.toArray( new CryptoCoinTrade[ resultBuffer.size()]);
+	    // Now return the buffer.
+	    return resultBuffer;
 	}
 
 	throw new TradeDataNotAvailableException( "trades request on btc-e failed");
@@ -694,8 +711,9 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      *
      * @return A list of trades or null, if an error occurred.
      */
-    private CryptoCoinTrade [] getTradesFromURL( String url, CurrencyPair currencyPair) {
-	ArrayList<CryptoCoinTrade> trades = new ArrayList<CryptoCoinTrade>();
+    private List<Trade> getTradesFromURL( String url, CurrencyPair currencyPair) {
+
+	List<Trade> trades = new ArrayList<Trade>();
 
         String requestResult = HttpUtils.httpGet( url);
 
@@ -711,9 +729,7 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
 		    trades.add( new BitstampTradeImpl( tradeObject, this, currencyPair));  // Add the new Trade object to the list.
 		}
 
-		CryptoCoinTrade [] tradeArray = trades.toArray( new CryptoCoinTrade[ trades.size()]);  // Convert the list to an array.
-		
-		return tradeArray;  // And return the array.
+		return trades;  // And return the list.
 
 	    } catch( JSONException je) {
 		System.err.println( "Cannot parse trade object: " + je.toString());

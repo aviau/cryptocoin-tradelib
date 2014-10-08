@@ -1,7 +1,7 @@
 /**
  * Java implementation for cryptocoin trading.
  *
- * Copyright (c) 2013 the authors:
+ * Copyright (c) 2014 the authors:
  * 
  * @author Andreas Rueckert <mail@andreas-rueckert.de>
  *
@@ -23,7 +23,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.andreas_rueckert.trade;
+package de.andreas_rueckert.trade.currency;
 
 
 /**
@@ -32,6 +32,11 @@ package de.andreas_rueckert.trade;
 public class CurrencyPairImpl implements CurrencyPair {
 
     // Static variables
+
+    /**
+     * The delimiter for currencies in the pair.
+     */
+    private static String PAIR_DELIMITER = "<=>";
 
 
     // Instance variables
@@ -60,7 +65,18 @@ public class CurrencyPairImpl implements CurrencyPair {
 	_paymentCurrency = paymentCurrency;
     }
 
+    /**
+     * Create a new currency pair object from 2 currency codes. This is just a convenience method.
+     *
+     * @param currencyCode The queried currency.
+     * @param paymentCurrencyCode The currency to be used for the payments.
+     */
+    public CurrencyPairImpl( String currencyCode, String paymentCurrencyCode) {
+	_currency = CurrencyProvider.getInstance().getCurrencyForCode( currencyCode);
+	_paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( paymentCurrencyCode);;
+    }
     
+
     // Methods
 
     /**
@@ -77,9 +93,9 @@ public class CurrencyPairImpl implements CurrencyPair {
 	}
  
 	if( getPaymentCurrency().equals( pair.getPaymentCurrency())) {
-            return getCurrency().getName().compareTo( pair.getCurrency().getName());
+            return getCurrency().getCode().compareTo( pair.getCurrency().getCode());
 	} else {
-	    return getPaymentCurrency().getName().compareTo( pair.getPaymentCurrency().getName());
+	    return getPaymentCurrency().getCode().compareTo( pair.getPaymentCurrency().getCode());
 	}
     }
 
@@ -92,8 +108,31 @@ public class CurrencyPairImpl implements CurrencyPair {
      */
     public final boolean equals( CurrencyPair currencyPair) {
 
-	return getCurrency().equals( currencyPair.getCurrency())
-	    && getPaymentCurrency().equals( currencyPair.getPaymentCurrency());
+	/* System.out.println( "CurrencyPairImpl.equals: " + getCode() + " to " + currencyPair.getCode());
+
+	if( getCurrency().getCode().equals( currencyPair.getCurrency().getCode())) {
+
+	    System.out.println(  getCurrency().getCode() + " equals " + currencyPair.getCurrency().getCode());
+
+	} else {
+
+	    System.out.println(  getCurrency().getCode() + " does not equal " + currencyPair.getCurrency().getCode());
+
+	}
+
+	if( getPaymentCurrency().getCode().equals( currencyPair.getPaymentCurrency().getCode())) {
+
+	    System.out.println(  getPaymentCurrency().getCode() + " equals " + currencyPair.getPaymentCurrency().getCode());
+
+	} else {
+
+	    System.out.println(  getPaymentCurrency().getCode() + " does not equal " + currencyPair.getPaymentCurrency().getCode());
+
+	}
+	System.out.flush(); */
+
+	return getCurrency().getCode().equals( currencyPair.getCurrency().getCode())
+	    && getPaymentCurrency().getCode().equals( currencyPair.getPaymentCurrency().getCode());
     }
 
     /**
@@ -117,17 +156,17 @@ public class CurrencyPairImpl implements CurrencyPair {
      *
      * @return A CurrencyPairImpl or null, if no matching currency pair was found.
      */
-    public static CurrencyPairImpl findByString( String currencyPairString) {
+    public static CurrencyPairImpl getCurrencyPairForCode( String currencyPairString) {
 
-	String [] currencies = currencyPairString.split( "<=>");
+	String [] currencies = currencyPairString.split( PAIR_DELIMITER);
 	
 	if( currencies.length != 2) {
 	    throw new CurrencyNotSupportedException( "Cannot split " + currencyPairString + " into a currency pair");
 	}
 
 	// Convert the 2 string into Currency objects.
-	Currency currency = CurrencyImpl.findByString( currencies[ 0]);
-	Currency paymentCurrency = CurrencyImpl.findByString( currencies[ 1]);
+	Currency currency = CurrencyProvider.getInstance().getCurrencyForCode( currencies[ 0]);
+	Currency paymentCurrency = CurrencyProvider.getInstance().getCurrencyForCode( currencies[ 1]);
 
 	// Create a new currency pair and return it.
 	return new CurrencyPairImpl( currency, paymentCurrency);
@@ -143,12 +182,23 @@ public class CurrencyPairImpl implements CurrencyPair {
     }
 
     /**
+     * Get the code of this currency pair.
+     *
+     * @return The code of this currency pair.
+     */
+    public String getCode() {
+	return toString();
+    }
+
+    /**
      * Get the name of this currency pair.
      *
      * @return The name of this currency pair.
      */
     public String getName() {
-	return toString();
+
+	// Use the names of the 2 currencies.
+	return getCurrency().getName() + PAIR_DELIMITER + getPaymentCurrency().getName();
     }
 
     /**
@@ -172,11 +222,22 @@ public class CurrencyPairImpl implements CurrencyPair {
     }
 
     /**
+      * Invert this pair (make the currency the payment currency and vice versa).
+      *
+      * @return The inverted currency pair.
+      */
+    public CurrencyPair invert() {
+
+	// Just create a new pair with the currencies switched.
+	return new CurrencyPairImpl( getPaymentCurrency(), getCurrency());
+    }
+
+    /**
      * Convert this currency pair to a string.
      *
      * @return This currency pair as a string.
      */
     public final String toString() {
-	return getCurrency().getName() + "<=>" + getPaymentCurrency().getName();
+	return getCurrency().getCode() + PAIR_DELIMITER + getPaymentCurrency().getCode();
     }
 }

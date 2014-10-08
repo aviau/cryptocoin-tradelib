@@ -25,6 +25,8 @@
 
 package de.andreas_rueckert.trade.currency;
 
+import java.util.Date;
+
 
 /**
  * Currency implementation.
@@ -37,11 +39,22 @@ public class CurrencyImpl implements Currency {
     // Instance variables
 
     /**
+     * Flag to indicate, if this currency is currently activated. A trading could(!) honor this
+     * flag and stop trading this currency.
+     */
+    private boolean _activated = true;
+
+    /**
      * The ISO 4217 code of this currency.
      * It seems, some exchanges use different capitalizations of the same code for their site.
      * Maybe add a map of codes, so the code for tradesite x could be requested? ( getCode( TradeSite tradeSite); ) ...
      */
     private String _code = null;
+
+    /**
+     * The time, when this currency was created.
+     */
+    private Date _created;
 
     /**
      * A description for this currency.
@@ -70,7 +83,10 @@ public class CurrencyImpl implements Currency {
 
 	// Convert the code to uppercase, just in case 2 exchanges use different
 	// capitalization.
-	_code = code. toUpperCase();
+	_code = code.toUpperCase().trim();
+
+	// Set the created date to now as the default.
+	_created = new Date();
     }
 
     /**
@@ -119,6 +135,22 @@ public class CurrencyImpl implements Currency {
     // Methods
 
     /**
+     * Check, if 2 currencies are the same.
+     *
+     * @param currency The second currency to check for equality.
+     *
+     * @return true, if the 2 currencies are equal. False otherwise.
+     */
+    public final boolean equals( Currency currency) {
+
+	//System.out.println( "CurrencyImpl.equals: " + getCode() + " to " + currency.getCode());
+	//System.out.flush();
+
+	return getCode().equals( currency.getCode());
+    }
+
+
+    /**
      * Get the ISO 4217 currency code (or similar for some newer cryptocurrencies)
      * for the currency.
      *
@@ -127,6 +159,16 @@ public class CurrencyImpl implements Currency {
     public String getCode() {
 
 	return _code;
+    }
+
+    /**
+     * Get the date, when this currency was created.
+     *
+     * @return The date, when this currency was created.
+     */
+    public Date getCreated() {
+
+	return _created;
     }
 
     /**
@@ -150,7 +192,7 @@ public class CurrencyImpl implements Currency {
      */
     public String getName() {
 
-	return _name;
+	return ( _name == null ? "<no name for " + getCode()+ ">": _name);
     }
 
     /**
@@ -163,6 +205,49 @@ public class CurrencyImpl implements Currency {
 	return _currencyType;
     }
 
+    /**
+     * Check, if this currency has a given currency code.
+     *
+     * @param currencyCode The currency code to check for.
+     *
+     * @return true, if the code of this currency equals the given code.
+     */
+    public boolean hasCode( String currencyCode) {
+
+	return currencyCode.equals( getCode());
+    }
+
+    /**
+     * Check, if this currency has one of the given currency codes.
+     *
+     * @param currencyCodes The currency codes to check for as an array.
+     *
+     * @return true, if the code of this currency equals pne of the given codes.
+     */
+    public boolean hasCode( String [] currencyCodes) {
+
+	// Loop over the given code and check them one by one.
+	for( String currentCode : currencyCodes) {
+
+	    if( hasCode( currentCode)) {  // If the current code matches,
+
+		return true;              // return true;
+	    }
+	}
+
+	return false;  // None of the codes matched.
+    }
+
+    /**
+     * Check if this currency is currently activated.
+     *
+     * @return true, if this currency is currently activated. False otherwise.
+     */
+    public boolean isActivated() {
+
+	return _activated;
+    }
+    
     /**
      * Check, if this currency is a crypto currency.
      *
@@ -182,4 +267,56 @@ public class CurrencyImpl implements Currency {
 
 	return ( getCurrencyType() == CurrencyType.FIAT);
     }
+
+    /**
+     * Set the activated flag of this currency.
+     *
+     * @param activated The new activated flag of this currency.
+     */
+    public void setActivated( boolean activated) {
+
+	_activated = activated;
+    }
+
+    /**
+     * Set a new date, when this currency was created.
+     *
+     * @param created The new date, when this currency was created.
+     */
+    public void setCreated( Date created) {
+
+	_created = created;
+    }
+
+    /**
+     * Set a new type for this currency.
+     *
+     * @param currencyType The new type to set for this currency.
+     */
+    public void setCurrencyType( CurrencyType currencyType) {
+
+	_currencyType = currencyType;
+    }
+
+    /**
+     * Set a new description for this currency.
+     *
+     * @param description The new description of this currency.
+     */
+    public void setDescription( String description) {
+
+	_description = description;
+    }
+
+    /**
+     * Set a new name for this currency.
+     *
+     * @param name The new name of this currency.
+     */
+    public void setName( String name) {
+
+	_name = name;
+    }
+
+
 }
