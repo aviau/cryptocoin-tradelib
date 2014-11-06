@@ -55,12 +55,14 @@ import net.sf.json.JSONException;
 
 /**
  * Implementation of the bitparking API.
- * @see: https://ltcexchange.bitparking.com/api
+ *
+ * @see <a href="https://ltcexchange.bitparking.com/api">Bitparking API implementation.
  *
  * Edit: the bitparking exchange seems to close now, but maybe this code
  * helps to implement other exchange APIs, so it's included in the sources
- * for now.
- * @see: https://bitcointalk.org/index.php?topic=106356.0
+ * for now.</a>
+ *
+ * @see <a href="https://bitcointalk.org/index.php?topic=106356.0">Bitparking</a>
  */
 public class BitparkingClient extends TradeSiteImpl implements TradeSite {
 
@@ -139,7 +141,6 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
      * Get the market depth as a Depth object.
      *
      * @param currencyPair The queried currency pair.
-     * @param paymentCurrency The currency to use for the payment
      */
     public Depth getDepth( CurrencyPair currencyPair) {
 
@@ -220,7 +221,6 @@ public class BitparkingClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the Bitparking API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current Bitparking ticker.
      */

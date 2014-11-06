@@ -68,7 +68,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the kraken API.
  *
- * @see https://www.kraken.com/help/api
+ * @see <a href="https://www.kraken.com/help/api">Kraken API</a>
  */
 public class KrakenClient extends TradeSiteImpl implements TradeSite {
 
@@ -457,7 +457,7 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.kraken.com/help/new-fees-info
+     * @see <a href="https://www.kraken.com/help/new-fees-info">Kraken fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -639,7 +639,6 @@ public class KrakenClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

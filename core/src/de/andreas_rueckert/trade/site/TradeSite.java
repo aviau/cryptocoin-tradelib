@@ -52,6 +52,14 @@ public interface TradeSite extends PersistentProperties {
     // Methods
 
     /**
+     * Add a listener to notify, when new trade data available. Mainly intended for
+     * websocket exchange API's, so the client can notify a trading app.
+     *
+     * @param listener A listener for new trade data.
+     */
+    public void addTradeDataListener( TradeDataListener listener);
+
+    /**
      * Cancel an order on the trade site.
      *
      * @param order The order to cancel.
@@ -139,7 +147,7 @@ public interface TradeSite extends PersistentProperties {
      *
      * @return The open orders as a collection.
      */
-    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAcount);
+    public Collection<SiteOrder> getOpenOrders( TradeSiteUserAccount userAccount);
 
     /**
      * Get some info, if proxies are allowed for requests to this trade site.
@@ -201,6 +209,15 @@ public interface TradeSite extends PersistentProperties {
     public int hashCode();
 
     /**
+     * Check, if a trade site supports a given feature.
+     *
+     * @param feature the feature to check for.
+     *
+     * @return true, if the feature is supported. False otherwise.
+     */
+    public boolean isFeatureSupported( TradeSiteFeature feature);
+
+    /**
      * Check, if some request type is allowed at the moment. Most
      * trade site have limits on the number of request per time interval.
      *
@@ -218,6 +235,13 @@ public interface TradeSite extends PersistentProperties {
      * @return true, if the currency pair is supported. False otherwise.
      */
     public boolean isSupportedCurrencyPair( CurrencyPair currencyPair);
+
+    /**
+     * Remove a listener from the list of trade data listeners.
+     *
+     * @param listener The listener to remove.
+     */
+    public void removeTradeDataListener( TradeDataListener listener);
 
     /**
      * Get a string for the trading site. This is just used to display

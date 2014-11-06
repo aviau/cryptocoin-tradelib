@@ -73,7 +73,7 @@ public class PersistentProperty implements Comparable<PersistentProperty> {
     /**
      * Create a new property instance with some given values.
      *
-     * @oaram name The name of the property.
+     * @param name The name of the property.
      * @param title The title for the property (could be null).
      * @param value The value of the property.
      * @param priority The priority of the property.
@@ -90,7 +90,7 @@ public class PersistentProperty implements Comparable<PersistentProperty> {
     /**
      * Create a new property instance with some given values.
      *
-     * @oaram name The name of the property.
+     * @param name The name of the property.
      * @param title The title for the property (could be null).
      * @param value The value of the property.
      * @param priority The priority of the property.

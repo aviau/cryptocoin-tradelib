@@ -62,7 +62,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Bittrex API.
  *
- * @see https://bittrex.com/Home/Api
+ * @see <a href="https://bittrex.com/Home/Api">Bittrex API</a>
  */
 public class BittrexClient extends TradeSiteImpl implements TradeSite {
 
@@ -303,7 +303,6 @@ public class BittrexClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

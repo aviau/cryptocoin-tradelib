@@ -413,6 +413,16 @@ public class TradeSiteUserAccount {
     }
 
     /**
+     * Set the trade site for this account.
+     *
+     * @param tradeSite The new trade site, this account is for.
+     */
+    public final void setTradeSite( TradeSite tradeSite) {
+
+	_tradeSite = tradeSite;
+    }
+
+    /**
      * Set a new user ID.
      *
      * @param userId The new user ID.

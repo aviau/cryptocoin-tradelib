@@ -48,7 +48,7 @@ import java.util.List;
 /**
  * Main class for the cex.io API.
  *
- * @see https://cex.io/api
+ * @see <a href="https://cex.io/api">Cex.IO API</a>
  */
 public class CexIOClient extends TradeSiteImpl implements TradeSite {
 
@@ -178,7 +178,6 @@ public class CexIOClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

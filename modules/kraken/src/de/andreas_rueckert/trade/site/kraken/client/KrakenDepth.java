@@ -35,7 +35,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Kraken.com trading site.
  *
- * @see https://www.kraken.com/help/api#get-order-book
+ * @see <a href="https://www.kraken.com/help/api#get-order-book">Kraken depth</a>
  */
 public class KrakenDepth extends DepthImpl {
 

@@ -58,7 +58,7 @@ import java.util.List;
 /**
  * Main class for the LakeBTC API.
  *
- * @see https://www.lakebtc.com/s/api?locale=en
+ * @see <a href="https://www.lakebtc.com/s/api?locale=en">LakeBTC API</a>
  */
 public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
 
@@ -177,7 +177,7 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://lakebtc.com/s/fees?locale=en
+     * @see <a href="https://lakebtc.com/s/fees?locale=en">LakeBTC fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -272,7 +272,6 @@ public class LakeBtcClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the LakeBTC API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current LakeBTC ticker.
      *

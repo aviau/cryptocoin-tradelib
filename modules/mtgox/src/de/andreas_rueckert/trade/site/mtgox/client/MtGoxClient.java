@@ -85,7 +85,7 @@ import org.apache.commons.codec.binary.Base64;
  *
  * @author Andreas Rueckert <a_rueckert@gmx.net>
  *
- * @see https://en.bitcoin.it/wiki/MtGox/API/HTTP/v1#HTTP_API_version_1_methods
+ * @see <a href="https://en.bitcoin.it/wiki/MtGox/API/HTTP/v1#HTTP_API_version_1_methods">MtGox API</a>
  */
 public class MtGoxClient extends TradeSiteImpl implements TradeSite {
 

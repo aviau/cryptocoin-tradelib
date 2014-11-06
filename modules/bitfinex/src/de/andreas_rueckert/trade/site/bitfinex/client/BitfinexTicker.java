@@ -36,7 +36,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the Bitfinex trading platform.
  *
- * @see https://www.bitfinex.com/pages/api
+ * @see <a href="https://www.bitfinex.com/pages/api">Bitfinex API</a>
  */
 public class BitfinexTicker extends TickerImpl {
 

@@ -37,7 +37,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the Poloniex trading platform.
  *
- * @see https://poloniex.com/api
+ * @see <a href="https://poloniex.com/api">Poloniex API</a>
  */
 public class PoloniexTicker extends TickerImpl {
 

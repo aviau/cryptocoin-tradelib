@@ -25,6 +25,10 @@
 
 package de.andreas_rueckert.trade.site.ui;
 
+import de.andreas_rueckert.trade.site.TradeSite;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccount;
+import de.andreas_rueckert.trade.site.TradeSiteUserAccountPersistenceSQLImpl;
+import de.andreas_rueckert.util.LogUtils;
 import de.andreas_rueckert.util.ModuleLoader;
 import java.awt.Color;
 import java.awt.Container;
@@ -262,7 +266,18 @@ public class TradeSiteUserAccountManagerDialog  extends JDialog implements Actio
 		// Now create the actual account object.
 		TradeSiteUserAccount newAccount = new TradeSiteUserAccount( tradeSite);
 		
-		... ToDo: add the other form data to the object.
+		// Add the other form data to the object.
+		newAccount.setAccountName( ((JTextField)_newAccountMap.get( "name")).getText());
+		newAccount.setTradeSite( ModuleLoader.getInstance().getRegisteredTradeSite( String.valueOf( ((JComboBox)_newAccountMap.get( "tradeSite")).getSelectedItem())));
+		// newAccount.setUserId(...)
+		newAccount.setEmail( ((JTextField)_newAccountMap.get( "email")).getText());
+		newAccount.setPassword( ((JTextField)_newAccountMap.get( "password")).getText());
+		newAccount.setAPIkey( ((JTextField)_newAccountMap.get( "apiKey")).getText());
+		newAccount.setSecret( ((JTextField)_newAccountMap.get( "secret")).getText());
+		newAccount.setActivated( ((JCheckBox)_newAccountMap.get( "secret")).isSelected());
+
+		// Add the account to the persistence.
+		TradeSiteUserAccountPersistenceSQLImpl.getInstance().addAccount( newAccount);
 	    }
 	}
     }

@@ -83,7 +83,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Vircurex API client.
  *
- * @see https://vircurex.com/welcome/api
+ * @see <a href="https://vircurex.com/welcome/api">Vircurex API</a>
  */
 public class VircurexClient extends TradeSiteImpl implements TradeSite {
 
@@ -702,7 +702,6 @@ public class VircurexClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency to use for payments.
      *
      * @return The current ticker.
      */

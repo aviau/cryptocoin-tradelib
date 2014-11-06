@@ -148,7 +148,7 @@ public class ProxyRequestHandler {
      *
      * @param tradeSite The trade site to check.
      *
-     * @returns true, if the trade site is already supported. False otherwise.
+     * @return true, if the trade site is already supported. False otherwise.
      */
     public boolean isSupportedTradeSite( TradeSite tradeSite) {
 
@@ -161,7 +161,7 @@ public class ProxyRequestHandler {
      *
      * @param tradeSite The trade site, we want to query.
      *
-     * @returns A proxy to use for this trade site.
+     * @return A proxy to use for this trade site.
      *
      * @throws NoProxyAvailableException if no proxy for this trade site is avaiable.
      */

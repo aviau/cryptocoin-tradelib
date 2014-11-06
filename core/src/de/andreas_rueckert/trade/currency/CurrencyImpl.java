@@ -122,7 +122,7 @@ public class CurrencyImpl implements Currency {
      * @param code The ISO 4217 code of the currency.
      * @param name The name of the currency.
      * @param description A optional description of the currency.
-     * @param type The type of this currency (FIAT, cryptocurrency etc).
+     * @param currencyType The type of this currency (FIAT, cryptocurrency etc).
      */
     public CurrencyImpl( String code, String name, String description, CurrencyType currencyType) {
 

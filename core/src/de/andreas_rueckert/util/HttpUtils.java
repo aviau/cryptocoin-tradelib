@@ -329,7 +329,7 @@ public class HttpUtils {
     /**
      * Don't check SSL certs anymore.
      *
-     * @see http://www.rgagnon.com/javadetails/java-fix-certificate-problem-in-HTTPS.html
+     * @see <a href="http://www.rgagnon.com/javadetails/java-fix-certificate-problem-in-HTTPS.html">Fix certificate problem in java</a>
      */
     private static void installAllCertsTruster() {
 	

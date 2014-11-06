@@ -36,7 +36,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the Bittrex trading platform.
  *
- * @see https://bittrex.com/Home/Api
+ * @see <a href="https://bittrex.com/Home/Api">Bittrex API</a>
  */
 public class BittrexTicker extends TickerImpl {
 

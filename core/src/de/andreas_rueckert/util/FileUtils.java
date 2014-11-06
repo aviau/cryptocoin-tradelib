@@ -52,7 +52,7 @@ public class FileUtils {
      *
      * @return The suffix of the file or null if it has no suffix.
      *
-     * @see http://stackoverflow.com/questions/3571223/how-do-i-get-the-file-extension-of-a-file-in-java
+     * @see < href="http://stackoverflow.com/questions/3571223/how-do-i-get-the-file-extension-of-a-file-in-java">How to get the suffix of a file</a>
      */
     public static final String getFileSuffix( String filepath) {
 

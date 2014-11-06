@@ -70,8 +70,16 @@
   <target name="docs" depends="compile">
     <javadoc packagenames="src" sourcepath="${src}" destdir="${docs}">
        <fileset dir="${src}">
-                <include name="**" />
-           </fileset>
+	 <include name="**" />
+       </fileset>
+      <classpath>
+	<fileset dir="${lib}">
+	  <include name="**/*.jar" />
+	</fileset>
+	<fileset dir="${core-dist-lib}">
+	  <include name="**/*.jar" />
+	</fileset>
+      </classpath>
     </javadoc>
   </target>
 

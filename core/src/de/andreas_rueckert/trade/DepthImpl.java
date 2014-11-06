@@ -391,7 +391,7 @@ public class DepthImpl implements Depth {
      * This method has to be used, if the pair is not passed in the constructor,
      * since many methods expect a correctly set currency pair in the depth.
      *
-     * @param The currency pair, that is used for this depth.
+     * @param currencyPair The currency pair, that is used for this depth.
      */
     public void setCurrencyPair( CurrencyPair currencyPair) {
 

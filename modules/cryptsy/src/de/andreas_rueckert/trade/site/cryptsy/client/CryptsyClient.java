@@ -83,8 +83,8 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the cryptsy API.
  *
- * @see https://www.cryptsy.com/pages/api
- * @see https://github.com/abwaters/cryptsy-api/blob/master/src/com/abwaters/cryptsy/Cryptsy.java
+ * @see <a href="https://www.cryptsy.com/pages/api">Cryptsy API</a>
+ * @see <a href="https://github.com/abwaters/cryptsy-api/blob/master/src/com/abwaters/cryptsy/Cryptsy.java">Cryptsy API java implementation</a>
  */
 public class CryptsyClient extends TradeSiteImpl implements TradeSite {
 
@@ -706,8 +706,9 @@ public class CryptsyClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the cryptsy API.
      *
      * @param currencyPair    The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
+     *
      * @return The current cryptsy ticker.
+     *
      * @throws TradeDataNotAvailableException if the ticker is not available.
      */
     public Ticker getTicker(CurrencyPair currencyPair) throws TradeDataNotAvailableException {

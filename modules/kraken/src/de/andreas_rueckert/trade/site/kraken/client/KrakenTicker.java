@@ -38,7 +38,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the Kraken trading platform.
  *
- * @see https://www.kraken.com/help/api#get-ticker-info
+ * @see <a href="https://www.kraken.com/help/api#get-ticker-info">Kraken ticker</a>
  */
 public class KrakenTicker extends TickerImpl {
 

@@ -36,7 +36,7 @@ import java.util.Map;
 /**
  * Class to connect to a HyperSQL database.
  *
- * @see http://www.hsqldb.org/doc/guide/
+ * @see <a href="http://www.hsqldb.org/doc/guide/">Hyper SQL guide</a>
  */
 public class HyperSQLDatabaseConnection implements DatabaseConnection {
 
@@ -83,7 +83,7 @@ public class HyperSQLDatabaseConnection implements DatabaseConnection {
     /**
      * Get the JDBC connection.
      *
-     * @see http://hsqldb.org/doc/guide/running-chapt.html
+     * @see <a href="http://hsqldb.org/doc/guide/running-chapt.html">HyperSQL users guide</a>
      *
      * @param dbname The name of the database or null, if the default database should be used.
      *

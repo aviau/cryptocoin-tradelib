@@ -59,8 +59,6 @@ public class DepositOrderImpl extends SiteOrderImpl implements DepositOrder {
      * @param userAccount The tradesite user account to use.
      * @param currency The currency to use.
      * @param amount The amount to deposit.
-     *
-     * @return The deposit order with the given parameters.
      */
     public DepositOrderImpl( TradeSite tradeSite, TradeSiteUserAccount userAccount, Currency currency, Amount amount) {
 
@@ -75,8 +73,6 @@ public class DepositOrderImpl extends SiteOrderImpl implements DepositOrder {
      * @param tradeSite The trade site to deposit funds to.
      * @param currency The currency to use.
      * @param amount The amount to deposit.
-     *
-     * @return The deposit order with the given parameters.
      */
     public DepositOrderImpl( TradeSite tradeSite, Currency currency, Amount amount) {
 

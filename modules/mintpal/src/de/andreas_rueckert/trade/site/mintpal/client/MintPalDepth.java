@@ -40,7 +40,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the MintPal trading site.
  *
- * @see https://www.mintpal.com/api#marketorders
+ * @see <a href="https://www.mintpal.com/api#marketorders">MintPal depth</a>
  */
 public class MintPalDepth extends DepthImpl {
 

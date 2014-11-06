@@ -34,8 +34,8 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the OKCoin trading site.
  *
- * @see https://www.okcoin.com/about/publicApi.do
- * @see https://www.okcoin.cn/api/depth.do?symbol=ltc_cny
+ * @see <a href="https://www.okcoin.com/about/publicApi.do">OKCoin API</a>
+ * @see <a href="https://www.okcoin.cn/api/depth.do?symbol=ltc_cny">OKCoin depth</a>
  */
 public class OKCoinDepth extends DepthImpl {
 

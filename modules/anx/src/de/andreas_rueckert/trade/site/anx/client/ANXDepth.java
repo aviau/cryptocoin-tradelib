@@ -41,7 +41,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the ANX trading site.
  *
- * @see http://docs.anxv2.apiary.io/#get-%2Fapi%2F2%2F{currency_pair}%2Fmoney%2Fdepth%2Ffull
+ * @see <a href="http://docs.anxv2.apiary.io/#get-%2Fapi%2F2%2F{currency_pair}%2Fmoney%2Fdepth%2Ffull">ANX depth</a>
  */
 public class ANXDepth extends DepthImpl {
 

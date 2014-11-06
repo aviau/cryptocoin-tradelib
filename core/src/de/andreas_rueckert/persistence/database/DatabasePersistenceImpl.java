@@ -27,7 +27,11 @@ package de.andreas_rueckert.persistence.database;
 
 import de.andreas_rueckert.NotYetImplementedException;
 import de.andreas_rueckert.util.LogUtils;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -145,6 +149,95 @@ public class DatabasePersistenceImpl implements DatabasePersistence {
     public void saveAll() {
 
 	throw new NotYetImplementedException( "Any derived class should overwrite the saveAll method!");
+    }
+
+    /**
+     * Search for a list of records in  a table. The conditions are passed in a column => condition pattern.
+     *
+     * @param tableName The name of the table.
+     * @param searchConditions A list of conditions to limit the search results.
+     *
+     * @return A list of records as column => value maps.
+     */
+    public List< Map< String, Object>> search( String tableName, List< String> searchConditions) {
+
+	// Create a string buffer for the search expression.
+	StringBuffer searchExpression = new StringBuffer();
+
+	// Create a SQL WHERE expression from the list.
+	for( String currentCondition : searchConditions) {
+
+	    // If there are conditions in the expression already, use AND to combine them.
+	    if( searchExpression.length() > 0) {
+
+		searchExpression.append( " AND ");
+	    }
+
+	    // Now append the current condition to the search expression.
+	    searchExpression.append( "(" + currentCondition + ")");
+	}
+
+	// Create a SQL search command from the table name and the expression.
+	String searchCommand = "SELECT * FROM " + tableName;
+
+	// If there were search conditions given, add them to the SQL expression.
+	if( searchExpression.length() > 0) {
+
+	    searchCommand += " WHERE " + searchExpression.toString();
+	}
+
+	// Create a buffer for the result.
+	List< Map< String, Object>> resultBuffer = new ArrayList< Map< String, Object>>();
+
+	try {
+
+	    // Execute the query via the persistence manager.
+	    ResultSet resultSet = null;
+	    if( ( resultSet = DatabasePersistenceManager.getInstance( null).executeQuery( searchCommand)) == null) {
+
+		// Log the problem.
+		LogUtils.getInstance().getLogger().error( "Cannot insert map into database.");
+
+		return null;  // Search failed.
+	    }
+
+	    // Get info on the result set.
+	    ResultSetMetaData metaData = resultSet.getMetaData();
+
+	    // Convert the meta data to a list of column names.
+	    List< String> columnNames = new ArrayList< String>();
+
+	    // Loop over the columns to fetch the data.
+	    for( int columnIndex = 0; columnIndex < metaData.getColumnCount(); ++columnIndex) {
+		
+		// Add the name of the current column to the list of column names.
+		columnNames.add( metaData.getColumnName( columnIndex));
+	    }
+	
+	    // Convert the result set to a list of maps.
+	    while( resultSet.next()) {
+		
+		// Create a map for the current row.
+		Map< String, Object> currentRow = new HashMap< String, Object>();
+
+		// Loop over the columns to fetch the data.
+		for( String currentColumnName : columnNames) {
+		
+		    currentRow.put( currentColumnName, resultSet.getObject( currentColumnName));
+		}
+
+		// Add the current map to the result buffer.
+		resultBuffer.add( currentRow);
+	    }
+	    
+	} catch( SQLException sqle) {  // Error while reading from the result set.
+
+	    LogUtils.getInstance().getLogger().error( "SQL query exception while resding the result set from a query: " + sqle);
+	    
+	    return null;  // No data to return...
+	}
+
+	return resultBuffer;  // Return the list of maps.
     }
 
     /**

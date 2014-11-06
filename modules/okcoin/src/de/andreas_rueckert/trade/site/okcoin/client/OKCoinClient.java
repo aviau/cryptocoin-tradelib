@@ -60,7 +60,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the OKCoin API.
  *
- * @see https://www.okcoin.com/about/tradeApi.do
+ * @see <a href="https://www.okcoin.com/about/tradeApi.do">OKCoin API</a>
  */
 public class OKCoinClient extends TradeSiteImpl implements TradeSite {
 
@@ -183,7 +183,7 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.okcoin.com/about/vip.do
+     * @see <a href="https://www.okcoin.com/about/vip.do">OKCoin trading fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -263,7 +263,6 @@ public class OKCoinClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

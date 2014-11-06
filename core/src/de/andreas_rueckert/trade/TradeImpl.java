@@ -80,9 +80,6 @@ public class TradeImpl implements Comparable<Trade>, Trade {
 
     /**
      * Create a new trade object from a JSONObject.
-     *
-     * @param site The site, where the trade takes place.
-     * @param currencyPair The queried currency pair.
      */
     public TradeImpl() {
     }

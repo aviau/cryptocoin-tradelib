@@ -250,7 +250,7 @@ public class DatabasePersistenceManager {
     /**
      * Execute a list of commands.
      *
-     * @param commands The list of commands.
+     * @param statements The list of commands.
      *
      * @return true, if the statements were successfully executed. False otherwise.
      */
@@ -286,7 +286,7 @@ public class DatabasePersistenceManager {
      *
      * @return The names of the existing tables as a list of strings.
      *
-     * @see http://stackoverflow.com/questions/7070449/how-can-i-see-table-structure-in-hsqldb
+     * @see <a href="http://stackoverflow.com/questions/7070449/how-can-i-see-table-structure-in-hsqldb">How can I see the table structure in HyperSQL</a>
      */
     public List<String> getDatabaseTables() {
 

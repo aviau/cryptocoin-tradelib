@@ -40,7 +40,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Atomic Trade trading site.
  *
- * @see https://www.atomic-trade.com/MarketAPI
+ * @see <a href="https://www.atomic-trade.com/MarketAPI">Atomic-Trade API</a>
  */
 public class AtomicTradeDepth extends DepthImpl {
 

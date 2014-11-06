@@ -185,7 +185,7 @@ public class ModuleLoader {
     /**
      * Get the location of the jar, this ModuleLoader is in.
      * So we can compute the ext/ directory relative to this jar file.
-     * @see http://stackoverflow.com/questions/320542/how-to-get-the-path-of-a-running-jar-file
+     * @see < href="http://stackoverflow.com/questions/320542/how-to-get-the-path-of-a-running-jar-file">How to get the path of a running jar file</a>
      *
      * @return The location of this loaded jar file.
      */
@@ -295,7 +295,7 @@ public class ModuleLoader {
 
     /**
      * Load all the classes in a given jar file.
-     * @see http://stackoverflow.com/questions/11016092/how-to-load-classes-at-runtime-from-a-folder-or-jar
+     * @see <a href="http://stackoverflow.com/questions/11016092/how-to-load-classes-at-runtime-from-a-folder-or-jar">How to load classes at runtime</a>
      *
      * @param file The jar file with the classes.
      */

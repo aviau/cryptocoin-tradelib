@@ -84,6 +84,11 @@ public class TradeSiteImpl {
     //protected BigDecimal _feeForWithdrawal = BigDecimal.ZERO;  // Set a default value.
 
     /**
+     * A list of listeners waiting to get notified about new trade data available.
+     */
+    protected List<TradeDataListener> _listeners = new ArrayList<TradeDataListener>();
+
+    /**
      * The current log level.
      */
     protected int _logLevel = LOGLEVEL_ERROR;
@@ -114,6 +119,18 @@ public class TradeSiteImpl {
     
 
     // Methods
+
+    /**
+     * Add a listener to notify, when new trade data available. Mainly intended for
+     * websocket exchange API's, so the client can notify a trading app.
+     *
+     * @param listener A listener for new trade data.
+     */
+    public void addTradeDataListener( TradeDataListener listener) {
+
+	// Add the new listener to the list of active listeners.
+	_listeners.add( listener);
+    }
 
     /**
      * Get the current market depth (minimal data of the orders).
@@ -410,6 +427,20 @@ public class TradeSiteImpl {
     }
 
     /**
+     * Check, if a trade site supports a given feature.
+     * This is just a default implementation. Should be overwritten by the
+     * API implementation if necessary.
+     *
+     * @param feature the feature to check for.
+     *
+     * @return true, if the feature is supported. False otherwise.
+     */
+    public boolean isFeatureSupported( TradeSiteFeature feature) {
+
+	return false;  // Default is, that no specific features are supported.
+    }
+
+    /**
      * Check, if a given currency pair is supported on this site.
      *
      * @param currencyPair The currency pair to check for this site.
@@ -426,7 +457,18 @@ public class TradeSiteImpl {
 	}
 	return false;  // Currency pair seems not supported here.
     }
-    
+   
+    /**
+     * Remove a listener from the list of trade data listeners.
+     *
+     * @param listener The listener to remove.
+     */
+    public void removeTradeDataListener( TradeDataListener listener) {
+
+	// Remove the listener from the list of active listeners.
+	_listeners.remove( listener);
+    }
+ 
     /**
      * Get the fee for deposits as percent.
      *

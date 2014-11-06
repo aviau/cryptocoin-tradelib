@@ -34,7 +34,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Huobi trading site.
  *
- * @see https://www.huobi.com/help/index.php?a=market_help
+ * @see <a href="https://www.huobi.com/help/index.php?a=market_help">Huobi depth</a>
  */
 public class HuobiDepth extends DepthImpl {
 

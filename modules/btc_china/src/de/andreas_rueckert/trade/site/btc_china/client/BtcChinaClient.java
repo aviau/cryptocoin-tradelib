@@ -59,8 +59,8 @@ import java.util.Map;
 /**
  * Main class for the btc-china API.
  *
- * @see https://gist.github.com/mkraemer/7483878
- * @see http://btcchina.org/api-market-data-documentation-en
+ * @see <a href="https://gist.github.com/mkraemer/7483878">PHP Btc-China API implementation</a>
+ * @see <a href="http://btcchina.org/api-market-data-documentation-en">Btc-China API market data</a>
  */
 public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
 
@@ -106,7 +106,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The returned data as JSON or null, if the request failed.
      *
-     * @see https://gist.github.com/mkraemer/7483878
+     * @see <a href="https://gist.github.com/mkraemer/7483878">Btc-China PHP sources</a>
      */
     private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
 
@@ -316,7 +316,6 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the btc-china API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current btc-china ticker.
      *
@@ -353,7 +352,7 @@ public class BtcChinaClient extends TradeSiteImpl implements TradeSite {
     /**
      * Get a list of recent trades.
      *
-     * @see http://www.reddit.com/r/Bitcoin/comments/1qteyu/any_apis_for_chinese_exchanges/
+     * @see <a href="http://www.reddit.com/r/Bitcoin/comments/1qteyu/any_apis_for_chinese_exchanges/">Chinese exchange APIs</a>
      *
      * @param since_micros The GMT-relative epoch in microseconds.
      * @param currencyPair The currency pair to query.

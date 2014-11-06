@@ -59,7 +59,7 @@ public class CryptsyDepth extends DepthImpl {
      * all the depths are returned in one response. The currency pair is part of the
      * market, so we don't have to pass it to the constructor.
      *
-     * @param jsonResponse The jsonResponse from the cryptsy server.
+     * @param jsonMarket The JSON response from the cryptsy server.
      * @param tradeSite The trade site, that delivered the data.
      *
      * @throws CurrencyNotSupportedException if an unknown currency is used in this depth.

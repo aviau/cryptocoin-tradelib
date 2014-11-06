@@ -72,7 +72,9 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Bitstamp API.
  *
- * @see https://www.bitstamp.net/api/
+ * @see <a href="https://www.bitstamp.net/api/">Bitstamp API</a>
+ *
+ * @see <a href="https://www.bitstamp.net/websocket/">Bitstamp websocket API</a>
  */
 public class BitstampClient extends TradeSiteImpl implements TradeSite {
 
@@ -635,7 +637,6 @@ public class BitstampClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the Bitstamp API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current Bitstamp ticker.
      *

@@ -76,7 +76,7 @@ import org.apache.commons.codec.binary.Base64;
 /**
  * Main class for the ANX API.
  *
- * @see http://docs.anxv2.apiary.io/
+ * @see <a href="http://docs.anxv2.apiary.io/">ANX API</a>
  */
 public class ANXClient extends TradeSiteImpl implements TradeSite {
 
@@ -716,8 +716,6 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      * @param order The order to use for the fee computation.
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
-     *
-     * @see https://www.bitfinex.com/pages/fees
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -845,7 +843,6 @@ public class ANXClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

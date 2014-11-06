@@ -67,7 +67,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the coins-e API.
  *
- * @see http://www.coins-e.com/exchange/api/documentation/
+ * @see <a href="http://www.coins-e.com/exchange/api/documentation/">Coins-E API</a>
  */
 public class CoinsEClient extends TradeSiteImpl implements TradeSite {
 
@@ -501,7 +501,6 @@ public class CoinsEClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the coins-e API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current coins-e ticker.
      *

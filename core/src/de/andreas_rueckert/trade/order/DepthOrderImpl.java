@@ -68,7 +68,7 @@ public class DepthOrderImpl implements DepthOrder {
      *
      * @param orderType The type of the order (buy or sell).
      * @param price The price of the order.
-     * @param currency The currency that is used for the order.
+     * @param currencyPair The currency that is used for the order.
      * @param amount The amount of the traded good.
      */
     public DepthOrderImpl( OrderType orderType, Price price, CurrencyPair currencyPair, Amount amount) {

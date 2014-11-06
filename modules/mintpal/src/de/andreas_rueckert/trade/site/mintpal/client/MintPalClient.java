@@ -64,7 +64,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the MintPal API.
  *
- * @see https://www.mintpal.com/api
+ * @see <a href="https://www.mintpal.com/api">MitPal API</a>
  */
 public class MintPalClient extends TradeSiteImpl implements TradeSite {
 
@@ -148,7 +148,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
      *
      * @throws TradeDataNotAvailableException if the depth is not available.
      *
-     * @see https://www.mintpal.com/api#marketorders
+     * @see <a href="https://www.mintpal.com/api#marketorders">MintPal depth</a>
      */
     public Depth getDepth( CurrencyPair currencyPair) throws TradeDataNotAvailableException {
 
@@ -265,7 +265,7 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.mintpal.com/fees 
+     * @see <a href="https://www.mintpal.com/fees">MintPal fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -340,7 +340,6 @@ public class MintPalClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

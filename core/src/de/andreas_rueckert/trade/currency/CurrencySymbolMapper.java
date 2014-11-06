@@ -50,7 +50,7 @@ public class CurrencySymbolMapper {
     /**
      * Get a currency object for a ISO 4217 currency name.
      *
-     * @see https://tools.ietf.org/html/draft-stanish-x-iso4217-a3-01
+     * @see <a href="https://tools.ietf.org/html/draft-stanish-x-iso4217-a3-01">Extended ISO codes draft</a>
      *
      * @param iso4217name The ISO 4217 name of the currency.
      *
@@ -101,7 +101,7 @@ public class CurrencySymbolMapper {
      *
      * @return The ISO 417 name of the currency.
      *
-     * @see https://tools.ietf.org/html/draft-stanish-x-iso4217-a3-01
+     * @see <a href="https://tools.ietf.org/html/draft-stanish-x-iso4217-a3-01">Extended ISO codes draft</a>
      */
     public String getISO4217Name( Currency currency) {
 

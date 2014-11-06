@@ -61,7 +61,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Poloniex API.
  *
- * @see https://poloniex.com/api
+ * @see <a href="https://poloniex.com/api">Poloniex API</a>
  */
 public class PoloniexClient extends TradeSiteImpl implements TradeSite {
 
@@ -255,7 +255,6 @@ public class PoloniexClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

@@ -47,7 +47,7 @@ public interface Order extends DepthOrder {
     /**
      * Add an order, that this order depends on.
      *
-     * @param The dependend order.
+     * @param dependency The order, that this order depends on.
      */
     public void addDependency( Order dependency);
 

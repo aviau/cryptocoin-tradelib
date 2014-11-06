@@ -58,8 +58,8 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Huobi API.
  *
- * @see https://www.huobi.com/help/index.php?a=api_help
- * @see https://www.huobi.com/help/index.php?a=market_help
+ * @see <a href="https://www.huobi.com/help/index.php?a=api_help">Huobi API</a>
+ * @see <a href="https://www.huobi.com/help/index.php?a=market_help">Huobi market</a>
  */
 public class HuobiClient extends TradeSiteImpl implements TradeSite {
 
@@ -179,7 +179,7 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.huobi.com/help/?a=detail&id=vipdes
+     * @see <a href="https://www.huobi.com/help/?a=detail&id=vipdes">Huobi fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -259,7 +259,6 @@ public class HuobiClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

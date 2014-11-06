@@ -72,8 +72,8 @@ public class ChartAnalyzer {
      * Compute the EMA over a timespan before the current time.
      * This timespan is also used for the weight calculation of each price.
      *
-     * @see http://www.iexplain.org/ema-how-to-calculate/
-     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     * @see <a href="http://www.iexplain.org/ema-how-to-calculate/">Calculate EMA</a>
+     * @see <a href="http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a">Calculate EMA</a>
      *
      * @param trades The list of trades.
      * @param timeInterval The time interval as a String object to guesstimate the time period.
@@ -126,8 +126,8 @@ public class ChartAnalyzer {
     /**
      * Compute the EMA over a timespan before the current time.
      *
-     * @see http://www.iexplain.org/ema-how-to-calculate/
-     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     * @see <a href="http://www.iexplain.org/ema-how-to-calculate/">Calculate EMA</a>
+     * @see <a href="http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a">Calculate EMA</a>
      *
      * @param trades The list of trades.
      * @param timeInterval The time interval as microseconds before the current time.
@@ -149,8 +149,8 @@ public class ChartAnalyzer {
     /**
      * Compute the EMA over a timespan before the a given end time.
      *
-     * @see http://www.iexplain.org/ema-how-to-calculate/
-     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     * @see <a href="http://www.iexplain.org/ema-how-to-calculate/">Howto calculate EMA</a>
+     * @see <a href="http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a">Calculate EMA</a>
      *
      * @param trades The list of trades.
      * @param startTime The start time as microseconds.
@@ -237,8 +237,8 @@ public class ChartAnalyzer {
      * Compute the EMA over a timespan before the current time.
      * This timespan is also used for the weight calculation of each price.
      *
-     * @see http://www.iexplain.org/ema-how-to-calculate/
-     * @see http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a
+     * @see <a href="http://www.iexplain.org/ema-how-to-calculate/">Calculate EMA</a>
+     * @see <a href="http://stockcharts.com/help/doku.php?id=chart_school:technical_indicators:moving_averages#exponential_moving_a">Calculate EMA</a>
      *
      * @param tradeSite The tradesite to query the trades from.
      * @param currencyPair The currency pair to query.

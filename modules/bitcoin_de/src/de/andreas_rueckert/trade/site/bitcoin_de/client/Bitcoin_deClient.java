@@ -61,7 +61,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Bitcoin.de API.
  *
- * @see https://www.bitcoin.de/de/api/marketplace
+ * @see <a href="https://www.bitcoin.de/de/api/marketplace">Bitcoin.de API</a>
  */
 public class Bitcoin_deClient extends TradeSiteImpl implements TradeSite {
 
@@ -212,7 +212,7 @@ public class Bitcoin_deClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.bitcoin.de/de/infos#p-main-2
+     * @see <a href="https://www.bitcoin.de/de/infos#p-main-2">Bitcoin.de fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -246,7 +246,7 @@ public class Bitcoin_deClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The shortest allowed request interval in microseconds.
      *
-     * @see https://www.bitcoin.de/de/api/marketplace
+     * @see <a href="https://www.bitcoin.de/de/api/marketplace">Bitcoin.de request limits</a>
      */
     public long getMinimumRequestInterval() {
 
@@ -295,7 +295,6 @@ public class Bitcoin_deClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

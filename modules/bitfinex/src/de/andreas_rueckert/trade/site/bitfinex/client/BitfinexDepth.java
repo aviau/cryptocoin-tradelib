@@ -40,7 +40,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Bitfinex trading site.
  *
- * @see https://www.bitfinex.com/pages/api
+ * @see <a href="https://www.bitfinex.com/pages/api">Bitfinex API</a>
  */
 public class BitfinexDepth extends DepthImpl {
 

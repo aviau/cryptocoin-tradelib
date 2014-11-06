@@ -37,7 +37,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the MintPal trading platform.
  *
- * @see https://www.mintpal.com/api#marketstats
+ * @see <a href="https://www.mintpal.com/api#marketstats">MintPal ticker</a>
  */
 public class MintPalTicker extends TickerImpl {
 

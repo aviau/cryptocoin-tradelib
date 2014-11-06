@@ -40,7 +40,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Bittrex trading site.
  *
- * @see https://bittrex.com/Home/Api
+ * @see <a href="https://bittrex.com/Home/Api">Bittrex API</a>
  */
 public class BittrexDepth extends DepthImpl {
 

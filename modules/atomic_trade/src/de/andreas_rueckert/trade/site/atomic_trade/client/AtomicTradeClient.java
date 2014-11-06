@@ -64,7 +64,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the Atomic-Trade exchange.
  *
- * @see https://www.atomic-trade.com/MarketAPI
+ * @see <a href="https://www.atomic-trade.com/MarketAPI">Atomic-Trade API</a>
  */
 public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
 
@@ -213,7 +213,7 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The fee in the resulting currency (currency value for buy, payment currency value for sell).
      *
-     * @see https://www.atomic-trade.com/Fees
+     * @see <a href="https://www.atomic-trade.com/Fees">Atomic-Trade fees</a>
      */
     public synchronized Price getFeeForOrder( SiteOrder order) {
 
@@ -299,7 +299,6 @@ public class AtomicTradeClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current ticker.
      *

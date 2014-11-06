@@ -65,7 +65,7 @@ import net.sf.json.JSONObject;
  *
  * @author Andreas Rueckert <a_rueckert@gmx.net>
  *
- * @see https://intersango.com/api.php
+ * @see <a href="https://intersango.com/api.php">Intersango API</a>
  */
 public class IntersangoClient extends TradeSiteImpl implements TradeSite {
 
@@ -289,7 +289,6 @@ public class IntersangoClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker state as a Ticker object.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency to use for payments.
      *
      * @return The current ticker state as a Ticker object or null, if no ticker could be requested.
      */

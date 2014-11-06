@@ -58,7 +58,7 @@ import net.sf.json.JSONObject;
 /**
  * Main class for the bitcurex API.
  *
- * @see https://eur.bitcurex.com/reading-room/API
+ * @see <a href="https://eur.bitcurex.com/reading-room/API">Bitcurex API</a>
  */
 public class BitcurexClient extends TradeSiteImpl implements TradeSite {
 
@@ -261,7 +261,6 @@ public class BitcurexClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the bitcurex API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current bitcurex ticker.
      *

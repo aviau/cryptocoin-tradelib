@@ -110,7 +110,7 @@ public class RatedProxy extends Proxy {
      *
      * @param proxy Another proxy.
      *
-     * @returns true, if the 2 proxies are the same. False otherwise.
+     * @return true, if the 2 proxies are the same. False otherwise.
      */
     public boolean equals( RatedProxy proxy) {
 

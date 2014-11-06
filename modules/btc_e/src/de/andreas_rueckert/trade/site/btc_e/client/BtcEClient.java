@@ -92,8 +92,8 @@ import de.andreas_rueckert.util.TimeUtils;
 /**
  * Main class for the btc-e API.
  *
- * @see https://btc-e.com/page/2
- * @see http://bitcoin.stackexchange.com/questions/1393/does-btc-e-have-an-api-for-alternate-currencies
+ * @see <a href="https://btc-e.com/page/2">Btc-E API</a>
+ * @see <a href="http://bitcoin.stackexchange.com/questions/1393/does-btc-e-have-an-api-for-alternate-currencies">More Btc-E API methods</a>
  */
 public class BtcEClient extends TradeSiteImpl implements TradeSite {
 
@@ -320,7 +320,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      *
      * @return The returned data as JSON or null, if the request failed.
      *
-     * @see http://pastebin.com/K25Nk2Sv
+     * @see <a href="http://pastebin.com/K25Nk2Sv">Authenticated request to Btc-E</a>
      */
     private final JSONObject authenticatedHTTPRequest( String method, Map<String, String> arguments, TradeSiteUserAccount userAccount) {
 
@@ -856,7 +856,7 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      *
      * @param URL The URL of the page.
      *
-     * @see http://jsoup.org/cookbook/input/load-document-from-url
+     * @see <a href="http://jsoup.org/cookbook/input/load-document-from-url">Do authenticated jsoup request</a>
      */
     private void getAuthenticatedPage( String URL) {
 
@@ -1082,8 +1082,10 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
     
     /**
      * Gets the fee for a currency pair trade, 
-     * @param the fee
-     * @return
+     *
+     * @param pair The currency pair.
+     *
+     * @return The fees for the given currency pair.
      */
     public BigDecimal getFeeForCurrencyPairTrade(CurrencyPair pair) {
     	for (CurrencyPair currencyPair : _supportedCurrencyPairs) {
@@ -1282,7 +1284,6 @@ public class BtcEClient extends TradeSiteImpl implements TradeSite {
      * Get the current ticker from the btc-e API.
      *
      * @param currencyPair The currency pair to query.
-     * @param paymentCurrency The currency for the payments.
      *
      * @return The current btc-e ticker.
      *

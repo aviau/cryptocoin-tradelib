@@ -36,7 +36,7 @@ import net.sf.json.JSONException;
 /**
  * This class implements a ticker object for the ANX trading platform.
  *
- * @see http://docs.anxv2.apiary.io/#get-%2Fapi%2F2%2F{currency_pair}%2Fmoney%2Fticker
+ * @see <a href="http://docs.anxv2.apiary.io/#get-%2Fapi%2F2%2F{currency_pair}%2Fmoney%2Fticker">ANX ticker</a>
  */
 public class ANXTicker extends TickerImpl {
 

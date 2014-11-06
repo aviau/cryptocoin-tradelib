@@ -40,4 +40,11 @@
     </subant>
   </target>
 
+  <target name="docs">
+    <!-- Generate javadocs -->
+    <subant target="docs">
+      <fileset refid="buildFiles"/>
+    </subant>
+  </target>
+
 </project>

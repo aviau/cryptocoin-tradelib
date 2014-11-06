@@ -38,7 +38,7 @@ import net.sf.json.JSONObject;
 /**
  * This class implements the depth of the Poloniex trading site.
  *
- * @see https://poloniex.com/api
+ * @see <a href="https://poloniex.com/api">Poloniex API</a>
  */
 public class PoloniexDepth extends DepthImpl {
 
